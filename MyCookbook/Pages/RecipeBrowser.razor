@@ -1,9 +1,12 @@
 ﻿@page "/recipebrowser"
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
+@using MyCookbook.Data.CookbookDatabaseExtensions;
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 @inherits OwningComponentBase<CookbookDatabaseService>
 <h1>Recipe browser</h1>
+<hr />
 <AuthorizeView>
     <Authorized>
         @if (_recipes == null)
@@ -11,12 +14,20 @@
             <p><em>Loading...</em></p>
             return;
         }
-        <table class="table">
+
+        <p>
+            <button class="btn btn-success"
+                    @onclick="AddRecipe">
+                Add New Recipe
+            </button>
+        </p>
+
+        <table class="table" style='table-layout:fixed;'>
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Duration</th>
+                    <th width="50%">Name</th>
+                    <th width="20%">Category</th>
+                    <th width="10%">Duration</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,23 +36,22 @@
                     <tr>
                         <td>@recipe.Name</td>
                         <td>@recipe.Category</td>
-                        <td>@recipe.Duration</td>
+                        <td>@recipe.GetDurationFormatted()</td>
                         <td>
                             <button class="btn btn-primary"
                                 @onclick="(() => EditRecipe(recipe))">
                                 Edit
+                            </button>
+                            <button class="btn btn-primary"
+                                @onclick='(() => NavigationManager.NavigateTo($"recipeviewer/{recipe.Name}"))'>
+                                Open
                             </button>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p>
-            <button class="btn btn-success"
-                    @onclick="AddRecipe">
-                Add New Recipe
-            </button>
-        </p>
+
         @if (_showPopup)
         {
             <div class="modal" tabindex="-1" style="display:block" role="dialog">
@@ -64,7 +74,7 @@
                             <input class="form-control" type="text"
                                placeholder="Duration"
                                @bind="_recipeDuration" />
-                            <br />
+                            <br/>
                             <button class="btn btn-success"
                                 @onclick="SaveRecipe">
                                 Save
@@ -90,15 +100,20 @@
 {
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+
+    private bool _showPopup = false;
+
     private List<Recipe> _recipes = new List<Recipe>();
     private Recipe _recipe = new Recipe();
-    private string _userIdentityName = "";
-    private bool _showPopup = false;
 
     private string _recipeDuration 
     {
-        get => _recipe.Duration.ToString() ?? "";
-        set => _recipe.Duration = (int)Math.Round(TimeSpan.Parse(value).TotalMinutes);
+        get => _recipe.GetDurationFormatted();
+        set 
+        {
+            _recipe.Duration = TimeSpan.TryParse(value, out var span) ? (int)Math.Round(span.TotalMinutes) : null;
+        }
     }
 
     protected override async Task OnInitializedAsync()
@@ -128,10 +143,7 @@
 
     private void AddRecipe()
     {
-        _recipe = new Recipe
-            {
-                UserName = _userIdentityName
-        };
+        _recipe = new Recipe();
         _showPopup = true;
     }
 
@@ -140,11 +152,11 @@
         _showPopup = false;
         if (_recipe.Id == 0)
         {
-            var result = await @Service.CreateRecipeAsync(_recipe);
+            var result = await @Service.CreateRecipeAsync(_recipe, _userIdentityName);
         }
         else
         {
-            var result = await @Service.UpdateRecipeAsync(_recipe);
+            var result = await @Service.UpdateRecipeAsync(_recipe, _userIdentityName);
         }
 
         await RefreshRecipes();
@@ -153,7 +165,7 @@
     private async Task DeleteRecipe()
     {
         _showPopup = false;
-        var result = await @Service.DeleteRecipeAsync(_recipe);
+        var result = await @Service.DeleteRecipeAsync(_recipe, _userIdentityName);
         await RefreshRecipes();
     }
 

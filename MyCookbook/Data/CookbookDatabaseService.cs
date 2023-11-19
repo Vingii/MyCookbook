@@ -12,6 +12,15 @@ namespace MyCookbook.Data
             _context = context;
         }
 
+        public async Task<Recipe?> GetDetailedRecipeAsync(string name, string user)
+        {
+            return await _context.Recipes
+                 .Where(x => x.UserName == user && x.Name == name)
+                 .Include(x => x.Ingredients)
+                 .Include(x => x.Steps)
+                 .AsNoTracking().FirstOrDefaultAsync();
+        }
+
         public async Task<List<Recipe>> GetRecipesAsync(string user)
         {
             return await _context.Recipes
@@ -19,18 +28,19 @@ namespace MyCookbook.Data
                  .AsNoTracking().ToListAsync();
         }
 
-        public async Task<Recipe> CreateRecipeAsync(Recipe recipe)
+        public async Task<Recipe> CreateRecipeAsync(Recipe recipe, string user)
         {
+            recipe.UserName = user;
             await _context.Recipes.AddAsync(recipe);
             await _context.SaveChangesAsync();
             return recipe;
         }
 
-        public async Task<bool> UpdateRecipeAsync(Recipe recipe)
+        public async Task<bool> UpdateRecipeAsync(Recipe recipe, string user)
         {
             var foundRecipe =
                 _context.Recipes
-                .Where(x => x.Id == recipe.Id)
+                .Where(x => x.Id == recipe.Id && x.UserName == user)
                 .FirstOrDefault();
 
             if (foundRecipe == null) return false;
@@ -43,16 +53,94 @@ namespace MyCookbook.Data
             return true;
         }
 
-        public async Task<bool> DeleteRecipeAsync(Recipe recipe)
+        public async Task<bool> DeleteRecipeAsync(Recipe recipe, string user)
         {
             var foundRecipe =
                 _context.Recipes
-                .Where(x => x.Id == recipe.Id)
+                .Where(x => x.Id == recipe.Id && x.UserName == user)
                 .FirstOrDefault();
 
             if (foundRecipe == null) return false;
 
             _context.Recipes.Remove(foundRecipe);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<Step> CreateStepAsync(Step step, string user)
+        {
+            step.UserName = user;
+            await _context.Steps.AddAsync(step);
+            await _context.SaveChangesAsync();
+            return step;
+        }
+
+        public async Task<bool> UpdateStepAsync(Step step, string user)
+        {
+            var foundStep =
+                _context.Steps
+                .Where(x => x.Id == step.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundStep == null) return false;
+
+            foundStep.Description = step.Description;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DeleteStepAsync(Step step, string user)
+        {
+            var foundStep =
+                _context.Steps
+                .Where(x => x.Id == step.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundStep == null) return false;
+
+            _context.Steps.Remove(foundStep);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<Ingredient> CreateIngredientAsync(Ingredient ingredient, string user)
+        {
+            ingredient.UserName = user;
+            await _context.Ingredients.AddAsync(ingredient);
+            await _context.SaveChangesAsync();
+            return ingredient;
+        }
+
+        public async Task<bool> UpdateIngredientAsync(Ingredient ingredient, string user)
+        {
+            var foundIngredient =
+                _context.Ingredients
+                .Where(x => x.Id == ingredient.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundIngredient == null) return false;
+
+            foundIngredient.Name = ingredient.Name;
+            foundIngredient.Amount = ingredient.Amount;
+            foundIngredient.Unit = ingredient.Unit;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DeleteIngredientAsync(Ingredient ingredient, string user)
+        {
+            var foundIngredient =
+                _context.Ingredients
+                .Where(x => x.Id == ingredient.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundIngredient == null) return false;
+
+            _context.Ingredients.Remove(foundIngredient);
             await _context.SaveChangesAsync();
 
             return true;

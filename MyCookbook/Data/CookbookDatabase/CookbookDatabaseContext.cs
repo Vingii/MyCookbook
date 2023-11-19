@@ -32,11 +32,15 @@ namespace MyCookbook.Data.CookbookDatabase
 
                 entity.Property(e => e.Unit).HasMaxLength(50);
 
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Ingredients)
                     .HasForeignKey(d => d.RecipeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Ingredien__Recip__5812160E");
+                    .HasConstraintName("FK__Ingredien__Recip__5EBF139D");
             });
 
             modelBuilder.Entity<Recipe>(entity =>
@@ -50,6 +54,8 @@ namespace MyCookbook.Data.CookbookDatabase
                     .IsRequired()
                     .HasMaxLength(50);
 
+                entity.Property(e => e.Servings).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.UserName)
                     .IsRequired()
                     .HasMaxLength(255);
@@ -57,11 +63,15 @@ namespace MyCookbook.Data.CookbookDatabase
 
             modelBuilder.Entity<Step>(entity =>
             {
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Steps)
                     .HasForeignKey(d => d.RecipeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Steps__RecipeId__5535A963");
+                    .HasConstraintName("FK__Steps__RecipeId__5BE2A6F2");
             });
 
             OnModelCreatingPartial(modelBuilder);

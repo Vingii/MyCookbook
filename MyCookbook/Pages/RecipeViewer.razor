@@ -1,0 +1,309 @@
+﻿@page "/recipeviewer/{Name}"
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inherits OwningComponentBase<CookbookDatabaseService>
+<AuthorizeView>
+    <Authorized>
+        @if (_loading)
+        {
+            <h1>@Name</h1>
+            <hr/>
+            <p><em>Loading...</em></p>
+            return;
+        }
+
+        @if (_recipe.Name == null)
+        {
+            // TODO: recipe creator
+            return;
+        }
+
+        <h1>
+            @Name
+            <button class="btn btn-primary"
+                @onclick="(() => ToggleEditMode())">
+                Edit mode
+            </button>
+        </h1>
+        <hr />
+
+        <h2>Ingredients</h2>
+        <table class="table" style='table-layout:fixed;'>
+            <thead>
+                <tr>
+                    <th width="50%">Name</th>
+                    <th width="20%">Amount</th>
+                    <th width="20%">Unit</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ingredient in _recipe.Ingredients)
+                {
+                    <tr>
+                        <td>@ingredient.Name</td>
+                        <td>@ingredient.Amount</td>
+                        <td>@ingredient.Unit</td>
+                        <td>
+                            @if (_editMode)
+                            {
+                                <button class="btn btn-primary"
+                                    @onclick="(() => EditIngredient(ingredient))">
+                                    Edit
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (_editMode)
+        {
+            <p>
+                <button class="btn btn-success"
+                    @onclick="AddIngredient">
+                    Add Ingredient
+                </button>
+            </p>
+        }
+
+        <h2>Steps</h2>
+        <ul>
+            @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
+            {
+                <li>
+                    @step.Description
+                    &nbsp;
+                    @if (_editMode)
+                    {
+                        <button class="btn btn-primary"
+                            @onclick="(() => EditStep(step))">
+                            Edit
+                        </button>
+                    }
+                </li>
+            }
+        </ul>
+        <p>
+            @if (_editMode)
+            {
+                <button class="btn btn-success"
+                        @onclick="AddStep">
+                    Add New Step
+                </button>
+            }
+        </p>
+
+        @if (_showStepPopup)
+        {
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Edit Step</h3>
+                            <button type="button" class="close"
+                                @onclick="ClosePopups">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input class="form-control" type="text"
+                               placeholder="Description"
+                               @bind="_step.Description" />
+                            <br />
+                            <button class="btn btn-success"
+                                @onclick="SaveStep">
+                                Save
+                            </button>&nbsp;
+                            @if (_step.Id > 0)
+                            {
+                                <button class="btn btn-danger"
+                                @onclick="DeleteStep">
+                                    Delete
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showIngredientPopup)
+        {
+                <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Edit Ingredient</h3>
+                                <button type="button" class="close"
+                                    @onclick="ClosePopups">
+                                    <span aria-hidden="true">X</span>
+                                </button>
+                            </div>
+                        <div class="modal-body">
+                            <input class="form-control" type="text"
+                               placeholder="Name"
+                               @bind="_ingredient.Name" />
+                            <input class="form-control" type="text"
+                               placeholder="Amount"
+                               @bind="_ingredient.Amount" />
+                            <input class="form-control" type="text"
+                               placeholder="Unit"
+                               @bind="_ingredient.Unit" />
+                             <br/>
+                            <button class="btn btn-success"
+                                @onclick="SaveIngredient">
+                                Save
+                            </button>&nbsp;
+                            @if (_ingredient.Id > 0)
+                            {
+                                <button class="btn btn-danger"
+                                    @onclick="DeleteIngredient">
+                                    Delete
+                                </button>
+                            }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+@code
+{
+    [Parameter]
+    public string Name { get; set; } = "";
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+
+    private bool _loading = true;
+    private bool _showStepPopup = false;
+    private bool _showIngredientPopup = false;
+    private bool _editMode = false;
+
+    private Recipe _recipe = new Recipe();
+    private Step _step = new Step();
+    private Ingredient _ingredient = new Ingredient();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null)
+            {
+                _userIdentityName = user.Identity.Name ?? "";
+            }
+        }
+
+        await RefreshRecipe();
+        _loading = false;
+    }
+
+    private void ToggleEditMode()
+    {
+        _editMode = !_editMode;
+    }
+
+    private void ClosePopups()
+    {
+        _showStepPopup = false;
+        _showIngredientPopup = false;
+    }
+
+    private void ShowStepPopup()
+    {
+        _showIngredientPopup = false;
+        _showStepPopup = true;
+    }
+
+    private void ShowIngredientPopup()
+    {
+        _showStepPopup = false;
+        _showIngredientPopup = true;
+    }
+
+    private void EditStep(Step step)
+    {
+        _step = step;
+        ShowStepPopup();
+    }
+
+    private void AddStep()
+    {
+        _step = new Step
+            {
+                RecipeId = _recipe.Id
+            };
+        ShowStepPopup();
+    }
+
+    private async Task SaveStep()
+    {
+        ClosePopups();
+        if (_step.Id == 0)
+        {
+            var result = await @Service.CreateStepAsync(_step, _userIdentityName);
+        }
+        else
+        {
+            var result = await @Service.UpdateStepAsync(_step, _userIdentityName);
+        }
+
+        await RefreshRecipe();
+    }
+
+    private async Task DeleteStep()
+    {
+        ClosePopups();
+        var result = await @Service.DeleteStepAsync(_step, _userIdentityName);
+        await RefreshRecipe();
+    }
+
+    private void EditIngredient(Ingredient ingredient)
+    {
+        _ingredient = ingredient;
+        ShowIngredientPopup();
+    }
+
+    private void AddIngredient()
+    {
+        _ingredient = new Ingredient
+            {
+                RecipeId = _recipe.Id
+            };
+        ShowIngredientPopup();
+    }
+
+    private async Task SaveIngredient()
+    {
+        ClosePopups();
+        if (_ingredient.Id == 0)
+        {
+            var result = await @Service.CreateIngredientAsync(_ingredient, _userIdentityName);
+        }
+        else
+        {
+            var result = await @Service.UpdateIngredientAsync(_ingredient, _userIdentityName);
+        }
+
+        await RefreshRecipe();
+    }
+
+    private async Task DeleteIngredient()
+    {
+        ClosePopups();
+        var result = await @Service.DeleteIngredientAsync(_ingredient, _userIdentityName);
+        await RefreshRecipe();
+    }
+
+    private async Task RefreshRecipe()
+    {
+        _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
+    }
+}

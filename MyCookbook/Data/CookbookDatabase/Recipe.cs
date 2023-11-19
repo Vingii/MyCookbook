@@ -18,6 +18,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public string Name { get; set; }
         public string Category { get; set; }
         public int? Duration { get; set; }
+        public int Servings { get; set; }
 
         public virtual ICollection<Ingredient> Ingredients { get; set; }
         public virtual ICollection<Step> Steps { get; set; }
