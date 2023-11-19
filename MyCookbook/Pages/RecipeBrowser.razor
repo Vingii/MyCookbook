@@ -1,0 +1,164 @@
+﻿@page "/recipebrowser"
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inherits OwningComponentBase<CookbookDatabaseService>
+<h1>Recipe browser</h1>
+<AuthorizeView>
+    <Authorized>
+        @if (_recipes == null)
+        {
+            <p><em>Loading...</em></p>
+            return;
+        }
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var recipe in _recipes)
+                {
+                    <tr>
+                        <td>@recipe.Name</td>
+                        <td>@recipe.Category</td>
+                        <td>@recipe.Duration</td>
+                        <td>
+                            <button class="btn btn-primary"
+                                @onclick="(() => EditRecipe(recipe))">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p>
+            <button class="btn btn-success"
+                    @onclick="AddRecipe">
+                Add New Recipe
+            </button>
+        </p>
+        @if (_showPopup)
+        {
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Edit Recipe</h3>
+                            <button type="button" class="close"
+                                @onclick="ClosePopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input class="form-control" type="text"
+                               placeholder="Name"
+                               @bind="_recipe.Name" />
+                            <input class="form-control" type="text"
+                               placeholder="Category"
+                               @bind="_recipe.Category" />
+                            <input class="form-control" type="text"
+                               placeholder="Duration"
+                               @bind="_recipeDuration" />
+                            <br />
+                            <button class="btn btn-success"
+                                @onclick="SaveRecipe">
+                                Save
+                            </button>&nbsp;
+                            @if (_recipe.Id > 0)
+                            {
+                                <button class="btn btn-danger"
+                                    @onclick="DeleteRecipe">
+                                    Delete
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private List<Recipe> _recipes = new List<Recipe>();
+    private Recipe _recipe = new Recipe();
+    private string _userIdentityName = "";
+    private bool _showPopup = false;
+
+    private string _recipeDuration 
+    {
+        get => _recipe.Duration.ToString() ?? "";
+        set => _recipe.Duration = (int)Math.Round(TimeSpan.Parse(value).TotalMinutes);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null)
+            {
+                _userIdentityName = user.Identity.Name ?? "";
+            }
+        }
+
+        await RefreshRecipes();
+    }
+
+    private void ClosePopup()
+    {
+        _showPopup = false;
+    }
+
+    private void EditRecipe(Recipe recipe)
+    {
+        _recipe = recipe;
+        _showPopup = true;
+    }
+
+    private void AddRecipe()
+    {
+        _recipe = new Recipe
+            {
+                UserName = _userIdentityName
+        };
+        _showPopup = true;
+    }
+
+    private async Task SaveRecipe()
+    {
+        _showPopup = false;
+        if (_recipe.Id == 0)
+        {
+            var result = await @Service.CreateRecipeAsync(_recipe);
+        }
+        else
+        {
+            var result = await @Service.UpdateRecipeAsync(_recipe);
+        }
+
+        await RefreshRecipes();
+    }
+
+    private async Task DeleteRecipe()
+    {
+        _showPopup = false;
+        var result = await @Service.DeleteRecipeAsync(_recipe);
+        await RefreshRecipes();
+    }
+
+    private async Task RefreshRecipes()
+    {
+        _recipes = await @Service.GetRecipesAsync(_userIdentityName);
+    }
+}

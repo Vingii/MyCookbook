@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-MyCookbook-94a01692-2198-4064-8628-81c676655f3a</UserSecretsId>
+    <PackageProjectUrl>https://localhost:44390</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
