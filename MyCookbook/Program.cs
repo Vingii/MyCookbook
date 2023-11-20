@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 using MyCookbook.Areas.Identity;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
@@ -23,9 +24,10 @@ namespace MyCookbook
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
             builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
-            builder.Services.AddScoped<CookbookDatabaseService>();
-
+            builder.Services.AddMudServices();
             builder.Services.AddAuthentication();
+
+            builder.Services.AddScoped<CookbookDatabaseService>();
 
             builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
                 options.UseSqlServer(

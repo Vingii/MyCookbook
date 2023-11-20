@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyCookbook.Data.CookbookDatabase
 {
@@ -22,5 +23,22 @@ namespace MyCookbook.Data.CookbookDatabase
 
         public virtual ICollection<Ingredient> Ingredients { get; set; }
         public virtual ICollection<Step> Steps { get; set; }
+
+        [NotMapped]
+        public string DurationText
+        {
+            get
+            {
+                if (Duration == null) return "";
+
+                var span = TimeSpan.FromMinutes(Duration ?? 0);
+                return span.Hours > 0 ? $"{span.Hours}:{span.Minutes}" : span.Minutes.ToString();
+            }
+
+            set
+            {
+                Duration = TimeSpan.TryParse(value, out var span) ? (int)Math.Round(span.TotalMinutes) : null;
+            }
+        }
     }
 }

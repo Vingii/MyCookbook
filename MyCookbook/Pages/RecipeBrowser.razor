@@ -1,96 +1,40 @@
 ﻿@page "/recipebrowser"
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
-@using MyCookbook.Data.CookbookDatabaseExtensions;
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inherits OwningComponentBase<CookbookDatabaseService>
 <h1>Recipe browser</h1>
-<hr />
+
 <AuthorizeView>
     <Authorized>
-        @if (_recipes == null)
-        {
-            <p><em>Loading...</em></p>
-            return;
-        }
-
-        <p>
-            <button class="btn btn-success"
-                    @onclick="AddRecipe">
-                Add New Recipe
-            </button>
-        </p>
-
-        <table class="table" style='table-layout:fixed;'>
-            <thead>
-                <tr>
-                    <th width="50%">Name</th>
-                    <th width="20%">Category</th>
-                    <th width="10%">Duration</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var recipe in _recipes)
-                {
-                    <tr>
-                        <td>@recipe.Name</td>
-                        <td>@recipe.Category</td>
-                        <td>@recipe.GetDurationFormatted()</td>
-                        <td>
-                            <button class="btn btn-primary"
-                                @onclick="(() => EditRecipe(recipe))">
-                                Edit
-                            </button>
-                            <button class="btn btn-primary"
-                                @onclick='(() => NavigationManager.NavigateTo($"recipeviewer/{recipe.Name}"))'>
-                                Open
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        @if (_showPopup)
-        {
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 class="modal-title">Edit Recipe</h3>
-                            <button type="button" class="close"
-                                @onclick="ClosePopup">
-                                <span aria-hidden="true">X</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <input class="form-control" type="text"
-                               placeholder="Name"
-                               @bind="_recipe.Name" />
-                            <input class="form-control" type="text"
-                               placeholder="Category"
-                               @bind="_recipe.Category" />
-                            <input class="form-control" type="text"
-                               placeholder="Duration"
-                               @bind="_recipeDuration" />
-                            <br/>
-                            <button class="btn btn-success"
-                                @onclick="SaveRecipe">
-                                Save
-                            </button>&nbsp;
-                            @if (_recipe.Id > 0)
-                            {
-                                <button class="btn btn-danger"
-                                    @onclick="DeleteRecipe">
-                                    Delete
-                                </button>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
+        <MudTable Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+                  RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Duration</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="recipe">
+                <MudTd DataLabel="Name">@recipe.Name</MudTd>
+                <MudTd DataLabel="Category">@recipe.Category</MudTd>
+                <MudTd DataLabel="Duration">@recipe.DurationText</MudTd>
+                <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.OpenInBrowser" @onclick="@(() => OpenRecipe(recipe))" Size="Size.Small"></MudIcon>
+                <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+            </RowTemplate>
+            <RowEditingTemplate Context="recipe">
+                <MudTd DataLabel="Name">@recipe.Name</MudTd>
+                <MudTd DataLabel="Category">
+                    <MudTextField @bind-Value="@recipe.Category"/>
+                </MudTd>
+                <MudTd DataLabel="Duration">
+                    <MudTextField @bind-Value="@recipe.DurationText" />
+                </MudTd>
+            </RowEditingTemplate>
+            <EditButtonContent Context="button">
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+            </EditButtonContent>
+        </MudTable>
     </Authorized>
     <NotAuthorized>
         <p>You're not signed in.</p>
@@ -102,19 +46,9 @@
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
     private string _userIdentityName = "";
 
-    private bool _showPopup = false;
+    private bool _loading = true;
 
     private List<Recipe> _recipes = new List<Recipe>();
-    private Recipe _recipe = new Recipe();
-
-    private string _recipeDuration 
-    {
-        get => _recipe.GetDurationFormatted();
-        set 
-        {
-            _recipe.Duration = TimeSpan.TryParse(value, out var span) ? (int)Math.Round(span.TotalMinutes) : null;
-        }
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -128,45 +62,23 @@
         }
 
         await RefreshRecipes();
+        _loading = false;
     }
 
-    private void ClosePopup()
+    private void CommitTableEdit(object element)
     {
-        _showPopup = false;
+        var recipe = (Recipe)element;
+        var result = Task.Run(() => @Service.UpdateRecipeAsync(recipe, _userIdentityName)).Result;
     }
 
-    private void EditRecipe(Recipe recipe)
+    private void OpenRecipe(Recipe recipe)
     {
-        _recipe = recipe;
-        _showPopup = true;
+        NavigationManager.NavigateTo($"Recipeviewer/{recipe.Name}");
     }
 
-    private void AddRecipe()
+    private async Task DeleteRecipe(Recipe recipe)
     {
-        _recipe = new Recipe();
-        _showPopup = true;
-    }
-
-    private async Task SaveRecipe()
-    {
-        _showPopup = false;
-        if (_recipe.Id == 0)
-        {
-            var result = await @Service.CreateRecipeAsync(_recipe, _userIdentityName);
-        }
-        else
-        {
-            var result = await @Service.UpdateRecipeAsync(_recipe, _userIdentityName);
-        }
-
-        await RefreshRecipes();
-    }
-
-    private async Task DeleteRecipe()
-    {
-        _showPopup = false;
-        var result = await @Service.DeleteRecipeAsync(_recipe, _userIdentityName);
-        await RefreshRecipes();
+        var result = await @Service.DeleteRecipeAsync(recipe, _userIdentityName);
     }
 
     private async Task RefreshRecipes()
