@@ -1,8 +1,10 @@
 ﻿@page "/recipebrowser"
+@using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 @inherits OwningComponentBase<CookbookDatabaseService>
 <h1>Recipe browser</h1>
 
@@ -35,6 +37,10 @@
                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
             </EditButtonContent>
         </MudTable>
+        <br />
+        <MudButton @onclick="AddRecipe" Variant="Variant.Filled" Color="Color.Primary">
+            New recipe
+        </MudButton>
     </Authorized>
     <NotAuthorized>
         <p>You're not signed in.</p>
@@ -79,10 +85,26 @@
     private async Task DeleteRecipe(Recipe recipe)
     {
         var result = await @Service.DeleteRecipeAsync(recipe, _userIdentityName);
+        await RefreshRecipes();
     }
 
     private async Task RefreshRecipes()
     {
         _recipes = await @Service.GetRecipesAsync(_userIdentityName);
+    }
+
+    private async Task AddRecipe()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<NewRecipeDialog>("New recipe", options);
+        var dialogResult = await dialog.Result;
+
+        if (!dialogResult.Canceled)
+        {
+            var recipeName = dialogResult.Data.ToString();
+            var recipe = new Recipe{ Name = recipeName };
+            var createResult = await @Service.CreateRecipeAsync(recipe, _userIdentityName);
+            await RefreshRecipes();
+        }
     }
 }

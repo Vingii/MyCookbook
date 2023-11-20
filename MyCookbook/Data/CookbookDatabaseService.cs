@@ -58,6 +58,8 @@ namespace MyCookbook.Data
             var foundRecipe =
                 _context.Recipes
                 .Where(x => x.Id == recipe.Id && x.UserName == user)
+                .Include(x => x.Ingredients)
+                .Include(x => x.Steps)
                 .FirstOrDefault();
 
             if (foundRecipe == null) return false;
