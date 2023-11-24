@@ -2,7 +2,7 @@
 
 <PageTitle>MyCookbook</PageTitle>
 
-<MudThemeProvider />
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" @ref="@_mudThemeProvider" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
@@ -11,7 +11,12 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         My Cookbook
         <MudSpacer />
-        <LoginDisplay />
+        <MudToolBar>
+            <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@_isDarkMode"
+                                 Icon="@Icons.Material.Filled.DarkMode" Title="Off"
+                                 ToggledIcon="@Icons.Material.Filled.LightMode" ToggledTitle="On" />
+            <LoginDisplay />
+        </MudToolBar>
     </MudAppBar>
     <MudDrawer @bind-Open="@_drawerOpen">
         <NavMenu/>
@@ -24,10 +29,23 @@
 </MudLayout>
 
 @code {
+    private MudTheme _theme = new();
+    private MudThemeProvider? _mudThemeProvider;
+    private bool _isDarkMode;
+
     bool _drawerOpen = true;
 
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
+            StateHasChanged();
+        }
     }
 }

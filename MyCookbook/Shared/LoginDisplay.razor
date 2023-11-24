@@ -1,12 +1,9 @@
 ﻿<AuthorizeView>
     <Authorized>
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="Identity/Account/Manage">@context.User.Identity?.Name!</MudButton>
-        &nbsp;
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="Identity/Account/LogOut">Log out</MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Href="Identity/Account/Manage" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Logout" Color="Color.Inherit" Href="Identity/Account/LogOut" />
     </Authorized>
     <NotAuthorized>
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="Identity/Account/Login">Login</MudButton>
-        &nbsp;
-        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="Identity/Account/Register">Register</MudButton>
+        <MudIconButton Icon="@Icons.Material.Outlined.Login" Color="Color.Inherit" Href="Identity/Account/Login" />
     </NotAuthorized>
 </AuthorizeView>
