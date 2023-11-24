@@ -78,7 +78,7 @@ namespace MyCookbook.Data
             return step;
         }
 
-        public async Task<bool> UpdateStepAsync(Step step, string user)
+        public async Task<bool> UpdateStepDescriptionAsync(Step step, string user)
         {
             var foundStep =
                 _context.Steps
@@ -88,6 +88,50 @@ namespace MyCookbook.Data
             if (foundStep == null) return false;
 
             foundStep.Description = step.Description;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> IncreaseStepOrder(Step step, string user)
+        {
+            var foundStep =
+                _context.Steps
+                .Where(x => x.Id == step.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundStep == null) return false;
+
+            var higherStep = _context.Steps
+                .Where(x => x.RecipeId == step.RecipeId && x.UserName == user && x.Order == step.Order + 1).FirstOrDefault();
+
+            if (higherStep == null) return true;
+
+            higherStep.Order--;
+            foundStep.Order++;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DecreaseStepOrder(Step step, string user)
+        {
+            var foundStep =
+                _context.Steps
+                .Where(x => x.Id == step.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundStep == null) return false;
+
+            var lowerStep = _context.Steps
+                .Where(x => x.RecipeId == step.RecipeId && x.UserName == user && x.Order == step.Order - 1).FirstOrDefault();
+
+            if (lowerStep == null) return true;
+
+            foundStep.Order--;
+            lowerStep.Order++;
+
             await _context.SaveChangesAsync();
 
             return true;

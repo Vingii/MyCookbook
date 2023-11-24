@@ -6,11 +6,12 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inherits OwningComponentBase<CookbookDatabaseService>
-<h1>Recipe browser</h1>
+
+<MudText Class="ma-2" Typo="Typo.h3">Recipe browser</MudText>
 
 <AuthorizeView>
     <Authorized>
-        <MudTable Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info"
+        <MudTable Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
                 <MudTh>Name</MudTh>
@@ -21,8 +22,10 @@
                 <MudTd DataLabel="Name">@recipe.Name</MudTd>
                 <MudTd DataLabel="Category">@recipe.Category</MudTd>
                 <MudTd DataLabel="Duration">@recipe.DurationText</MudTd>
-                <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.OpenInBrowser" @onclick="@(() => OpenRecipe(recipe))" Size="Size.Small"></MudIcon>
-                <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+                <MudTd DataLabel="Icons" Style="text-align:right">
+                    <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.OpenInBrowser" @onclick="@(() => OpenRecipe(recipe))" Size="Size.Small"></MudIcon>
+                    <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+                </MudTd>
             </RowTemplate>
             <RowEditingTemplate Context="recipe">
                 <MudTd DataLabel="Name">@recipe.Name</MudTd>
@@ -96,7 +99,9 @@
     private async Task AddRecipe()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<NewRecipeDialog>("New recipe", options);
+        var parameters = new DialogParameters<NewEntryDialog>();
+        parameters.Add(x => x.EntryType, "recipe");
+        var dialog = await DialogService.ShowAsync<NewEntryDialog>("New recipe", parameters, options);
         var dialogResult = await dialog.Result;
 
         if (!dialogResult.Canceled)

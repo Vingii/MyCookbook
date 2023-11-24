@@ -1,172 +1,85 @@
 ﻿@page "/recipeviewer/{Name}"
+@using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IDialogService DialogService
 @inherits OwningComponentBase<CookbookDatabaseService>
+
+<MudText Class="ma-2" Typo="Typo.h3">@Name</MudText>
+<hr />
+
 <AuthorizeView>
     <Authorized>
-        @if (_loading)
-        {
-            <h1>@Name</h1>
-            <hr/>
-            <p><em>Loading...</em></p>
-            return;
-        }
-
-        @if (_recipe.Name == null)
-        {
-            // TODO: recipe creator
-            return;
-        }
-
-        <h1>
-            @Name
-            <button class="btn btn-primary"
-                @onclick="(() => ToggleEditMode())">
-                Edit mode
-            </button>
-        </h1>
+        <MudTable Items="@_recipe.Ingredients" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+                  RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
+            <HeaderContent>
+                <MudTh>Ingredient</MudTh>
+                <MudTh>Amount</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="ingredient">
+                <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
+                <MudTd DataLabel="Amount">@(ingredient.Amount + " " + ingredient.Unit)</MudTd>
+                <MudTd DataLabel="Icons" Style="text-align:right">
+                    <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
+                </MudTd>
+            </RowTemplate>
+            <RowEditingTemplate Context="ingredient">
+                <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
+                <MudTd DataLabel="Amount">
+                    <MudTextField @bind-Value="@ingredient.Amount" />
+                </MudTd>
+                <MudTd DataLabel="Unit">
+                    <MudTextField @bind-Value="@ingredient.Unit" />
+                </MudTd>
+            </RowEditingTemplate>
+            <EditButtonContent Context="button">
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+            </EditButtonContent>
+        </MudTable>
+        <br />
+        <MudButton @onclick="AddIngredient" Variant="Variant.Filled" Color="Color.Primary">
+            New ingredient
+        </MudButton>
         <hr />
-
-        <h2>Ingredients</h2>
-        <table class="table" style='table-layout:fixed;'>
-            <thead>
-                <tr>
-                    <th width="50%">Name</th>
-                    <th width="20%">Amount</th>
-                    <th width="20%">Unit</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var ingredient in _recipe.Ingredients)
-                {
-                    <tr>
-                        <td>@ingredient.Name</td>
-                        <td>@ingredient.Amount</td>
-                        <td>@ingredient.Unit</td>
-                        <td>
-                            @if (_editMode)
-                            {
-                                <button class="btn btn-primary"
-                                    @onclick="(() => EditIngredient(ingredient))">
-                                    Edit
-                                </button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        @if (_editMode)
-        {
-            <p>
-                <button class="btn btn-success"
-                    @onclick="AddIngredient">
-                    Add Ingredient
-                </button>
-            </p>
-        }
-
-        <h2>Steps</h2>
-        <ul>
+        <MudPaper Class="pa-4 mt-4" Elevation="0">
             @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
             {
-                <li>
-                    @step.Description
-                    &nbsp;
-                    @if (_editMode)
+                var text = step.Description;
+                var highlights = _recipe.Ingredients.Select(x => x.Name);
+                <MudPaper Class="pa-2 ma-2" Outlined="true">
+                    <MudStack Row="true" Justify="Justify.SpaceAround">
+                        <MudText @key="step" Class="ma-2 flex-fill" Typo="Typo.h5">Step @step.Order</MudText>
+                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
+                        <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@EditMode[step]"
+                                         Icon="@Icons.Material.Outlined.Edit" Title="Off"
+                                         ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
+                        <MudStack>
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseStepOrder(step))" />
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
+                        </MudStack>
+                    </MudStack>
+                    @if (EditMode[step])
                     {
-                        <button class="btn btn-primary"
-                            @onclick="(() => EditStep(step))">
-                            Edit
-                        </button>
+                        <MudTextField Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000"
+                              ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" />
                     }
-                </li>
+                    else
+                    {
+                        <MudText Class="ma-2">
+                            <MudHighlighter Class="mud-primary-text"
+                                    Style="background-color:transparent;font-weight:bold"
+                                    Text="@text"
+                                    HighlightedTexts="@highlights" />
+                        </MudText>
+                    }
+                </MudPaper>
             }
-        </ul>
-        <p>
-            @if (_editMode)
-            {
-                <button class="btn btn-success"
-                        @onclick="AddStep">
-                    Add New Step
-                </button>
-            }
-        </p>
-
-        @if (_showStepPopup)
-        {
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 class="modal-title">Edit Step</h3>
-                            <button type="button" class="close"
-                                @onclick="ClosePopups">
-                                <span aria-hidden="true">X</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <input class="form-control" type="text"
-                               placeholder="Description"
-                               @bind="_step.Description" />
-                            <br />
-                            <button class="btn btn-success"
-                                @onclick="SaveStep">
-                                Save
-                            </button>&nbsp;
-                            @if (_step.Id > 0)
-                            {
-                                <button class="btn btn-danger"
-                                @onclick="DeleteStep">
-                                    Delete
-                                </button>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-
-        @if (_showIngredientPopup)
-        {
-                <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h3 class="modal-title">Edit Ingredient</h3>
-                                <button type="button" class="close"
-                                    @onclick="ClosePopups">
-                                    <span aria-hidden="true">X</span>
-                                </button>
-                            </div>
-                        <div class="modal-body">
-                            <input class="form-control" type="text"
-                               placeholder="Name"
-                               @bind="_ingredient.Name" />
-                            <input class="form-control" type="text"
-                               placeholder="Amount"
-                               @bind="_ingredient.Amount" />
-                            <input class="form-control" type="text"
-                               placeholder="Unit"
-                               @bind="_ingredient.Unit" />
-                             <br/>
-                            <button class="btn btn-success"
-                                @onclick="SaveIngredient">
-                                Save
-                            </button>&nbsp;
-                            @if (_ingredient.Id > 0)
-                            {
-                                <button class="btn btn-danger"
-                                    @onclick="DeleteIngredient">
-                                    Delete
-                                </button>
-                            }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        }
+            <br />
+            <MudButton @onclick="AddStep" Variant="Variant.Filled" Color="Color.Primary">
+                New step
+            </MudButton>
+        </MudPaper>
     </Authorized>
     <NotAuthorized>
         <p>You're not signed in.</p>
@@ -182,13 +95,9 @@
     private string _userIdentityName = "";
 
     private bool _loading = true;
-    private bool _showStepPopup = false;
-    private bool _showIngredientPopup = false;
-    private bool _editMode = false;
 
     private Recipe _recipe = new Recipe();
-    private Step _step = new Step();
-    private Ingredient _ingredient = new Ingredient();
+    private Dictionary<Step, bool> EditMode = new Dictionary<Step, bool>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -205,105 +114,73 @@
         _loading = false;
     }
 
-    private void ToggleEditMode()
+    private void CommitTableEdit(object element)
     {
-        _editMode = !_editMode;
+        var ingredient = (Ingredient)element;
+        var result = Task.Run(() => @Service.UpdateIngredientAsync(ingredient, _userIdentityName)).Result;
     }
 
-    private void ClosePopups()
+    private async Task DeleteIngredient(Ingredient ingredient)
     {
-        _showStepPopup = false;
-        _showIngredientPopup = false;
-    }
-
-    private void ShowStepPopup()
-    {
-        _showIngredientPopup = false;
-        _showStepPopup = true;
-    }
-
-    private void ShowIngredientPopup()
-    {
-        _showStepPopup = false;
-        _showIngredientPopup = true;
-    }
-
-    private void EditStep(Step step)
-    {
-        _step = step;
-        ShowStepPopup();
-    }
-
-    private void AddStep()
-    {
-        _step = new Step
-            {
-                RecipeId = _recipe.Id
-            };
-        ShowStepPopup();
-    }
-
-    private async Task SaveStep()
-    {
-        ClosePopups();
-        if (_step.Id == 0)
-        {
-            var result = await @Service.CreateStepAsync(_step, _userIdentityName);
-        }
-        else
-        {
-            var result = await @Service.UpdateStepAsync(_step, _userIdentityName);
-        }
-
-        await RefreshRecipe();
-    }
-
-    private async Task DeleteStep()
-    {
-        ClosePopups();
-        var result = await @Service.DeleteStepAsync(_step, _userIdentityName);
-        await RefreshRecipe();
-    }
-
-    private void EditIngredient(Ingredient ingredient)
-    {
-        _ingredient = ingredient;
-        ShowIngredientPopup();
-    }
-
-    private void AddIngredient()
-    {
-        _ingredient = new Ingredient
-            {
-                RecipeId = _recipe.Id
-            };
-        ShowIngredientPopup();
-    }
-
-    private async Task SaveIngredient()
-    {
-        ClosePopups();
-        if (_ingredient.Id == 0)
-        {
-            var result = await @Service.CreateIngredientAsync(_ingredient, _userIdentityName);
-        }
-        else
-        {
-            var result = await @Service.UpdateIngredientAsync(_ingredient, _userIdentityName);
-        }
-
-        await RefreshRecipe();
-    }
-
-    private async Task DeleteIngredient()
-    {
-        ClosePopups();
-        var result = await @Service.DeleteIngredientAsync(_ingredient, _userIdentityName);
+        var result = await @Service.DeleteIngredientAsync(ingredient, _userIdentityName);
         await RefreshRecipe();
     }
 
     private async Task RefreshRecipe()
     {
         _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
+        EditMode = _recipe.Steps.ToDictionary(x => x, x => false);
+    }
+
+    private async Task AddIngredient()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters<NewEntryDialog>();
+        parameters.Add(x => x.EntryType, "ingredient");
+        var dialog = await DialogService.ShowAsync<NewEntryDialog>("New ingredient", parameters, options);
+        var dialogResult = await dialog.Result;
+
+        if (!dialogResult.Canceled)
+        {
+            var ingredientName = dialogResult.Data.ToString();
+            var ingredient = new Ingredient { Name = ingredientName, RecipeId = _recipe.Id };
+            var createResult = await @Service.CreateIngredientAsync(ingredient, _userIdentityName);
+            await RefreshRecipe();
+        }
+    }
+
+    private async Task AddStep()
+    {
+        var step = new Step()
+        {
+            RecipeId = _recipe.Id,
+            Order = _recipe.Steps.Count + 1
+        };
+        var createResult = await @Service.CreateStepAsync(step, _userIdentityName);
+        await RefreshRecipe();
+    }
+
+    private async Task DeleteStep(Step step)
+    {
+        var result = await @Service.DeleteStepAsync(step, _userIdentityName);
+        await RefreshRecipe();
+    }
+
+    private async Task UpdateStepDescription(Step step, string description)
+    {
+        step.Description = description;
+        var result = await @Service.UpdateStepDescriptionAsync(step, _userIdentityName);
+    }
+
+    private async Task DecreaseStepOrder(Step step)
+    {
+        var result = await @Service.DecreaseStepOrder(step, _userIdentityName);
+        await RefreshRecipe();
+    }
+
+    private async Task IncreaseStepOrder(Step step)
+    {
+        var result = await @Service.IncreaseStepOrder(step, _userIdentityName);
+        await RefreshRecipe();
     }
 }
