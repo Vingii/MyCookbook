@@ -1,7 +1,9 @@
-﻿<MudNavMenu>
+﻿@using MyCookbook.Data
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inherits OwningComponentBase<CookbookDatabaseService>
+
+<MudNavMenu>
     <MudNavLink Href="/" Match="NavLinkMatch.All">Dashboard</MudNavLink>
-    <MudNavLink Href="/Recipebrowser" Match="NavLinkMatch.Prefix">Recipe browser</MudNavLink>
-    <MudNavGroup Title="Recent recipes" Expanded="true">
-        <MudNavLink Href="/Recipeviewer/recipe" Match="NavLinkMatch.Prefix">Recipe</MudNavLink>
-    </MudNavGroup>
+    <MudNavLink Href="/RecipeBrowser" Match="NavLinkMatch.Prefix">Recipe browser</MudNavLink>
+    <MudNavLink Href="/RandomRecipe" Match="NavLinkMatch.Prefix">Random recipe</MudNavLink>
 </MudNavMenu>

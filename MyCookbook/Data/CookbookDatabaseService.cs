@@ -53,6 +53,21 @@ namespace MyCookbook.Data
             return true;
         }
 
+        public async Task<bool> UpdateRecipeLastCookedAsync(Recipe recipe, string user)
+        {
+            var foundRecipe =
+                _context.Recipes
+                .Where(x => x.Id == recipe.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundRecipe == null) return false;
+
+            foundRecipe.LastCooked = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<bool> DeleteRecipeAsync(Recipe recipe, string user)
         {
             var foundRecipe =

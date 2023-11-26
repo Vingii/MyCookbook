@@ -1,0 +1,49 @@
+﻿@page "/randomrecipe"
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inherits OwningComponentBase<CookbookDatabaseService>
+
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+
+    private List<Recipe> _recipes = new List<Recipe>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null)
+            {
+                _userIdentityName = user.Identity.Name ?? "";
+            }
+        }
+
+        await RefreshRecipes();
+
+        NavigationManager.NavigateTo($"RecipeViewer/{GetRandomRecipe()}");
+    }
+
+    private async Task RefreshRecipes()
+    {
+        _recipes = await @Service.GetRecipesAsync(_userIdentityName);
+    }
+
+    public string GetRandomRecipe()
+    {
+        if (_userIdentityName == null || !_recipes.Any())
+        {
+            return "";
+        }
+
+        var random = new Random();
+        var randomIndex = random.Next(_recipes.Count);
+
+        return _recipes[randomIndex].Name;
+    }
+}

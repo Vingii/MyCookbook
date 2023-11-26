@@ -17,11 +17,13 @@
                 <MudTh>Name</MudTh>
                 <MudTh>Category</MudTh>
                 <MudTh>Duration</MudTh>
+                <MudTh>Cooked</MudTh>
             </HeaderContent>
             <RowTemplate Context="recipe">
                 <MudTd DataLabel="Name">@recipe.Name</MudTd>
                 <MudTd DataLabel="Category">@recipe.Category</MudTd>
                 <MudTd DataLabel="Duration">@recipe.DurationText</MudTd>
+                <MudTd DataLabel="Cooked">@(recipe.LastCooked?.ToShortDateString() ?? "Never")</MudTd>
                 <MudTd DataLabel="Icons" Style="text-align:right">
                     <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.OpenInBrowser" @onclick="@(() => OpenRecipe(recipe))" Size="Size.Small"></MudIcon>
                     <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
