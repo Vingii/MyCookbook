@@ -51,7 +51,7 @@
                     <MudStack Row="true" Justify="Justify.SpaceAround">
                         <MudText @key="step" Class="ma-2 flex-fill" Typo="Typo.h5">Step @step.Order</MudText>
                         <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
-                        <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@EditMode[step]"
+                        <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@EditMode[step.Order]"
                                          Icon="@Icons.Material.Outlined.Edit" Title="Off"
                                          ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
                         <MudStack>
@@ -59,7 +59,7 @@
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
                         </MudStack>
                     </MudStack>
-                    @if (EditMode[step])
+                    @if (EditMode[step.Order])
                     {
                         <MudTextField Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000"
                               ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" />
@@ -97,7 +97,7 @@
     private bool _loading = true;
 
     private Recipe _recipe = new Recipe();
-    private Dictionary<Step, bool> EditMode = new Dictionary<Step, bool>();
+    private Dictionary<int, bool> EditMode = new Dictionary<int, bool>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -129,7 +129,17 @@
     private async Task RefreshRecipe()
     {
         _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
-        EditMode = _recipe.Steps.ToDictionary(x => x, x => false);
+        var recipesByOrder = _recipe.Steps.GroupBy(x => x.Order);
+
+        if (recipesByOrder.Count() != _recipe.Steps.Count
+        || _recipe.Steps.Max(x => x.Order) != _recipe.Steps.Count
+        || _recipe.Steps.Min(x => x.Order) != 1)
+        {
+            var result = await @Service.FixStepsOrder(_recipe, _userIdentityName);
+            _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
+        }
+
+        EditMode = _recipe.Steps.ToDictionary(x => x.Order, x => false);
     }
 
     private async Task AddIngredient()

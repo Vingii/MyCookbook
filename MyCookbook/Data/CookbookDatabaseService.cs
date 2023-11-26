@@ -139,14 +139,40 @@ namespace MyCookbook.Data
 
         public async Task<bool> DeleteStepAsync(Step step, string user)
         {
-            var foundStep =
+            var foundStep = await
                 _context.Steps
                 .Where(x => x.Id == step.Id && x.UserName == user)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             if (foundStep == null) return false;
 
+            var higherSteps = await
+                _context.Steps
+                .Where(x => x.RecipeId == step.RecipeId && x.UserName == user)
+                .Where(x => x.Order > step.Order)
+                .ToListAsync();
+
+            foreach (var higherStep in higherSteps)
+            {
+                higherStep.Order--;
+            }
+
             _context.Steps.Remove(foundStep);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> FixStepsOrder(Recipe recipe, string user)
+        {
+            var foundSteps = await _context.Steps
+                .Where(x => x.RecipeId == recipe.Id && x.UserName == user).OrderBy(x => x.Order).ToListAsync();
+
+            for (int i = 0; i < foundSteps.Count; i++)
+            {
+                foundSteps[i].Order = i+1;
+            }
+
             await _context.SaveChangesAsync();
 
             return true;
