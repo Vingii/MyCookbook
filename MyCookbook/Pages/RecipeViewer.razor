@@ -15,17 +15,20 @@
         <MudTable Items="@_recipe.Ingredients" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
+                <MudTh>Ready</MudTh>
                 <MudTh>Ingredient</MudTh>
                 <MudTh>Amount</MudTh>
             </HeaderContent>
             <RowTemplate Context="ingredient">
+                <MudCheckBox @bind-Checked="@IngredientReady[IngredientOrder[ingredient]]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
                 <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
                 <MudTd DataLabel="Amount">@(ingredient.Amount + " " + ingredient.Unit)</MudTd>
                 <MudTd DataLabel="Icons" Style="text-align:right">
-                    <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
+                    <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
                 </MudTd>
             </RowTemplate>
             <RowEditingTemplate Context="ingredient">
+                    <MudCheckBox @bind-Checked="@IngredientReady[IngredientOrder[ingredient]]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
                 <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
                 <MudTd DataLabel="Amount">
                     <MudTextField @bind-Value="@ingredient.Amount" />
@@ -61,7 +64,11 @@
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
                         </MudStack>
                     </MudStack>
-                    @if (EditMode[step.Order])
+                    @if (StepDone[step.Order])
+                    {
+                        return;
+                    }
+                    else if (EditMode[step.Order])
                     {
                         <MudTextField Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
                               ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" />
@@ -103,6 +110,9 @@
     private Recipe _recipe = new Recipe();
     private Dictionary<int, bool> EditMode = new Dictionary<int, bool>();
     private Dictionary<int, bool> StepDone = new Dictionary<int, bool>();
+    private Dictionary<Ingredient, int> IngredientOrder = new Dictionary<Ingredient, int>();
+
+    private bool[] IngredientReady = new bool[0];
 
     protected override async Task OnInitializedAsync()
     {
@@ -147,6 +157,15 @@
 
         EditMode = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
+
+        var ingredients = _recipe.Ingredients.ToList();
+
+        for (int i = 0; i < _recipe.Ingredients.Count; i++)
+        {
+            IngredientOrder[ingredients[i]] = i;
+        }
+
+        IngredientReady = new bool[_recipe.Ingredients.Count];
     }
 
     private async Task AddIngredient()
