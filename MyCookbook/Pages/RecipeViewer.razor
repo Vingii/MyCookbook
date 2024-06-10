@@ -2,6 +2,10 @@
 @using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
+@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@inject IStringLocalizer<RecipeViewer> Localizer
+@inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
@@ -16,15 +20,15 @@
         <MudTable Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
-                <MudTh>Ready</MudTh>
-                <MudTh>Ingredient</MudTh>
-                <MudTh>Amount</MudTh>
+                <MudTh>@Localizer["Ready"]</MudTh>
+                <MudTh>@Localizer["Ingredient"]</MudTh>
+                <MudTh>@Localizer["Amount"]</MudTh>
             </HeaderContent>
             <RowTemplate Context="ingredient">
                 <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
-                <MudTd DataLabel="Amount">@(ingredient.Amount + " " + ingredient.Unit)</MudTd>
-                <MudTd DataLabel="Icons" Style="text-align:right">
+                <MudTd>@ingredient.Name</MudTd>
+                <MudTd>@(ingredient.Amount + " " + ingredient.Unit)</MudTd>
+                <MudTd Style="text-align:right">
                     <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
                 </MudTd>
                 <MudTd DataLabel="Icons" Style="text-align:right">
@@ -34,13 +38,13 @@
             </RowTemplate>
             <RowEditingTemplate Context="ingredient">
                 <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                <MudTd DataLabel="Name">
+                <MudTd>
                     <MudTextField @bind-Value="@ingredient.Name" />
                 </MudTd>
-                <MudTd DataLabel="Amount">
+                <MudTd>
                     <MudTextField @bind-Value="@ingredient.Amount" />
                 </MudTd>
-                <MudTd DataLabel="Unit">
+                <MudTd>
                     <MudTextField @bind-Value="@ingredient.Unit" />
                 </MudTd>
             </RowEditingTemplate>
@@ -50,7 +54,7 @@
         </MudTable>
         <br />
         <MudButton @onclick="AddIngredient" Variant="Variant.Filled" Color="Color.Primary">
-            New ingredient
+            @Localizer["NewIngredient"]
         </MudButton>
         <hr />
         <MudPaper Class="pa-4 mt-4" Elevation="0">
@@ -91,10 +95,10 @@
             }
             <br />
             <MudButton @onclick="AddStep" Variant="Variant.Filled" Color="Color.Primary">
-                New step
+                @Localizer["NewStep"]
             </MudButton>
             <MudButton @onclick="FinishCooking" Variant="Variant.Filled" Color="Color.Success">
-                Finish cooking
+                @Localizer["FinishCooking"]
             </MudButton>
         </MudPaper>
     </Authorized>
@@ -120,6 +124,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        LanguageNotifier.SubscribeLanguageChange(this);
+
         if (authenticationStateTask != null)
         {
             var user = (await authenticationStateTask).User;
@@ -178,7 +184,7 @@
     {
         var options = new DialogOptions { CloseOnEscapeKey = true };
         var parameters = new DialogParameters<NewEntryDialog>();
-        parameters.Add(x => x.EntryType, "ingredient");
+        parameters.Add(x => x.EntryType, Localizer["IngredientLowercase"]);
         var dialog = await DialogService.ShowAsync<NewEntryDialog>("New ingredient", parameters, options);
         var dialogResult = await dialog.Result;
 
@@ -243,4 +249,6 @@
         var result = Task.Run(() => @Service.UpdateRecipeLastCookedAsync(_recipe, _userIdentityName)).Result;
         NavigationManager.NavigateTo("");
     }
+
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
 }

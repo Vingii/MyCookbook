@@ -1,11 +1,16 @@
-﻿<MudDialog>
+﻿@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@inject IStringLocalizer<NewEntryDialog> Localizer
+@inject LanguageNotifier LanguageNotifier
+
+<MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Add new @EntryType
+            @Localizer["AddNew"] @EntryType
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="Name" Label="Name" Variant="Variant.Text"></MudTextField>
+        <MudTextField @bind-Value="Name" Label="@Localizer["Name"]" Variant="Variant.Text"></MudTextField>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -25,4 +30,7 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
 }

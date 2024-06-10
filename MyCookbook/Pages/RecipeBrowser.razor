@@ -2,6 +2,10 @@
 @using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
+@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@inject IStringLocalizer<RecipeBrowser> Localizer
+@inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject ILogger<RecipeBrowser> Logger
@@ -9,7 +13,7 @@
 @inherits OwningComponentBase<CookbookDatabaseService>
 
 <PageTitle>Recipe browser</PageTitle>
-<MudText Class="ma-2" Typo="Typo.h3">Recipe browser</MudText>
+<MudText Class="ma-2" Typo="Typo.h3">@Localizer["RecipeBrowser"]</MudText>
 
 <AuthorizeView>
     <Authorized>
@@ -17,18 +21,18 @@
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
                   EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Category</MudTh>
-                <MudTh>Active Duration</MudTh>
-                <MudTh>Duration</MudTh>
-                <MudTh>Cooked</MudTh>
+                <MudTh>@Localizer["Name"]</MudTh>
+                <MudTh>@Localizer["Category"]</MudTh>
+                <MudTh>@Localizer["ActiveDuration"]</MudTh>
+                <MudTh>@Localizer["Duration"]</MudTh>
+                <MudTh>@Localizer["Cooked"]</MudTh>
             </HeaderContent>
             <RowTemplate Context="recipe">
                 <MudTd DataLabel="Name" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
                 <MudTd DataLabel="Category">@recipe.Category</MudTd>
                 <MudTd DataLabel="Active Duration">@recipe.ActiveDurationText</MudTd>
                 <MudTd DataLabel="Duration">@recipe.DurationText</MudTd>
-                <MudTd DataLabel="Cooked">@(recipe.LastCooked?.ToShortDateString() ?? "Never")</MudTd>
+                <MudTd DataLabel="Cooked">@(recipe.LastCooked?.ToShortDateString() ?? @Localizer["Never"])</MudTd>
                 <MudTd DataLabel="Icons" Style="text-align:right">
                     <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
                 </MudTd>
@@ -53,7 +57,7 @@
         </MudTable>
         <br />
         <MudButton @onclick="AddRecipe" Variant="Variant.Filled" Color="Color.Primary">
-            New recipe
+            @Localizer["NewRecipe"]
         </MudButton>
     </Authorized>
     <NotAuthorized>
@@ -74,6 +78,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        LanguageNotifier.SubscribeLanguageChange(this);
+
         if (authenticationStateTask != null)
         {
             var user = (await authenticationStateTask).User;
@@ -123,7 +129,7 @@
         {
             var options = new DialogOptions { CloseOnEscapeKey = true };
             var parameters = new DialogParameters<NewEntryDialog>();
-            parameters.Add(x => x.EntryType, "recipe");
+            parameters.Add(x => x.EntryType, Localizer["recipe"]);
             var dialog = await DialogService.ShowAsync<NewEntryDialog>("New recipe", parameters, options);
             var dialogResult = await dialog.Result;
 
@@ -140,4 +146,6 @@
             Logger.LogError(ex, "Failed to create recipe.");
         }
     }
+
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
 }
