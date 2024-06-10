@@ -8,9 +8,9 @@ using MudBlazor.Services;
 using MyCookbook.Areas.Identity;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
+using MyCookbook.Services;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
-using Serilog.Sinks.Grafana.Loki.HttpClients;
 
 namespace MyCookbook
 {
@@ -21,8 +21,9 @@ namespace MyCookbook
             var builder = WebApplication.CreateBuilder(args);
 
             Log.Logger = BuildLogger(builder);
-
             builder.Host.UseSerilog(Log.Logger);
+
+            var config = builder.Configuration;
 
             try
             {
@@ -31,13 +32,20 @@ namespace MyCookbook
                 builder.Services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseSqlServer(connectionString));
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-                builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
-                    .AddEntityFrameworkStores<ApplicationDbContext>();
+
                 builder.Services.AddRazorPages();
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
                 builder.Services.AddMudServices();
-                builder.Services.AddAuthentication();
+
+                builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                    .AddEntityFrameworkStores<ApplicationDbContext>();
+                builder.Services.AddAuthentication()
+                   .AddGoogle(options =>
+                   {
+                       options.ClientId = builder.GetSecret("Authentication:Google:ClientId");
+                       options.ClientSecret = builder.GetSecret("Authentication:Google:ClientSecret");
+                   });
 
                 builder.Services.Configure<IdentityOptions>(options =>
                 {
@@ -53,8 +61,7 @@ namespace MyCookbook
                 builder.Services.AddScoped<CookbookDatabaseService>();
 
                 builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
-                    options.UseSqlServer(
-                        builder.Configuration.GetConnectionString("DefaultConnection")));
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
                 var app = builder.Build();
 
@@ -134,29 +141,8 @@ namespace MyCookbook
 
         private static LokiCredentials CreateGrafanaCredentials(WebApplicationBuilder builder)
         {
-            var grafanaToken = builder.Environment.IsProduction()
-                ? GetAzureGrafanaKey()
-                : File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "grafana.key"));
+            var grafanaToken = builder.GetSecret("GrafanaKey");
             return new LokiCredentials { Login = "912173", Password = grafanaToken };
-        }
-
-        private static string GetAzureGrafanaKey()
-        {
-            var options = new SecretClientOptions()
-            {
-                Retry =
-                {
-                    Delay = TimeSpan.FromSeconds(2),
-                    MaxDelay = TimeSpan.FromSeconds(16),
-                    MaxRetries = 3,
-                    Mode = RetryMode.Exponential
-                }
-            };
-            var client = new SecretClient(new Uri("https://mycookbookpdnvault.vault.azure.net/"), new DefaultAzureCredential(), options);
-
-            KeyVaultSecret secret = client.GetSecret("GrafanaKey");
-
-            return secret.Value;
         }
     }
 }
