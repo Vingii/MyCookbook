@@ -1,11 +1,16 @@
+using Azure.Core;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using MyCookbook.Areas.Identity;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
+using Serilog.Sinks.Grafana.Loki.HttpClients;
 
 namespace MyCookbook
 {
@@ -15,64 +20,143 @@ namespace MyCookbook
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-            builder.Services.AddRazorPages();
-            builder.Services.AddServerSideBlazor();
-            builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
-            builder.Services.AddMudServices();
-            builder.Services.AddAuthentication();
+            Log.Logger = BuildLogger(builder);
 
-            builder.Services.Configure<IdentityOptions>(options =>
+            builder.Host.UseSerilog(Log.Logger);
+
+            try
             {
-                // Default Password settings.
-                options.Password.RequireDigit = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequiredLength = 8;
-                options.Password.RequiredUniqueChars = 1;
-            });
+                // Add services to the container.
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseSqlServer(connectionString));
+                builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+                builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+                    .AddEntityFrameworkStores<ApplicationDbContext>();
+                builder.Services.AddRazorPages();
+                builder.Services.AddServerSideBlazor();
+                builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
+                builder.Services.AddMudServices();
+                builder.Services.AddAuthentication();
 
-            builder.Services.AddScoped<CookbookDatabaseService>();
+                builder.Services.Configure<IdentityOptions>(options =>
+                {
+                    // Default Password settings.
+                    options.Password.RequireDigit = false;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequiredUniqueChars = 1;
+                });
 
-            builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")));
+                builder.Services.AddScoped<CookbookDatabaseService>();
 
-            var app = builder.Build();
+                builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
+                    options.UseSqlServer(
+                        builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseMigrationsEndPoint();
+                var app = builder.Build();
+
+                // Configure the HTTP request pipeline.
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseMigrationsEndPoint();
+                }
+                else
+                {
+                    app.UseExceptionHandler("/Error");
+                    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                    app.UseHsts();
+                }
+
+                app.UseSerilogRequestLogging();
+
+                app.UseHttpsRedirection();
+
+                app.UseStaticFiles();
+
+                app.UseRouting();
+
+                app.UseAuthentication();
+                app.UseAuthorization();
+
+                app.MapControllers();
+                app.MapBlazorHub();
+                app.MapFallbackToPage("/_Host");
+
+                app.Run();
             }
-            else
+            catch (Exception ex)
             {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                Log.Fatal(ex, "Host Terminated Unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+
+        private static Serilog.ILogger BuildLogger(WebApplicationBuilder builder)
+        {
+            var appSettingsConfiguration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+                .Build();
+
+            var grafanaSections = appSettingsConfiguration.GetSection("Serilog").GetSection("WriteTo")
+                .GetChildren().Where(x => x.GetSection("Name").Value == "GrafanaLoki");
+
+            var credentials = CreateGrafanaCredentials(builder);
+
+            var grafanaLoginSettings = new Dictionary<string, string>();
+            foreach (var section in grafanaSections)
+            {
+                var basePath = section.Path;
+                grafanaLoginSettings[$"{basePath}:args:credentials:login"] = credentials.Login;
+                grafanaLoginSettings[$"{basePath}:args:credentials:password"] = credentials.Password;
             }
 
-            app.UseHttpsRedirection();
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
+                .AddInMemoryCollection(grafanaLoginSettings)
+                .Build();
 
-            app.UseStaticFiles();
+            var logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
 
-            app.UseRouting();
+            return logger;
+        }
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+        private static LokiCredentials CreateGrafanaCredentials(WebApplicationBuilder builder)
+        {
+            var grafanaToken = builder.Environment.IsProduction()
+                ? GetAzureGrafanaKey()
+                : File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "grafana.key"));
+            return new LokiCredentials { Login = "912173", Password = grafanaToken };
+        }
 
-            app.MapControllers();
-            app.MapBlazorHub();
-            app.MapFallbackToPage("/_Host");
+        private static string GetAzureGrafanaKey()
+        {
+            var options = new SecretClientOptions()
+            {
+                Retry =
+                {
+                    Delay = TimeSpan.FromSeconds(2),
+                    MaxDelay = TimeSpan.FromSeconds(16),
+                    MaxRetries = 3,
+                    Mode = RetryMode.Exponential
+                }
+            };
+            var client = new SecretClient(new Uri("https://mycookbookpdnvault.vault.azure.net/"), new DefaultAzureCredential(), options);
 
-            app.Run();
+            KeyVaultSecret secret = client.GetSecret("GrafanaKey");
+
+            return secret.Value;
         }
     }
 }

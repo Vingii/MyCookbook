@@ -4,6 +4,7 @@
 @using MyCookbook.Data.CookbookDatabase
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject ILogger<RecipeBrowser> Logger
 @inject IDialogService DialogService
 @inherits OwningComponentBase<CookbookDatabaseService>
 
@@ -53,7 +54,7 @@
     </NotAuthorized>
 </AuthorizeView>
 @code
-{
+    {
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
     private string _userIdentityName = "";
@@ -101,18 +102,25 @@
 
     private async Task AddRecipe()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        var parameters = new DialogParameters<NewEntryDialog>();
-        parameters.Add(x => x.EntryType, "recipe");
-        var dialog = await DialogService.ShowAsync<NewEntryDialog>("New recipe", parameters, options);
-        var dialogResult = await dialog.Result;
-
-        if (!dialogResult.Canceled)
+        try
         {
-            var recipeName = dialogResult.Data.ToString();
-            var recipe = new Recipe{ Name = recipeName };
-            var createResult = await @Service.CreateRecipeAsync(recipe, _userIdentityName);
-            await RefreshRecipes();
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters<NewEntryDialog>();
+            parameters.Add(x => x.EntryType, "recipe");
+            var dialog = await DialogService.ShowAsync<NewEntryDialog>("New recipe", parameters, options);
+            var dialogResult = await dialog.Result;
+
+            if (!dialogResult.Canceled)
+            {
+                var recipeName = dialogResult.Data.ToString();
+                var recipe = new Recipe { Name = recipeName };
+                var createResult = await @Service.CreateRecipeAsync(recipe, _userIdentityName);
+                await RefreshRecipes();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to create recipe.");
         }
     }
 }
