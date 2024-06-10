@@ -28,7 +28,7 @@
             <RowTemplate Context="ingredient">
                 <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
                 <MudTd>@ingredient.Name</MudTd>
-                <MudTd>@(ingredient.Amount + " " + ingredient.Unit)</MudTd>
+                <MudTd>@ingredient.Amount</MudTd>
                 <MudTd Style="text-align:right">
                     <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
                 </MudTd>
@@ -44,9 +44,6 @@
                 </MudTd>
                 <MudTd>
                     <MudTextField @bind-Value="@ingredient.Amount" />
-                </MudTd>
-                <MudTd>
-                    <MudTextField @bind-Value="@ingredient.Unit" />
                 </MudTd>
             </RowEditingTemplate>
             <EditButtonContent Context="button">

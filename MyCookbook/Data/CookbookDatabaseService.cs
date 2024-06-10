@@ -227,7 +227,6 @@ namespace MyCookbook.Data
 
             foundIngredient.Name = ingredient.Name;
             foundIngredient.Amount = ingredient.Amount;
-            foundIngredient.Unit = ingredient.Unit;
             await _context.SaveChangesAsync();
 
             return true;

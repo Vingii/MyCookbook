@@ -30,7 +30,8 @@ namespace MyCookbook.Data.CookbookDatabase
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.Unit).HasMaxLength(50);
+                entity.Property(e => e.Amount)
+                    .HasMaxLength(50);
 
                 entity.Property(e => e.UserName)
                     .IsRequired()
