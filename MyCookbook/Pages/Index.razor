@@ -1,7 +1,16 @@
-﻿@page "/"
+﻿@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@inject IStringLocalizer<Index> Localizer
+@inject LanguageNotifier LanguageNotifier
+@page "/"
 
 <PageTitle>My Cookbook</PageTitle>
 
-<h1>Dashboard</h1>
+<h1>@Localizer["Dashboard"]</h1>
 
-Welcome!
+@Localizer["Welcome"]
+
+@code {
+    protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+}

@@ -1,0 +1,65 @@
+﻿@using Microsoft.AspNetCore.Localization;
+@using MyCookbook.Services;
+@using System.Globalization;
+@using System.Web;
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject LanguageNotifier LanguageNotifier
+@inject CultureProvider CultureProvider
+
+<MudSelect @ref="selector" T="string" Dense="true" Margin="Margin.Dense" @bind-Value="Culture" AnchorOrigin="Origin.BottomCenter">
+    @foreach (var (culture, language) in Languages)
+    {
+        <MudSelectItem Value="@(culture)">@language</MudSelectItem>
+    }
+</MudSelect>
+
+@code {
+    private Dictionary<string, string> Languages { get; } = new Dictionary<string, string>
+    {
+        { "en", "English" },
+        { "cs", "Čeština" }
+    };
+
+    private MudSelect<string>? selector;
+
+    private string? _culture;
+    private string? Culture
+    {
+        get => _culture;
+        set
+        {
+            _culture = value;
+            OnChangeLanguage();
+        }
+    }
+
+    private Lazy<IJSObjectReference> LanguageSelectorModule = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        LanguageSelectorModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/LanguageSelector.js"));
+    }
+
+    protected override void OnInitialized()
+    {
+        _culture = CultureProvider.SelectedLanguage;
+    }
+
+    private void OnChangeLanguage()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(Culture);
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(Culture);
+        LanguageSelectorModule.Value.InvokeVoidAsync("addCookies", CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(new(CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture)));
+        LanguageNotifier.NotifyLanguageChange();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (LanguageSelectorModule.IsValueCreated)
+        {
+            await LanguageSelectorModule.Value.DisposeAsync();
+        }
+    }
+}

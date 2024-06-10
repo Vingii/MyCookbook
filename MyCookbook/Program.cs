@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using MudBlazor.Services;
 using MyCookbook.Areas.Identity;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
+using MyCookbook.Pages;
 using MyCookbook.Services;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
@@ -33,9 +36,24 @@ namespace MyCookbook
 
                 builder.Services.AddRazorPages();
                 builder.Services.AddServerSideBlazor();
-                builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
                 builder.Services.AddMudServices();
 
+                var cultureProvider = new CultureProvider("en");
+                builder.Services.AddLocalization(options => options.ResourcesPath = "LanguageResources");
+                builder.Services.AddScoped<LanguageNotifier>();
+                builder.Services.AddSingleton(cultureProvider);
+                builder.Services.AddScoped(typeof(IStringLocalizer<>), typeof(CookbookStringLocalizer<>));
+                builder.Services.Configure<RequestLocalizationOptions>(options =>
+                {
+                    options.AddSupportedCultures(new[] { "en", "cs" });
+                    options.AddSupportedUICultures(new[] { "en", "cs" });
+                    options.RequestCultureProviders = new List<IRequestCultureProvider>()
+                    {
+                        cultureProvider
+                    };
+                });
+
+                builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
                 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
                     .AddEntityFrameworkStores<ApplicationDbContext>();
                 builder.Services.AddAuthentication()
@@ -76,9 +94,10 @@ namespace MyCookbook
                 else
                 {
                     app.UseExceptionHandler("/Error");
-                    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                     app.UseHsts();
                 }
+
+                app.UseRequestLocalization();
 
                 app.UseSerilogRequestLogging();
 

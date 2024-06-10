@@ -59,6 +59,10 @@ a, .btn-link {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+.mud-input-margin-dense {
+    margin-top: 0 !important;
+}
