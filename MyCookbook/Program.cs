@@ -1,8 +1,6 @@
-using Azure.Core;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using MyCookbook.Areas.Identity;
@@ -62,6 +60,11 @@ namespace MyCookbook
 
                 builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+                if (!builder.Environment.IsDevelopment())
+                {
+                    builder.Services.AddTransient<IEmailSender, EmailSender>();
+                }
 
                 var app = builder.Build();
 
