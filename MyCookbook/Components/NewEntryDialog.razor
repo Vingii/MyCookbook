@@ -2,6 +2,7 @@
 @using MyCookbook.Services;
 @inject IStringLocalizer<NewEntryDialog> Localizer
 @inject LanguageNotifier LanguageNotifier
+@implements IDisposable
 
 <MudDialog>
     <TitleContent>

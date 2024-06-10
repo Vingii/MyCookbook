@@ -6,6 +6,7 @@ namespace MyCookbook.Services
     public class CultureProvider : RequestCultureProvider
     {
         public string SelectedLanguage { get; private set; }
+        public CultureInfo SelectedCulture { get; set; }
         public string DefaultCulture { get; set; }
 
         public CultureProvider(string defaultCulture)
@@ -21,16 +22,16 @@ namespace MyCookbook.Services
             if (result is null)
             {
                 SelectedLanguage = DefaultCulture;
-                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(DefaultCulture);
-                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(DefaultCulture);
                 result = new(DefaultCulture);
             }
             else
             {
                 SelectedLanguage = result.Cultures.First().Value;
-                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(result.Cultures.First().Value);
-                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(result.UICultures.First().Value);
             }
+
+            SelectedCulture = CultureInfo.GetCultureInfo(SelectedLanguage);
+            CultureInfo.CurrentCulture = SelectedCulture;
+            CultureInfo.CurrentUICulture = SelectedCulture;
 
             return Task.FromResult<ProviderCultureResult?>(result);
         }

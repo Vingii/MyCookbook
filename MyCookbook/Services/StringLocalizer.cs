@@ -11,10 +11,12 @@ namespace MyCookbook.Services
         public LocalizedString this[string name, params object[] arguments] => FindLocalizedString(name, arguments);
 
         private readonly IOptions<LocalizationOptions> _localizationOptions;
+        private readonly CultureProvider _cultureProvider;
 
-        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions)
+        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider)
         {
             _localizationOptions = localizationOptions;
+            _cultureProvider = cultureProvider;
         }
 
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
@@ -28,7 +30,7 @@ namespace MyCookbook.Services
 
             try
             {
-                string value = resourceManager.GetString(key);
+                string value = resourceManager.GetString(key, _cultureProvider.SelectedCulture);
 
                 if (arguments is not null)
                 {

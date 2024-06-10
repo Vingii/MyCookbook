@@ -11,6 +11,7 @@
 @inject ILogger<RecipeBrowser> Logger
 @inject IDialogService DialogService
 @inherits OwningComponentBase<CookbookDatabaseService>
+@implements IDisposable
 
 <PageTitle>Recipe browser</PageTitle>
 <MudText Class="ma-2" Typo="Typo.h3">@Localizer["RecipeBrowser"]</MudText>

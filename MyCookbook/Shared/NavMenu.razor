@@ -5,6 +5,7 @@
 @inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inherits OwningComponentBase<CookbookDatabaseService>
+@implements IDisposable
 
 <MudNavMenu>
     <MudNavLink Href="/" Match="NavLinkMatch.All">@Localizer["Dashboard"]</MudNavLink>

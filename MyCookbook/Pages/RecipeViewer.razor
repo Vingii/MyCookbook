@@ -10,6 +10,7 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 @inherits OwningComponentBase<CookbookDatabaseService>
+@implements IDisposable
 
 <PageTitle>Recipe - @Name</PageTitle>
 <MudText Class="ma-2" Typo="Typo.h3">@Name</MudText>

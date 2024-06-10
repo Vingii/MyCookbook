@@ -48,10 +48,9 @@
 
     private void OnChangeLanguage()
     {
-        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(Culture);
-        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(Culture);
+        CultureProvider.SelectedCulture = CultureInfo.GetCultureInfo(Culture);
         LanguageSelectorModule.Value.InvokeVoidAsync("addCookies", CookieRequestCultureProvider.DefaultCookieName,
-            CookieRequestCultureProvider.MakeCookieValue(new(CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture)));
+            CookieRequestCultureProvider.MakeCookieValue(new(CultureProvider.SelectedCulture, CultureProvider.SelectedCulture)));
         LanguageNotifier.NotifyLanguageChange();
     }
 
