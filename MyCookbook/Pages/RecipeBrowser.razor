@@ -13,31 +13,38 @@
 
 <AuthorizeView>
     <Authorized>
-        <MudTable Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
-                  RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
+        <MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+                  RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
+                  EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh>Category</MudTh>
+                <MudTh>Active Duration</MudTh>
                 <MudTh>Duration</MudTh>
                 <MudTh>Cooked</MudTh>
             </HeaderContent>
             <RowTemplate Context="recipe">
-                <MudTd DataLabel="Name">@recipe.Name</MudTd>
+                <MudTd DataLabel="Name" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
                 <MudTd DataLabel="Category">@recipe.Category</MudTd>
+                <MudTd DataLabel="Active Duration">@recipe.ActiveDurationText</MudTd>
                 <MudTd DataLabel="Duration">@recipe.DurationText</MudTd>
                 <MudTd DataLabel="Cooked">@(recipe.LastCooked?.ToShortDateString() ?? "Never")</MudTd>
                 <MudTd DataLabel="Icons" Style="text-align:right">
-                    <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.OpenInBrowser" @onclick="@(() => OpenRecipe(recipe))" Size="Size.Small"></MudIcon>
                     <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
                 </MudTd>
             </RowTemplate>
             <RowEditingTemplate Context="recipe">
-                <MudTd DataLabel="Name">@recipe.Name</MudTd>
+                <MudTd DataLabel="Name">
+                    <MudTextField @bind-Value="@recipe.Name" OnKeyPress="CommitEdit" />
+                </MudTd>
                 <MudTd DataLabel="Category">
-                    <MudTextField @bind-Value="@recipe.Category"/>
+                        <MudTextField @bind-Value="@recipe.Category" OnKeyPress="CommitEdit" />
+                </MudTd>
+                <MudTd DataLabel="Active Duration">
+                        <MudTextField @bind-Value="@recipe.ActiveDurationText" OnKeyPress="CommitEdit" />
                 </MudTd>
                 <MudTd DataLabel="Duration">
-                    <MudTextField @bind-Value="@recipe.DurationText" />
+                        <MudTextField @bind-Value="@recipe.DurationText" OnKeyPress="CommitEdit" />
                 </MudTd>
             </RowEditingTemplate>
             <EditButtonContent Context="button">
@@ -63,6 +70,8 @@
 
     private List<Recipe> _recipes = new List<Recipe>();
 
+    private MudTable<Recipe> _tableRef;
+
     protected override async Task OnInitializedAsync()
     {
         if (authenticationStateTask != null)
@@ -78,15 +87,23 @@
         _loading = false;
     }
 
+    private async Task OpenRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"Recipeviewer/{recipe.Name}");
+    }
+
+    private void CommitEdit(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _tableRef.SetEditingItem(null);
+        }
+    }
+
     private void CommitTableEdit(object element)
     {
         var recipe = (Recipe)element;
         var result = Task.Run(() => @Service.UpdateRecipeAsync(recipe, _userIdentityName)).Result;
-    }
-
-    private void OpenRecipe(Recipe recipe)
-    {
-        NavigationManager.NavigateTo($"Recipeviewer/{recipe.Name}");
     }
 
     private async Task DeleteRecipe(Recipe recipe)

@@ -13,6 +13,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public string Name { get; set; }
         public double? Amount { get; set; }
         public string Unit { get; set; }
+        public int Order { get; set; }
 
         public virtual Recipe Recipe { get; set; }
     }

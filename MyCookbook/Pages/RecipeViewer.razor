@@ -13,7 +13,7 @@
 
 <AuthorizeView>
     <Authorized>
-        <MudTable Items="@_recipe.Ingredients" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+        <MudTable Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
                 <MudTh>Ready</MudTh>
@@ -21,16 +21,22 @@
                 <MudTh>Amount</MudTh>
             </HeaderContent>
             <RowTemplate Context="ingredient">
-                <MudCheckBox @bind-Checked="@IngredientReady[IngredientOrder[ingredient]]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
                 <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
                 <MudTd DataLabel="Amount">@(ingredient.Amount + " " + ingredient.Unit)</MudTd>
                 <MudTd DataLabel="Icons" Style="text-align:right">
                     <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
                 </MudTd>
+                <MudTd DataLabel="Icons" Style="text-align:right">
+                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseIngredientOrder(ingredient))" />
+                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseIngredientOrder(ingredient))" />
+                </MudTd>
             </RowTemplate>
             <RowEditingTemplate Context="ingredient">
-                    <MudCheckBox @bind-Checked="@IngredientReady[IngredientOrder[ingredient]]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                <MudTd DataLabel="Ingredient">@ingredient.Name</MudTd>
+                <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                <MudTd DataLabel="Name">
+                    <MudTextField @bind-Value="@ingredient.Name" />
+                </MudTd>
                 <MudTd DataLabel="Amount">
                     <MudTextField @bind-Value="@ingredient.Amount" />
                 </MudTd>
@@ -55,7 +61,23 @@
                 <MudPaper Class="pa-2 ma-2" Outlined="true">
                     <MudStack Row="true" Justify="Justify.SpaceAround">
                         <MudCheckBox @bind-Checked="@StepDone[step.Order]" Color="Color.Primary"></MudCheckBox>
-                        <MudText @key="step" Class="ma-2 flex-fill" Typo="Typo.h5">Step @step.Order</MudText>
+                        @if (EditMode[step.Order])
+                        {
+                            <MudTextField Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
+                                  ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" />
+                        }
+                        else if (StepDone[step.Order])
+                        {
+                            <MudText Class="ma-2 flex-fill" />
+                        }
+                        else
+                        {
+                            <MudText Class="ma-2 flex-fill">
+                                <MudHighlighter Class="pa-1 mud-elevation-2 mud-theme-primary"
+                                    Text="@text"
+                                    HighlightedTexts="@highlights" />
+                            </MudText>
+                        }
                         <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
                         <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@EditMode[step.Order]"
                                          Icon="@Icons.Material.Outlined.Edit" Title="Off"
@@ -65,23 +87,6 @@
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
                         </MudStack>
                     </MudStack>
-                    @if (StepDone[step.Order])
-                    {
-                        return;
-                    }
-                    else if (EditMode[step.Order])
-                    {
-                        <MudTextField Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
-                              ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" />
-                    }
-                    else
-                    {
-                        <MudText Class="ma-2" Mu>
-                            <MudHighlighter Class="pa-1 mud-elevation-2 mud-theme-primary"
-                                    Text="@text"
-                                    HighlightedTexts="@highlights" />
-                        </MudText>
-                    }
                 </MudPaper>
             }
             <br />
@@ -111,9 +116,7 @@
     private Recipe _recipe = new Recipe();
     private Dictionary<int, bool> EditMode = new Dictionary<int, bool>();
     private Dictionary<int, bool> StepDone = new Dictionary<int, bool>();
-    private Dictionary<Ingredient, int> IngredientOrder = new Dictionary<Ingredient, int>();
-
-    private bool[] IngredientReady = new bool[0];
+    private Dictionary<int, bool> IngredientDone = new Dictionary<int, bool>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,10 +148,11 @@
     private async Task RefreshRecipe()
     {
         _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
-        var recipesByOrder = _recipe.Steps.GroupBy(x => x.Order);
+        var stepsByOrder = _recipe.Steps.GroupBy(x => x.Order);
+        var ingredientsByOrder = _recipe.Ingredients.GroupBy(x => x.Order);
 
         if (_recipe.Steps.Any() &&
-            (recipesByOrder.Count() != _recipe.Steps.Count
+            (stepsByOrder.Count() != _recipe.Steps.Count
             || _recipe.Steps.Max(x => x.Order) != _recipe.Steps.Count
             || _recipe.Steps.Min(x => x.Order) != 1))
         {
@@ -156,17 +160,18 @@
             _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
         }
 
-        EditMode = _recipe.Steps.ToDictionary(x => x.Order, x => false);
-        StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
-
-        var ingredients = _recipe.Ingredients.ToList();
-
-        for (int i = 0; i < _recipe.Ingredients.Count; i++)
+        if (_recipe.Ingredients.Any() &&
+            (ingredientsByOrder.Count() != _recipe.Ingredients.Count
+            || _recipe.Ingredients.Max(x => x.Order) != _recipe.Ingredients.Count
+            || _recipe.Ingredients.Min(x => x.Order) != 1))
         {
-            IngredientOrder[ingredients[i]] = i;
+            var result = await @Service.FixIngredientsOrder(_recipe, _userIdentityName);
+            _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
         }
 
-        IngredientReady = new bool[_recipe.Ingredients.Count];
+        EditMode = _recipe.Steps.ToDictionary(x => x.Order, x => false);
+        StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
+        IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
     }
 
     private async Task AddIngredient()
@@ -207,6 +212,18 @@
     {
         step.Description = description;
         var result = await @Service.UpdateStepDescriptionAsync(step, _userIdentityName);
+    }
+
+    private async Task DecreaseIngredientOrder(Ingredient ingredient)
+    {
+        var result = await @Service.DecreaseIngredientOrder(ingredient, _userIdentityName);
+        await RefreshRecipe();
+    }
+
+    private async Task IncreaseIngredientOrder(Ingredient ingredient)
+    {
+        var result = await @Service.IncreaseIngredientOrder(ingredient, _userIdentityName);
+        await RefreshRecipe();
     }
 
     private async Task DecreaseStepOrder(Step step)

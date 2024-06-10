@@ -185,7 +185,22 @@ namespace MyCookbook.Data
 
             for (int i = 0; i < foundSteps.Count; i++)
             {
-                foundSteps[i].Order = i+1;
+                foundSteps[i].Order = i + 1;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> FixIngredientsOrder(Recipe recipe, string user)
+        {
+            var foundIngredients = await _context.Ingredients
+                .Where(x => x.RecipeId == recipe.Id && x.UserName == user).OrderBy(x => x.Order).ToListAsync();
+
+            for (int i = 0; i < foundIngredients.Count; i++)
+            {
+                foundIngredients[i].Order = i + 1;
             }
 
             await _context.SaveChangesAsync();
@@ -227,7 +242,62 @@ namespace MyCookbook.Data
 
             if (foundIngredient == null) return false;
 
+            var higherIngredients = await
+                _context.Ingredients
+                .Where(x => x.RecipeId == ingredient.RecipeId && x.UserName == user)
+                .Where(x => x.Order > ingredient.Order)
+                .ToListAsync();
+
+            foreach (var higherIngredient in higherIngredients)
+            {
+                higherIngredient.Order--;
+            }
+
             _context.Ingredients.Remove(foundIngredient);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> IncreaseIngredientOrder(Ingredient ingredient, string user)
+        {
+            var foundIngredient =
+                _context.Ingredients
+                .Where(x => x.Id == ingredient.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundIngredient == null) return false;
+
+            var higherIngredient = _context.Ingredients
+                .Where(x => x.RecipeId == ingredient.RecipeId && x.UserName == user && x.Order == ingredient.Order + 1).FirstOrDefault();
+
+            if (higherIngredient == null) return true;
+
+            higherIngredient.Order--;
+            foundIngredient.Order++;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DecreaseIngredientOrder(Ingredient ingredient, string user)
+        {
+            var foundIngredient =
+                _context.Ingredients
+                .Where(x => x.Id == ingredient.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundIngredient == null) return false;
+
+            var lowerIngredient = _context.Ingredients
+                .Where(x => x.RecipeId == ingredient.RecipeId && x.UserName == user && x.Order == ingredient.Order - 1).FirstOrDefault();
+
+            if (lowerIngredient == null) return true;
+
+            foundIngredient.Order--;
+            lowerIngredient.Order++;
+
             await _context.SaveChangesAsync();
 
             return true;
