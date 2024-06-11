@@ -8,7 +8,6 @@ using MudBlazor.Services;
 using MyCookbook.Areas.Identity;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
-using MyCookbook.Pages;
 using MyCookbook.Services;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
@@ -31,7 +30,7 @@ namespace MyCookbook
                 // Add services to the container.
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
                 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString));
+                    options.UseSqlServer(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
                 builder.Services.AddRazorPages();
