@@ -26,21 +26,22 @@ namespace MyCookbook.Data.CookbookDatabase
         {
             modelBuilder.Entity<Ingredient>(entity =>
             {
+                entity.Property(e => e.Amount).HasMaxLength(50);
+
                 entity.Property(e => e.Name)
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.Amount)
-                    .HasMaxLength(50);
+                entity.Property(e => e.Order).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.UserName)
                     .IsRequired()
-                    .HasMaxLength(255);
+                    .HasMaxLength(450);
 
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Ingredients)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.Cascade)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Ingredien__Recip__5EBF139D");
             });
 
@@ -51,27 +52,27 @@ namespace MyCookbook.Data.CookbookDatabase
 
                 entity.Property(e => e.Category).HasMaxLength(50);
 
+                entity.Property(e => e.LastCooked).HasColumnType("date");
+
                 entity.Property(e => e.Name)
                     .IsRequired()
                     .HasMaxLength(50);
 
                 entity.Property(e => e.Servings).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.UserName)
-                    .IsRequired()
-                    .HasMaxLength(255);
+                entity.Property(e => e.UserName).IsRequired();
             });
 
             modelBuilder.Entity<Step>(entity =>
             {
                 entity.Property(e => e.UserName)
                     .IsRequired()
-                    .HasMaxLength(255);
+                    .HasMaxLength(450);
 
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Steps)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.Cascade)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Steps__RecipeId__5BE2A6F2");
             });
 
