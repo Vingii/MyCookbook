@@ -75,16 +75,18 @@
                         }
                         else
                         {
-                            <MudText Class="ma-2 flex-fill">
+                            <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
                                 <MudHighlighter Class="pa-1 mud-elevation-2 mud-theme-primary"
                                     Text="@text"
                                     HighlightedTexts="@highlights" />
                             </MudText>
                         }
-                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
-                        <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@EditMode[step.Order]"
-                                         Icon="@Icons.Material.Outlined.Edit" Title="Off"
-                                         ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
+                        <MudStack>
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
+                            <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@EditMode[step.Order]" Class="pa-0"
+                                             Icon="@Icons.Material.Outlined.Edit" Title="Edit"
+                                             ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
+                        </MudStack>
                         <MudStack>
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseStepOrder(step))" />
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
