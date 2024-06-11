@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 using MyCookbook.Data.CookbookDatabase;
+using System.Text.RegularExpressions;
 
 namespace MyCookbook.Data
 {
@@ -83,6 +85,54 @@ namespace MyCookbook.Data
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<Recipe> CloneRecipeAsync(Recipe recipe, IEnumerable<string> existingRecipes, string user)
+        {
+            recipe = await GetDetailedRecipeAsync(recipe.Name, recipe.UserName) ?? recipe;
+            var newRecipe = recipe.Clone();
+            newRecipe.UserName = user;
+            var name = newRecipe.Name;
+            var highestIndex = GetHighestRecipeNameIndex(ref name, existingRecipes);
+            newRecipe.Name = $"{name} ({highestIndex + 1})";
+            _context.Recipes.Add(newRecipe);
+            await _context.SaveChangesAsync();
+
+            newRecipe.Ingredients = recipe.Ingredients.Select(x => x.Clone(recipe)).ToList();
+            newRecipe.Steps = recipe.Steps.Select(x => x.Clone(recipe)).ToList();
+            await _context.SaveChangesAsync();
+
+            return newRecipe;
+        }
+
+        private int GetHighestRecipeNameIndex(ref string name, IEnumerable<string> existingRecipes)
+        {
+            var highestIndex = 0;
+            var namePattern = @$"(.*) \(\d+\)";
+            Regex nameRegex = new Regex(namePattern);
+
+            var matches = nameRegex.Match(name);
+            if (matches.Success)
+            {
+                name = matches.Groups[1].Value;
+            }
+
+            var indexPattern = @$"{name} \((\d+)\)";
+            Regex indexRegex = new Regex(indexPattern);
+
+            foreach (var recipe in existingRecipes)
+            {
+                matches = indexRegex.Match(recipe);
+                if (matches.Success)
+                {
+                    var index = int.Parse(matches.Groups[1].Value);
+                    if (index > highestIndex)
+                    {
+                        highestIndex = index;
+                    }
+                }
+            }
+            return highestIndex;
         }
 
         public async Task<Step> CreateStepAsync(Step step, string user)

@@ -13,5 +13,17 @@ namespace MyCookbook.Data.CookbookDatabase
         public int Order { get; set; }
 
         public virtual Recipe Recipe { get; set; }
+
+        public Ingredient Clone(Recipe recipe)
+        {
+            return new Ingredient()
+            {
+                RecipeId = recipe.Id,
+                UserName = recipe.UserName,
+                Name = Name,
+                Amount = Amount,
+                Order = Order
+            };
+        }
     }
 }

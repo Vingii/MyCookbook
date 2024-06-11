@@ -17,7 +17,6 @@ namespace MyCookbook.Data.CookbookDatabase
         public string Name { get; set; }
         public string Category { get; set; }
         public int? Duration { get; set; }
-        public int? ActiveDuration { get; set; }
         public int Servings { get; set; }
         public DateTime? LastCooked { get; set; }
 
@@ -41,21 +40,16 @@ namespace MyCookbook.Data.CookbookDatabase
             }
         }
 
-        [NotMapped]
-        public string ActiveDurationText
+        public Recipe Clone()
         {
-            get
+            return new Recipe()
             {
-                if (ActiveDuration == null) return "";
-
-                var span = TimeSpan.FromMinutes(ActiveDuration ?? 0);
-                return $"{Math.Floor(span.TotalHours)}:{span.Minutes}";
-            }
-
-            set
-            {
-                ActiveDuration = int.TryParse(value, out var minutes) ? minutes : (int)TimeSpan.Parse(value).TotalMinutes;
-            }
+                Name = Name,
+                Category = Category,
+                Duration = Duration,
+                Servings = Servings,
+                LastCooked = LastCooked
+            };
         }
     }
 }
