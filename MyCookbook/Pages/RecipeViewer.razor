@@ -28,8 +28,8 @@
             </HeaderContent>
             <RowTemplate Context="ingredient">
                 <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                <MudTd>@ingredient.Name</MudTd>
-                <MudTd>@ingredient.Amount</MudTd>
+                <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
+                <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
                 <MudTd Style="text-align:right">
                     <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
                 </MudTd>
@@ -40,10 +40,10 @@
             </RowTemplate>
             <RowEditingTemplate Context="ingredient">
                 <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                <MudTd>
+                <MudTd DataLabel="@Localizer["Ingredient"]">
                     <MudTextField @bind-Value="@ingredient.Name" />
                 </MudTd>
-                <MudTd>
+                <MudTd DataLabel="@Localizer["Amount"]">
                     <MudTextField @bind-Value="@ingredient.Amount" />
                 </MudTd>
             </RowEditingTemplate>

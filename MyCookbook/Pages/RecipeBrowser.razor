@@ -30,23 +30,23 @@
                 <MudTh>@Localizer["Cooked"]</MudTh>
             </HeaderContent>
             <RowTemplate Context="recipe">
-                <MudTd DataLabel="Name" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
-                <MudTd DataLabel="Category">@recipe.Category</MudTd>
-                <MudTd DataLabel="Duration">@recipe.DurationText</MudTd>
-                <MudTd DataLabel="Cooked">@(recipe.LastCooked?.ToShortDateString() ?? @Localizer["Never"])</MudTd>
-                <MudTd DataLabel="Icons" Style="text-align:right">
+                <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
+                <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Category</MudTd>
+                <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
+                <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToShortDateString() ?? @Localizer["Never"])</MudTd>
+                <MudTd Style="text-align:right">
                         <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
                         <MudIcon Class="ma-4 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async() => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
                 </MudTd>
             </RowTemplate>
             <RowEditingTemplate Context="recipe">
-                <MudTd DataLabel="Name">
+                    <MudTd DataLabel="@Localizer["Name"]">
                     <MudTextField @bind-Value="@recipe.Name" OnKeyPress="CommitEdit" />
                 </MudTd>
-                <MudTd DataLabel="Category">
+                    <MudTd DataLabel="@Localizer["Category"]">
                         <MudTextField @bind-Value="@recipe.Category" OnKeyPress="CommitEdit" />
                 </MudTd>
-                <MudTd DataLabel="Duration">
+                    <MudTd DataLabel="@Localizer["Duration"]">
                         <MudTextField @bind-Value="@recipe.DurationText" OnKeyPress="CommitEdit" />
                 </MudTd>
             </RowEditingTemplate>
