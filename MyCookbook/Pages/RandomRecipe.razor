@@ -1,6 +1,7 @@
 ﻿@page "/randomrecipe"
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
+@using System.Security.Claims;
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inherits OwningComponentBase<CookbookDatabaseService>
@@ -22,7 +23,7 @@
             var user = (await authenticationStateTask).User;
             if (user.Identity != null)
             {
-                _userIdentityName = user.Identity.Name ?? "";
+                _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
             }
         }
 

@@ -1,9 +1,11 @@
 ﻿@page "/recipebrowser"
+@using Microsoft.AspNetCore.Identity;
 @using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
 @using Microsoft.Extensions.Localization;
 @using MyCookbook.Services;
+@using System.Security.Claims;
 @inject IStringLocalizer<RecipeBrowser> Localizer
 @inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -82,7 +84,7 @@
             var user = (await authenticationStateTask).User;
             if (user.Identity != null)
             {
-                _userIdentityName = user.Identity.Name ?? "";
+                _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
             }
         }
 
