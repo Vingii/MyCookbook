@@ -126,16 +126,34 @@
   <data name="Duration" xml:space="preserve">
     <value>Duration</value>
   </data>
+  <data name="Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>
   <data name="NewRecipe" xml:space="preserve">
     <value>New Recipe</value>
   </data>
+  <data name="of" xml:space="preserve">
+    <value>of</value>
+  </data>
   <data name="recipe" xml:space="preserve">
     <value>recipe</value>
   </data>
   <data name="RecipeBrowser" xml:space="preserve">
     <value>Recipe Browser</value>
+  </data>
+  <data name="Recipes" xml:space="preserve">
+    <value>Recipes</value>
+  </data>
+  <data name="RowsPerPage" xml:space="preserve">
+    <value>Rows per page:</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Uncategorized" xml:space="preserve">
+    <value>Uncategorized</value>
   </data>
 </root>

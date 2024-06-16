@@ -126,16 +126,34 @@
   <data name="Duration" xml:space="preserve">
     <value>Celková doba přípravy</value>
   </data>
+  <data name="Group" xml:space="preserve">
+    <value>Seskupit</value>
+  </data>
   <data name="Name" xml:space="preserve">
     <value>Název</value>
   </data>
   <data name="NewRecipe" xml:space="preserve">
     <value>Přidat recept</value>
   </data>
+  <data name="of" xml:space="preserve">
+    <value>z</value>
+  </data>
   <data name="recipe" xml:space="preserve">
     <value>recept</value>
   </data>
   <data name="RecipeBrowser" xml:space="preserve">
     <value>Recepty</value>
+  </data>
+  <data name="Recipes" xml:space="preserve">
+    <value>Recepty</value>
+  </data>
+  <data name="RowsPerPage" xml:space="preserve">
+    <value>Řádků na stránku:</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Hledat</value>
+  </data>
+  <data name="Uncategorized" xml:space="preserve">
+    <value>Nezařazené</value>
   </data>
 </root>
