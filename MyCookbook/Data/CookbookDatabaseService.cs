@@ -20,7 +20,7 @@ namespace MyCookbook.Data
                  .Where(x => x.UserName == user && x.Name == name)
                  .Include(x => x.Ingredients)
                  .Include(x => x.Steps)
-                 .AsNoTracking().FirstOrDefaultAsync();
+                 .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
         }
 
         public async Task<List<Recipe>> GetRecipesAsync(string user)
