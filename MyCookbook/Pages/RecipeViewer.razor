@@ -19,7 +19,7 @@
 
 <AuthorizeView>
     <Authorized>
-        <MudTable Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+        <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
                 <MudTh>@Localizer["Ready"]</MudTh>
@@ -116,6 +116,8 @@
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
     private string _userIdentityName = "";
 
+    private MudTable<Ingredient> _ingredientTable;
+
     private bool _loading = true;
 
     private Recipe _recipe = new Recipe();
@@ -154,6 +156,7 @@
 
     private async Task RefreshRecipe()
     {
+        _ingredientTable?.SetEditingItem(null);
         _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
         var stepsByOrder = _recipe.Steps.GroupBy(x => x.Order);
         var ingredientsByOrder = _recipe.Ingredients.GroupBy(x => x.Order);
@@ -179,23 +182,22 @@
         EditMode = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
+        StateHasChanged();
     }
 
     private async Task AddIngredient()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        var parameters = new DialogParameters<NewEntryDialog>();
-        parameters.Add(x => x.EntryType, Localizer["IngredientLowercase"]);
-        var dialog = await DialogService.ShowAsync<NewEntryDialog>("New ingredient", parameters, options);
-        var dialogResult = await dialog.Result;
-
-        if (!dialogResult.Canceled)
+        var ingredient = new Ingredient()
         {
-            var ingredientName = dialogResult.Data.ToString();
-            var ingredient = new Ingredient { Name = ingredientName, RecipeId = _recipe.Id };
-            var createResult = await @Service.CreateIngredientAsync(ingredient, _userIdentityName);
-            await RefreshRecipe();
-        }
+            RecipeId = _recipe.Id,
+            Order = _recipe.Ingredients.Count + 1,
+            Name = ""
+        };
+        var createResult = await @Service.CreateIngredientAsync(ingredient, _userIdentityName);
+        await RefreshRecipe();
+        _ingredientTable.SetSelectedItem(_recipe.Ingredients.Last());
+        _ingredientTable.SetEditingItem(_recipe.Ingredients.Last());
+        StateHasChanged();
     }
 
     private async Task AddStep()
