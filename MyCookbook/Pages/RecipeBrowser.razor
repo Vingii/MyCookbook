@@ -182,9 +182,9 @@
     {
         if (string.IsNullOrWhiteSpace(_recipeSearch))
             return true;
-        if (recipe.Name.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
+        if (recipe.Name != null && recipe.Name.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
             return true;
-        if (recipe.Category.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
+        if (recipe.Category != null && recipe.Category.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
             return true;
         return false;
     }
