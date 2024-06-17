@@ -33,6 +33,8 @@ namespace MyCookbook
                     options.UseSqlServer(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+                new DbHeartbeatProvider(connectionString).Start();
+
                 builder.Services.AddRazorPages();
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
