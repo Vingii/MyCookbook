@@ -10,7 +10,7 @@ namespace MyCookbook.Services
         public DbHeartbeatProvider(string connectionString)
         {
             Connection = new SqlConnection(connectionString);
-            Command = new SqlCommand("Select id from dbo.Recipes where 0=1", Connection);
+            Command = new SqlCommand("Select 1", Connection);
         }
 
         public void Start()
