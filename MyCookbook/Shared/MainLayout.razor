@@ -1,8 +1,9 @@
-﻿@inherits LayoutComponentBase
+﻿@inject IJSRuntime JSRuntime
+@inherits LayoutComponentBase
 
 <PageTitle>MyCookbook</PageTitle>
 
-<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" @ref="@_mudThemeProvider" />
+<MudThemeProvider @bind-IsDarkMode="@IsDarkMode" @ref="@_mudThemeProvider" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
@@ -32,9 +33,20 @@
 @code {
     private MudTheme _theme = new();
     private MudThemeProvider? _mudThemeProvider;
-    private bool _isDarkMode;
+    private bool _isDarkMode = true;
+    private bool IsDarkMode
+    { 
+        get => _isDarkMode;
+        set
+        {
+            _isDarkMode = value;
+            DarkModeModule?.Value?.InvokeVoidAsync("addCookies", "DarkMode", value);
+        } 
+    }
 
     bool _drawerOpen = true;
+
+    private Lazy<IJSObjectReference> DarkModeModule;
 
     void DrawerToggle()
     {
@@ -43,10 +55,21 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender) return;
+
+        DarkModeModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/DarkMode.js"));
+
+        var myCookie = await JSRuntime.InvokeAsync<string>("ReadCookie.ReadCookie", "DarkMode");
+
+        IsDarkMode = myCookie != null && bool.TryParse(myCookie, out var darkMode) ? darkMode : await _mudThemeProvider.GetSystemPreference();
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (DarkModeModule.IsValueCreated)
         {
-            _isDarkMode = await _mudThemeProvider.GetSystemPreference();
-            StateHasChanged();
+            await DarkModeModule.Value.DisposeAsync();
         }
     }
 }
