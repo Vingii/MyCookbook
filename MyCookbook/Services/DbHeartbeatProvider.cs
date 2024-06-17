@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Serilog;
 
 namespace MyCookbook.Services
 {
@@ -27,12 +28,19 @@ namespace MyCookbook.Services
 
         private void SendHeartbeat()
         {
-            Connection.Open();
-            using (SqlDataReader reader = Command.ExecuteReader())
+            try
             {
-                reader.Read();
+                Connection.Open();
+                using (SqlDataReader reader = Command.ExecuteReader())
+                {
+                    reader.Read();
+                }
+                Connection.Close();
             }
-            Connection.Close();
+            catch(Exception ex)
+            {
+                Log.Error(ex, "Error sending SQL heartbeat.");
+            }
         }
     }
 }
