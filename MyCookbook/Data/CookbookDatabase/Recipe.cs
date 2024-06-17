@@ -32,7 +32,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 if (Duration == null) return "";
 
                 var span = TimeSpan.FromMinutes(Duration ?? 0);
-                return $"{Math.Floor(span.TotalHours)}:{span.Minutes}";
+                return $"{Math.Floor(span.TotalHours)}:{(span.Minutes < 10 ? "0" : "")}{span.Minutes}";
             }
 
             set

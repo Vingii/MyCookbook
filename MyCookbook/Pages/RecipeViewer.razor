@@ -211,6 +211,8 @@
         };
         var createResult = await @Service.CreateStepAsync(step, _userIdentityName);
         await RefreshRecipe();
+        EditMode[EditMode.Count] = true;
+        StateHasChanged();
     }
 
     private async Task DeleteStep(Step step)

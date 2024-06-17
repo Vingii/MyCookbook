@@ -6,12 +6,14 @@
 @using Microsoft.Extensions.Localization;
 @using MyCookbook.Services;
 @using System.Security.Claims;
+@using MyCookbook.Utils;
 @inject IStringLocalizer<RecipeBrowser> Localizer
 @inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject ILogger<RecipeBrowser> Logger
 @inject IDialogService DialogService
+@inject CultureProvider CultureProvider
 @inherits OwningComponentBase<CookbookDatabaseService>
 @implements IDisposable
 
@@ -46,9 +48,9 @@
                 <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
                 <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Category</MudTd>
                 <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
-                <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToShortDateString() ?? @Localizer["Never"])</MudTd>
+                <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", CultureProvider.SelectedCulture) ?? @Localizer["Never"])</MudTd>
                 <MudTd Style="text-align:right">
-                        <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+                        <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async () => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
                         <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async() => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
                 </MudTd>
             </RowTemplate>
@@ -139,8 +141,24 @@
 
     private async Task DeleteRecipe(Recipe recipe)
     {
-        var result = await @Service.DeleteRecipeAsync(recipe, _userIdentityName);
-        await RefreshRecipes();
+        try
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters<ConfirmationDialog>();
+            parameters.Add(x => x.Action, Localizer["DeleteRecipe"]);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>(Localizer["DeleteRecipe"].Value.CapitalizeFirst(), parameters, options);
+            var dialogResult = await dialog.Result;
+
+            if (!dialogResult.Canceled)
+            {
+                var createResult = await @Service.DeleteRecipeAsync(recipe, _userIdentityName);
+                await RefreshRecipes();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to create recipe.");
+        }
     }
 
     private async Task CloneRecipe(Recipe recipe)

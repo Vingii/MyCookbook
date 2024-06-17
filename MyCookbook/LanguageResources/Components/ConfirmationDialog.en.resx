@@ -117,46 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Category" xml:space="preserve">
-    <value>Category</value>
-  </data>
-  <data name="Cooked" xml:space="preserve">
-    <value>Last Cooked</value>
-  </data>
-  <data name="DeleteRecipe" xml:space="preserve">
-    <value>delete recipe</value>
-  </data>
-  <data name="Duration" xml:space="preserve">
-    <value>Duration</value>
-  </data>
-  <data name="Group" xml:space="preserve">
-    <value>Group</value>
-  </data>
-  <data name="Name" xml:space="preserve">
-    <value>Name</value>
-  </data>
-  <data name="NewRecipe" xml:space="preserve">
-    <value>New Recipe</value>
-  </data>
-  <data name="of" xml:space="preserve">
-    <value>of</value>
-  </data>
-  <data name="recipe" xml:space="preserve">
-    <value>recipe</value>
-  </data>
-  <data name="RecipeBrowser" xml:space="preserve">
-    <value>Recipe Browser</value>
-  </data>
-  <data name="Recipes" xml:space="preserve">
-    <value>Recipes</value>
-  </data>
-  <data name="RowsPerPage" xml:space="preserve">
-    <value>Rows per page:</value>
-  </data>
-  <data name="Search" xml:space="preserve">
-    <value>Search</value>
-  </data>
-  <data name="Uncategorized" xml:space="preserve">
-    <value>Uncategorized</value>
+  <data name="AreYouSure" xml:space="preserve">
+    <value>Are you sure you want to</value>
   </data>
 </root>

@@ -123,6 +123,9 @@
   <data name="Cooked" xml:space="preserve">
     <value>Naposledy vařeno</value>
   </data>
+  <data name="DeleteRecipe" xml:space="preserve">
+    <value>smazat recept</value>
+  </data>
   <data name="Duration" xml:space="preserve">
     <value>Celková doba přípravy</value>
   </data>
