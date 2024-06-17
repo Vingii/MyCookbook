@@ -59,7 +59,7 @@
         <MudPaper Class="pa-4 mt-4" Elevation="0">
             @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
             {
-                var text = step.Description;
+                var text = $"{step.Order}. {step.Description}";
                 var highlights = _recipe.Ingredients.Select(x => x.Name);
                 <MudPaper Class="pa-2 ma-2" Outlined="true">
                     <MudStack Row="true" Justify="Justify.SpaceAround">
@@ -71,7 +71,9 @@
                         }
                         else if (StepDone[step.Order])
                         {
-                            <MudText Class="ma-2 flex-fill" />
+                            <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
+                                @(text.Length > 20 ? text.Substring(0, 20) + "..." : text)
+                            </MudText>
                         }
                         else
                         {
