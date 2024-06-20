@@ -39,6 +39,9 @@ namespace MyCookbook
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
 
+                var dictionary = new MemoryLanguageDictionary();
+                builder.Services.AddSingleton<ILanguageDictionary>(dictionary);
+
                 var cultureProvider = new CultureProvider("en");
                 builder.Services.AddLocalization(options => options.ResourcesPath = "LanguageResources");
                 builder.Services.AddScoped<LanguageNotifier>();

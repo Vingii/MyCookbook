@@ -5,6 +5,7 @@
 @using Microsoft.Extensions.Localization;
 @using MyCookbook.Services;
 @using System.Security.Claims;
+@inject ILanguageDictionary LanguageDictionary
 @inject IStringLocalizer<RecipeViewer> Localizer
 @inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -60,7 +61,7 @@
             @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
             {
                 var text = $"{step.Order}. {step.Description}";
-                var highlights = _recipe.Ingredients.Select(x => x.Name);
+                var highlights = _recipe.Ingredients.SelectMany(x => x.Name.Split(" ")).SelectMany(LanguageDictionary.WordInflections);
                 <MudPaper Class="pa-2 ma-2" Outlined="true">
                     <MudStack Row="true" Justify="Justify.SpaceAround">
                         <MudCheckBox @bind-Checked="@StepDone[step.Order]" Color="Color.Primary"></MudCheckBox>
@@ -78,7 +79,8 @@
                         else
                         {
                             <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
-                                <MudHighlighter Class="pa-1 mud-elevation-2 mud-theme-primary"
+                                <MudHighlighter Class="mud-primary-text" Style="background-color:transparent;font-weight:bold"
+                                    UntilNextBoundary = "true"
                                     Text="@text"
                                     HighlightedTexts="@highlights" />
                             </MudText>
