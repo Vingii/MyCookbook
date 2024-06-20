@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\Static\Dictionaries\Czech.json" />
     <None Include="wwwroot\js\DarkMode.js" />
     <None Include="wwwroot\js\LanguageSelector.js" />
   </ItemGroup>

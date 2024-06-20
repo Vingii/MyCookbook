@@ -39,7 +39,7 @@ namespace MyCookbook
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
 
-                var dictionary = new MemoryLanguageDictionary();
+                var dictionary = new MemoryLanguageDictionary("Static/Dictionaries");
                 builder.Services.AddSingleton<ILanguageDictionary>(dictionary);
 
                 var cultureProvider = new CultureProvider("en");
