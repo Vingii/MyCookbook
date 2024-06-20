@@ -1,0 +1,42 @@
+﻿@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@using MyCookbook.Data.CookbookDatabase
+@inject IStringLocalizer<RecipeShareDialog> Localizer
+@inject LanguageNotifier LanguageNotifier
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigator
+@implements IDisposable
+
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex align-center gap-4">
+            <input class="form-control" readonly type="text" value="@(Navigator.BaseUri)recipe/shared/@(Recipe.Guid)" />
+            <button type="button" class="btn btn-primary" @onclick="CopyTextToClipboard">Copy</button>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+    [Parameter] public Recipe Recipe { get; set; }
+
+    private Lazy<IJSObjectReference> ClipboardCopyModule = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        ClipboardCopyModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/ClipboardCopy.js"));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+
+    private async Task CopyTextToClipboard()
+    {
+        await ClipboardCopyModule.Value.InvokeVoidAsync("copyText", $"{Navigator.BaseUri}recipe/shared/{Recipe.Guid}");
+    }
+}

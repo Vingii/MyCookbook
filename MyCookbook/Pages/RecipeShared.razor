@@ -1,0 +1,155 @@
+﻿@page "/recipe/shared/{Id}"
+@using MyCookbook.Components;
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@using System.Security.Claims;
+@inject ILanguageDictionary LanguageDictionary
+@inject IStringLocalizer<RecipeViewer> Localizer
+@inject ILogger<RecipeShared> Logger
+@inject LanguageNotifier LanguageNotifier
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inherits OwningComponentBase<CookbookDatabaseService>
+@implements IDisposable
+
+<PageTitle>Recipe - @_recipe.Name</PageTitle>
+<div class="d-flex align-center gap-4">
+    <MudText Class="ma-2" Typo="Typo.h3">@_recipe.Name</MudText>
+</div>
+<hr />
+
+<MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" 
+        Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true">
+    <ColGroup>
+        <col style="width:20px"/>
+        <col />
+        <col />
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>@Localizer["Ready"]</MudTh>
+        <MudTh>@Localizer["Ingredient"]</MudTh>
+        <MudTh>@Localizer["Amount"]</MudTh>
+    </HeaderContent>
+    <RowTemplate Context="ingredient">
+        <MudTd>
+            <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+        </MudTd>
+        <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
+        <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
+    </RowTemplate>
+</MudTable>
+<hr />
+<MudPaper Class="pa-1 mt-1" Elevation="0">
+    @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
+    {
+        var text = $"{step.Order}. {step.Description}";
+        var highlights = _recipe.Ingredients.SelectMany(x => x.Name.Split(" ")).SelectMany(LanguageDictionary.WordInflections);
+        <MudPaper Class="pa-2 ma-2" Outlined="true">
+            <MudStack Row="true" Justify="Justify.SpaceAround">
+                <MudCheckBox @bind-Checked="@StepDone[step.Order]" Color="Color.Primary"></MudCheckBox>
+                @if (StepDone[step.Order])
+                {
+                    <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
+                        @(text.Length > 20 ? text.Substring(0, 20) + "..." : text)
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
+                        <MudHighlighter Class="mud-primary-text" Style="background-color:transparent;font-weight:bold"
+                            UntilNextBoundary = "true"
+                            Text="@text"
+                            HighlightedTexts="@highlights" />
+                    </MudText>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+</MudPaper>
+
+<link rel="stylesheet" href="css/RecipeShared.css">
+
+@code
+{
+    [Parameter]
+    public string Id { get; set; } = "";
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+
+    private MudTable<Ingredient> _ingredientTable;
+
+    private bool _loading = true;
+
+    private Recipe _recipe = new Recipe();
+    private Dictionary<int, bool> StepDone = new Dictionary<int, bool>();
+    private Dictionary<int, bool> IngredientDone = new Dictionary<int, bool>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        LanguageNotifier.SubscribeLanguageChange(this);
+
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null)
+            {
+                _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            }
+        }
+
+        await RefreshRecipe();
+        _loading = false;
+    }
+
+    private async Task RefreshRecipe()
+    {
+        _recipe = await @Service.GetDetailedRecipeByIdAsync(Id) ?? new Recipe();
+        var stepsByOrder = _recipe.Steps.GroupBy(x => x.Order);
+        var ingredientsByOrder = _recipe.Ingredients.GroupBy(x => x.Order);
+
+        if (_recipe.Steps.Any() &&
+            (stepsByOrder.Count() != _recipe.Steps.Count
+            || _recipe.Steps.Max(x => x.Order) != _recipe.Steps.Count
+            || _recipe.Steps.Min(x => x.Order) != 1))
+        {
+            var result = await @Service.FixStepsOrder(_recipe, _userIdentityName);
+            _recipe = await @Service.GetDetailedRecipeByIdAsync(Id) ?? new Recipe();
+        }
+
+        if (_recipe.Ingredients.Any() &&
+            (ingredientsByOrder.Count() != _recipe.Ingredients.Count
+            || _recipe.Ingredients.Max(x => x.Order) != _recipe.Ingredients.Count
+            || _recipe.Ingredients.Min(x => x.Order) != 1))
+        {
+            var result = await @Service.FixIngredientsOrder(_recipe, _userIdentityName);
+            _recipe = await @Service.GetDetailedRecipeByIdAsync(Id) ?? new Recipe();
+        }
+
+        StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
+        IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
+        StateHasChanged();
+    }
+
+    private async Task ShareRecipe()
+    {
+        try
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters<RecipeShareDialog>();
+            parameters.Add(x => x.Recipe, _recipe);
+            var dialog = await DialogService.ShowAsync<RecipeShareDialog>(Localizer["Share"], parameters, options);
+            var dialogResult = await dialog.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to share recipe.");
+        }
+    }
+
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+}

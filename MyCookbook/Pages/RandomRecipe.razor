@@ -1,4 +1,4 @@
-﻿@page "/randomrecipe"
+﻿@page "/random"
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
 @using System.Security.Claims;
@@ -29,7 +29,7 @@
 
         await RefreshRecipes();
 
-        NavigationManager.NavigateTo($"RecipeViewer/{GetRandomRecipe()}");
+        NavigationManager.NavigateTo($"Recipe/{GetRandomRecipe()}");
     }
 
     private async Task RefreshRecipes()

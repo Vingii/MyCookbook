@@ -1,4 +1,4 @@
-﻿@page "/recipeviewer/{Name}"
+﻿@page "/recipe/{Name}"
 @using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
@@ -7,6 +7,7 @@
 @using System.Security.Claims;
 @inject ILanguageDictionary LanguageDictionary
 @inject IStringLocalizer<RecipeViewer> Localizer
+@inject ILogger<RecipeViewer> Logger
 @inject LanguageNotifier LanguageNotifier
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
@@ -15,7 +16,10 @@
 @implements IDisposable
 
 <PageTitle>Recipe - @Name</PageTitle>
-<MudText Class="ma-2" Typo="Typo.h3">@Name</MudText>
+<div class="d-flex align-center gap-4">
+    <MudText Class="ma-2" Typo="Typo.h3">@Name</MudText>
+    <MudButton Style="margin-left: auto" OnClick="@(async() => await ShareRecipe())" Variant="Variant.Filled" Color="Color.Primary">@Localizer["Share"]</MudButton>
+</div>
 <hr />
 
 <AuthorizeView>
@@ -26,9 +30,13 @@
                 <MudTh>@Localizer["Ready"]</MudTh>
                 <MudTh>@Localizer["Ingredient"]</MudTh>
                 <MudTh>@Localizer["Amount"]</MudTh>
+                <MudTh></MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate Context="ingredient">
-                <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                <MudTd Style="text-align:right">
+                    <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                </MudTd>
                 <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
                 <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
                 <MudTd Style="text-align:right">
@@ -57,7 +65,7 @@
             @Localizer["NewIngredient"]
         </MudButton>
         <hr />
-        <MudPaper Class="pa-4 mt-4" Elevation="0">
+        <MudPaper Class="pa-1 mt-1" Elevation="0">
             @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
             {
                 var text = $"{step.Order}. {step.Description}";
@@ -257,6 +265,22 @@
     {
         var result = Task.Run(() => @Service.UpdateRecipeLastCookedAsync(_recipe, _userIdentityName)).Result;
         NavigationManager.NavigateTo("");
+    }
+
+    private async Task ShareRecipe()
+    {
+        try
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters<RecipeShareDialog>();
+            parameters.Add(x => x.Recipe, _recipe);
+            var dialog = await DialogService.ShowAsync<RecipeShareDialog>(Localizer["Share"], parameters, options);
+            var dialogResult = await dialog.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to share recipe.");
+        }
     }
 
     public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);

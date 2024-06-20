@@ -23,6 +23,15 @@ namespace MyCookbook.Data
                  .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
         }
 
+        public async Task<Recipe?> GetDetailedRecipeByIdAsync(string id)
+        {
+            return await _context.Recipes
+                 .Where(x => x.Guid == new Guid(id))
+                 .Include(x => x.Ingredients)
+                 .Include(x => x.Steps)
+                 .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
+        }
+
         public async Task<List<Recipe>> GetRecipesAsync(string user)
         {
             return await _context.Recipes

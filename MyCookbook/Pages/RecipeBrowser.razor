@@ -1,4 +1,4 @@
-﻿@page "/recipebrowser"
+﻿@page "/browser"
 @using Microsoft.AspNetCore.Identity;
 @using MyCookbook.Components;
 @using MyCookbook.Data
@@ -18,10 +18,10 @@
 @implements IDisposable
 
 <PageTitle>Recipe browser</PageTitle>
-<MudText Class="ma-2" Typo="Typo.h3">@Localizer["RecipeBrowser"]</MudText>
 
 <AuthorizeView>
     <Authorized>
+        <br />
         <MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
                   EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
@@ -33,6 +33,13 @@
                 <MudSpacer />
                 <MudTextField @bind-Value="_recipeSearch" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
             </ToolBarContent>
+            <ColGroup>
+                <col style="width:20px" />
+                <col />
+                <col />
+                <col />
+                <col />
+            </ColGroup>
             <HeaderContent>
                 <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.Name) : x.Name)">@Localizer["Name"]</MudTableSortLabel></MudTh>
                 <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Category)">@Localizer["Category"]</MudTableSortLabel></MudTh>
@@ -122,7 +129,7 @@
 
     private async Task OpenRecipe(Recipe recipe)
     {
-        NavigationManager.NavigateTo($"Recipeviewer/{recipe.Name}");
+        NavigationManager.NavigateTo($"Recipe/{recipe.Name}");
     }
 
     private void CommitEdit(KeyboardEventArgs e)
