@@ -50,7 +50,8 @@ namespace MyCookbook.Data.CookbookDatabase
                 Category = Category,
                 Duration = Duration,
                 Servings = Servings,
-                LastCooked = LastCooked
+                LastCooked = LastCooked,
+                Guid = Guid.NewGuid()
             };
         }
     }

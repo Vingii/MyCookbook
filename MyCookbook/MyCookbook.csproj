@@ -8,12 +8,11 @@
     <PackageProjectUrl>https://localhost:44390</PackageProjectUrl>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="wwwroot\Static\Dictionaries\Czech.json" />
-    <None Include="wwwroot\js\ClipboardCopy.js" />
-    <None Include="wwwroot\js\DarkMode.js" />
-    <None Include="wwwroot\js\LanguageSelector.js" />
-  </ItemGroup>
+<ItemGroup>
+    <None Include="wwwroot\**">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Communication.Email" Version="1.0.1" />
