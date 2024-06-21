@@ -19,7 +19,7 @@ public class EmailSender : IEmailSender
     {
         var response = await _client.SendAsync(
             WaitUntil.Completed,
-            senderAddress: "DoNotReply@4d843932-02f9-456e-8dda-0ba3e0bf8f31.azurecomm.net",
+            senderAddress: "DoNotReply@cookbookapp.xyz",
             recipientAddress: toEmail,
             subject: subject,
             htmlContent: message);
