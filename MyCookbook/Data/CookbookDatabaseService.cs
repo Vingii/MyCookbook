@@ -154,6 +154,8 @@ namespace MyCookbook.Data
 
         public async Task<bool> UpdateStepDescriptionAsync(Step step, string user)
         {
+            if (step.Description.Length > 10000) return false;
+
             var foundStep =
                 _context.Steps
                 .Where(x => x.Id == step.Id && x.UserName == user)
