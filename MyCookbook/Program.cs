@@ -23,8 +23,6 @@ namespace MyCookbook
             Log.Logger = BuildLogger(builder);
             builder.Host.UseSerilog(Log.Logger);
 
-            var config = builder.Configuration;
-
             try
             {
                 // Add services to the container.
@@ -42,15 +40,15 @@ namespace MyCookbook
                 var dictionary = new MemoryLanguageDictionary("Static/Dictionaries");
                 builder.Services.AddSingleton<ILanguageDictionary>(dictionary);
 
-                var cultureProvider = new CultureProvider("en");
+                var cultureProvider = new CultureProvider("en", builder.Configuration.GetSection("SupportedCultures").Get<string[]>() ?? new string[] { "en" });
                 builder.Services.AddLocalization(options => options.ResourcesPath = "LanguageResources");
                 builder.Services.AddScoped<LanguageNotifier>();
                 builder.Services.AddSingleton(cultureProvider);
                 builder.Services.AddScoped(typeof(IStringLocalizer<>), typeof(CookbookStringLocalizer<>));
                 builder.Services.Configure<RequestLocalizationOptions>(options =>
                 {
-                    options.AddSupportedCultures(new[] { "en", "cs" });
-                    options.AddSupportedUICultures(new[] { "en", "cs" });
+                    options.AddSupportedCultures(cultureProvider.SupportedCultures);
+                    options.AddSupportedUICultures(cultureProvider.SupportedCultures);
                     options.RequestCultureProviders = new List<IRequestCultureProvider>()
                     {
                         cultureProvider

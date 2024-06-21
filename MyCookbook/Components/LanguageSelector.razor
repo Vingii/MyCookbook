@@ -15,11 +15,7 @@
 </MudSelect>
 
 @code {
-    private Dictionary<string, string> Languages { get; } = new Dictionary<string, string>
-    {
-        { "en", "English" },
-        { "cs", "Čeština" }
-    };
+    private Dictionary<string, string> Languages { get; set; } = new();
 
     private MudSelect<string>? selector;
 
@@ -43,6 +39,7 @@
 
     protected override void OnInitialized()
     {
+        Languages = CultureProvider.SupportedLanguages;
         _culture = CultureProvider.SelectedLanguage;
     }
 
