@@ -1,0 +1,80 @@
+﻿@using MyCookbook.Components.Layout
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link href="MyCookbook.styles.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
+    <HeadOutlet @rendermode="@RenderModeForPage" />
+</head>
+<body>
+    <CascadingValue Value="IsDarkMode">
+        <Routes @rendermode="@RenderModeForPage" />
+    </CascadingValue>
+    <script src="_framework/blazor.server.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        window.WriteCookie = {
+
+            WriteCookie: function (name, value, days) {
+
+                var expires;
+                if (days) {
+                    var date = new Date();
+                    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                    expires = "; expires=" + date.toGMTString();
+                }
+                else {
+                    expires = "";
+                }
+                document.cookie = name + "=" + value + expires + "; path=/";
+            }
+        }
+        window.ReadCookie = {
+            ReadCookie: function (cname) {
+                var name = cname + "=";
+                var decodedCookie = decodeURIComponent(document.cookie);
+                var ca = decodedCookie.split(';');
+                for (var i = 0; i < ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                        c = c.substring(1);
+                    }
+                    if (c.indexOf(name) == 0) {
+                        return c.substring(name.length, c.length);
+                    }
+                }
+                return "";
+            }
+        }
+        navigatorLanguages = function () {
+            return Promise.resolve(navigator.languages);
+        };
+    </script>
+</body>
+</html>
+
+@code {
+    private bool IsDarkMode { get; set; }
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? RenderModeForPage => HttpContext.Request.Path.StartsWithSegments("/Account")
+        ? null
+        : InteractiveServer;
+
+    protected override void OnInitialized()
+    {
+        IsDarkMode = HttpContext.Request.Cookies.TryGetValue("DarkMode", out var darkModeStr) && bool.TryParse(darkModeStr, out var darkMode)
+        ? darkMode
+        : false;
+    }
+}

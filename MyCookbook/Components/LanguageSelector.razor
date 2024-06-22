@@ -7,7 +7,7 @@
 @inject LanguageNotifier LanguageNotifier
 @inject CultureProvider CultureProvider
 
-<MudSelect @ref="selector" T="string" Dense="true" Margin="Margin.Dense" @bind-Value="Culture" AnchorOrigin="Origin.BottomCenter">
+<MudSelect @ref="selector" T="string" Dense="true" Margin="Margin.Dense" @bind-Value="Culture" AnchorOrigin="Origin.BottomCenter" Disabled="@DisableInteractivity" >
     @foreach (var (culture, language) in Languages)
     {
         <MudSelectItem Value="@(culture)">@language</MudSelectItem>
@@ -29,6 +29,8 @@
             OnChangeLanguage();
         }
     }
+
+    private bool DisableInteractivity => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).StartsWith("Account");
 
     private Lazy<IJSObjectReference> LanguageSelectorModule = new();
 

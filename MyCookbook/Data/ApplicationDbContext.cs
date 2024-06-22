@@ -3,11 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MyCookbook.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
     }
 }

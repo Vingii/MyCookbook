@@ -4,10 +4,13 @@
 @inject ILogger<Feedback> Logger
 @inject IFeedbackProvider FeedbackProvider
 @inject IDialogService DialogService
+@inject NavigationManager NavigationManager
 
-<MudIconButton Icon="@Icons.Material.Filled.BugReport" Color="Color.Inherit" OnClick="@(async (e) => await OpenDialog())" />
+<MudIconButton Icon="@Icons.Material.Filled.BugReport" Color="Color.Inherit" OnClick="@(async (e) => await OpenDialog())" Disabled="@DisableInteractivity" />
 
 @code {
+    private bool DisableInteractivity => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).StartsWith("Account");
+
     private async Task OpenDialog()
     {
         try

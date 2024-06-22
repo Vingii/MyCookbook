@@ -1,0 +1,19 @@
+﻿@using MyCookbook.Data
+@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@inject IStringLocalizer<NavMenu> Localizer
+@inject LanguageNotifier LanguageNotifier
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inherits OwningComponentBase<CookbookDatabaseService>
+@implements IDisposable
+
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All">@Localizer["Dashboard"]</MudNavLink>
+    <MudNavLink Href="/Browser" Match="NavLinkMatch.Prefix">@Localizer["RecipeBrowser"]</MudNavLink>
+    <MudNavLink Href="/Random" Match="NavLinkMatch.Prefix">@Localizer["RandomRecipe"]</MudNavLink>
+</MudNavMenu>
+
+@code {
+    protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+}

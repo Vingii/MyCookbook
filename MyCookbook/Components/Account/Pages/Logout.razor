@@ -1,0 +1,26 @@
+﻿@page "/Account/Logout"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Identity
+@using MyCookbook.Data
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log out</PageTitle>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            await SignInManager.SignOutAsync();
+            RedirectManager.RedirectTo("/");
+        }
+    }
+}

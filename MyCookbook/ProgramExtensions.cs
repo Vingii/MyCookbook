@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
-using MyCookbook.Areas.Identity;
+using MyCookbook.Components.Account;
 using MyCookbook.Data;
 using MyCookbook.Services;
 
@@ -47,17 +48,36 @@ namespace MyCookbook
                     };
             });
         }
-        public static void AddAuth(this IServiceCollection services, ISecretsProvider secretsProvider)
+        public static void AddAuth(this IServiceCollection services, ISecretsProvider secretsProvider, bool isDev)
         {
-            services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
-            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-            services.AddAuthentication()
+            services.AddCascadingAuthenticationState();
+            services.AddScoped<IdentityUserAccessor>();
+            services.AddScoped<IdentityRedirectManager>();
+
+            services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+            services.AddIdentity<ApplicationUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddSignInManager()
+                .AddDefaultTokenProviders();
+
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+                })
                .AddGoogle(options =>
                {
                    options.ClientId = secretsProvider.GetSecret("Authentication:Google:ClientId");
                    options.ClientSecret = secretsProvider.GetSecret("Authentication:Google:ClientSecret");
-               });
+               })
+               .AddCookie("Cookies");
+
+            if (!isDev)
+            {
+                services.AddTransient<IEmailSender, EmailSender>();
+            }
+            services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
             services.Configure<IdentityOptions>(options =>
             {

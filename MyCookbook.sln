@@ -5,7 +5,7 @@ VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyCookbook", "MyCookbook\MyCookbook.csproj", "{CE81B4A9-A140-4959-B132-BC2D31758415}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LanguageDictionaryCleaner", "LanguageDictionaryCleaner\LanguageDictionaryCleaner.csproj", "{CDA2497E-7492-46B8-A244-8A96608995CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LanguageDictionaryCleaner", "LanguageDictionaryCleaner\LanguageDictionaryCleaner.csproj", "{CDA2497E-7492-46B8-A244-8A96608995CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

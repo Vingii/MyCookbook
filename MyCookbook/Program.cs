@@ -1,11 +1,6 @@
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Localization;
 using MudBlazor.Services;
-using MyCookbook.Areas.Identity;
+using MyCookbook.Components;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Services;
@@ -33,14 +28,15 @@ namespace MyCookbook
                 new DbHeartbeatProvider(connectionString).Start();
 
                 builder.Services.AddRazorPages();
-                builder.Services.AddServerSideBlazor();
+                builder.Services.AddRazorComponents()
+                    .AddInteractiveServerComponents();
                 builder.Services.AddMudServices();
 
                 var secretsProvider = builder.Services.AddSecretsProvider(builder);
                 builder.Services.AddFeedbackProvider(secretsProvider, config);
                 builder.Services.AddLanguageDictionary();
                 builder.Services.AddCultureLocalization(config);
-                builder.Services.AddAuth(secretsProvider);
+                builder.Services.AddAuth(secretsProvider, builder.Environment.IsDevelopment());
 
                 Log.Logger = BuildLogger(secretsProvider);
                 builder.Host.UseSerilog(Log.Logger);
@@ -49,11 +45,6 @@ namespace MyCookbook
 
                 builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-                if (!builder.Environment.IsDevelopment())
-                {
-                    builder.Services.AddTransient<IEmailSender, EmailSender>();
-                }
 
                 var app = builder.Build();
 
@@ -74,16 +65,19 @@ namespace MyCookbook
 
                 app.UseHttpsRedirection();
 
-                app.UseStaticFiles();
-
                 app.UseRouting();
+                app.UseAntiforgery();
+
+                app.UseStaticFiles();
 
                 app.UseAuthentication();
                 app.UseAuthorization();
 
-                app.MapControllers();
-                app.MapBlazorHub();
-                app.MapFallbackToPage("/_Host");
+                app.MapRazorComponents<App>()
+                    .AddInteractiveServerRenderMode();
+                app.MapBlazorHub().WithOrder(-1);
+
+                app.MapAdditionalIdentityEndpoints();
 
                 app.Run();
             }

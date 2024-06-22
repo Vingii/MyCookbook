@@ -1,0 +1,93 @@
+﻿@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inherits LayoutComponentBase
+
+<PageTitle>MyCookbook</PageTitle>
+
+<MudThemeProvider @bind-IsDarkMode="@IsDarkMode" @ref="@_mudThemeProvider" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" Disabled="@DisableInteractivity" />
+        My Cookbook
+        <MudSpacer />
+        <MudToolBar>
+            <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@IsDarkMode"
+                                    Icon="@Icons.Material.Filled.DarkMode" Title="Off"
+                                    ToggledIcon="@Icons.Material.Filled.LightMode" ToggledTitle="On" Disabled="@DisableInteractivity" />
+            <MyCookbook.Components.LanguageSelector />
+            <MyCookbook.Components.Feedback />
+            <LoginDisplay />
+        </MudToolBar>
+    </MudAppBar>
+    <MudDrawer @bind-Open="@_drawerOpen" >
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui">
+    <environment include="Staging,Production">
+        An error has occurred. This application may no longer respond until reloaded.
+    </environment>
+    <environment include="Development">
+        An unhandled exception has occurred. See browser dev tools for details.
+    </environment>
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private MudTheme _theme = new();
+    private MudThemeProvider? _mudThemeProvider;
+
+    private bool _isDarkMode = true;
+
+    private bool DisableInteractivity => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).StartsWith("Account");
+
+    [CascadingParameter]
+    public bool IsDarkMode
+    { 
+        get => _isDarkMode;
+        set
+        {
+            _isDarkMode = value;
+            DarkModeModule?.Value?.InvokeVoidAsync("addCookies", "DarkMode", value);
+        } 
+    }
+
+    bool _drawerOpen = true;
+
+    private Lazy<IJSObjectReference> DarkModeModule;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        DarkModeModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/DarkMode.js"));
+
+        var myCookie = await JSRuntime.InvokeAsync<string>("ReadCookie.ReadCookie", "DarkMode");
+
+        IsDarkMode = myCookie != null && bool.TryParse(myCookie, out var darkMode) ? darkMode : await _mudThemeProvider.GetSystemPreference();
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (DarkModeModule.IsValueCreated)
+        {
+            await DarkModeModule.Value.DisposeAsync();
+        }
+    }
+}
