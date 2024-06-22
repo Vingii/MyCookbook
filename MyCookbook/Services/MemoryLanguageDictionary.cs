@@ -18,6 +18,7 @@ namespace MyCookbook.Services
 
         public IEnumerable<string> WordInflections(string word)
         {
+            word = word.ToLowerInvariant();
             return Inflections.ContainsKey(word) ? Inflections[word] : new List<string> { word };
         }
 
@@ -40,7 +41,7 @@ namespace MyCookbook.Services
 
                     foreach (string inflection in word.Inflections.Where(x => !Inflections[word.Word].Contains(x)))
                     {
-                        Inflections[word.Word].Add(inflection);
+                        Inflections[word.Word].Add(inflection.ToLowerInvariant());
                     }
                 }
                 catch { }
