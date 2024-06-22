@@ -4,16 +4,23 @@ using Azure.Security.KeyVault.Secrets;
 
 namespace MyCookbook.Services
 {
-    public static class SecretsProvider
+    public class SecretsProvider : ISecretsProvider
     {
-        public static string GetSecret(this WebApplicationBuilder builder, string key)
+        private WebApplicationBuilder Builder { get; }
+
+        public SecretsProvider(WebApplicationBuilder builder)
         {
-            return builder.Environment.IsProduction()
-                ? GetAzureSecret(key)
-                : builder.Configuration[key];
+            Builder = builder;
         }
 
-        private static string GetAzureSecret(string key)
+        public string GetSecret(string key)
+        {
+            return Builder.Environment.IsProduction()
+                ? GetAzureSecret(key)
+                : Builder.Configuration[key];
+        }
+
+        private string GetAzureSecret(string key)
         {
             var options = new SecretClientOptions()
             {

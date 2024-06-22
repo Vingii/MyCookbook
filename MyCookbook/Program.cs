@@ -20,8 +20,7 @@ namespace MyCookbook
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            Log.Logger = BuildLogger(builder);
-            builder.Host.UseSerilog(Log.Logger);
+            var config = builder.Configuration;
 
             try
             {
@@ -37,44 +36,14 @@ namespace MyCookbook
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
 
-                var dictionary = new MemoryLanguageDictionary("Static/Dictionaries");
-                builder.Services.AddSingleton<ILanguageDictionary>(dictionary);
+                var secretsProvider = builder.Services.AddSecretsProvider(builder);
+                builder.Services.AddFeedbackProvider(secretsProvider, config);
+                builder.Services.AddLanguageDictionary();
+                builder.Services.AddCultureLocalization(config);
+                builder.Services.AddAuth(secretsProvider);
 
-                var cultureProvider = new CultureProvider("en", builder.Configuration.GetSection("SupportedCultures").Get<string[]>() ?? new string[] { "en" });
-                builder.Services.AddLocalization(options => options.ResourcesPath = "LanguageResources");
-                builder.Services.AddScoped<LanguageNotifier>();
-                builder.Services.AddSingleton(cultureProvider);
-                builder.Services.AddScoped(typeof(IStringLocalizer<>), typeof(CookbookStringLocalizer<>));
-                builder.Services.Configure<RequestLocalizationOptions>(options =>
-                {
-                    options.AddSupportedCultures(cultureProvider.SupportedCultures);
-                    options.AddSupportedUICultures(cultureProvider.SupportedCultures);
-                    options.RequestCultureProviders = new List<IRequestCultureProvider>()
-                    {
-                        cultureProvider
-                    };
-                });
-
-                builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
-                builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                    .AddEntityFrameworkStores<ApplicationDbContext>();
-                builder.Services.AddAuthentication()
-                   .AddGoogle(options =>
-                   {
-                       options.ClientId = builder.GetSecret("Authentication:Google:ClientId");
-                       options.ClientSecret = builder.GetSecret("Authentication:Google:ClientSecret");
-                   });
-
-                builder.Services.Configure<IdentityOptions>(options =>
-                {
-                    // Default Password settings.
-                    options.Password.RequireDigit = false;
-                    options.Password.RequireLowercase = false;
-                    options.Password.RequireNonAlphanumeric = false;
-                    options.Password.RequireUppercase = false;
-                    options.Password.RequiredLength = 8;
-                    options.Password.RequiredUniqueChars = 1;
-                });
+                Log.Logger = BuildLogger(secretsProvider);
+                builder.Host.UseSerilog(Log.Logger);
 
                 builder.Services.AddScoped<CookbookDatabaseService>();
 
@@ -128,7 +97,7 @@ namespace MyCookbook
             }
         }
 
-        private static Serilog.ILogger BuildLogger(WebApplicationBuilder builder)
+        private static Serilog.ILogger BuildLogger(ISecretsProvider secretsProvider)
         {
             var appSettingsConfiguration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -139,7 +108,7 @@ namespace MyCookbook
             var grafanaSections = appSettingsConfiguration.GetSection("Serilog").GetSection("WriteTo")
                 .GetChildren().Where(x => x.GetSection("Name").Value == "GrafanaLoki");
 
-            var credentials = CreateGrafanaCredentials(builder);
+            var credentials = CreateGrafanaCredentials(secretsProvider);
 
             var grafanaLoginSettings = new Dictionary<string, string>();
             foreach (var section in grafanaSections)
@@ -163,9 +132,9 @@ namespace MyCookbook
             return logger;
         }
 
-        private static LokiCredentials CreateGrafanaCredentials(WebApplicationBuilder builder)
+        private static LokiCredentials CreateGrafanaCredentials(ISecretsProvider secretsProvider)
         {
-            var grafanaToken = builder.GetSecret("GrafanaKey");
+            var grafanaToken = secretsProvider.GetSecret("GrafanaKey");
             return new LokiCredentials { Login = "912173", Password = grafanaToken };
         }
     }

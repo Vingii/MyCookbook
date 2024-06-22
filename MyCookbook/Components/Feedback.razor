@@ -1,0 +1,29 @@
+﻿@using Microsoft.AspNetCore.Localization;
+@using MyCookbook.Services;
+@using System.Web;
+@inject ILogger<Feedback> Logger
+@inject IFeedbackProvider FeedbackProvider
+@inject IDialogService DialogService
+
+<MudIconButton Icon="@Icons.Material.Filled.BugReport" Color="Color.Inherit" OnClick="@(async (e) => await OpenDialog())" />
+
+@code {
+    private async Task OpenDialog()
+    {
+        try
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var dialog = await DialogService.ShowAsync<FeedbackDialog>("New recipe", options);
+            var dialogResult = await dialog.Result;
+
+            if (!dialogResult.Canceled)
+            {
+                await FeedbackProvider.ProvideFeedback(dialogResult.Data.ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to provide feedback.");
+        }
+    }
+}

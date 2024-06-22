@@ -1,0 +1,37 @@
+﻿@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@inject IStringLocalizer<FeedbackDialog> Localizer
+@inject LanguageNotifier LanguageNotifier
+@implements IDisposable
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @Localizer["Feedback"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText>@Localizer["FeedbackPrompt"]</MudText>
+        <MudTextField @bind-Value="Feedback" Variant="Variant.Text"></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">@Localizer["Send"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+
+    private string Feedback { get; set; }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(Feedback));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+}
