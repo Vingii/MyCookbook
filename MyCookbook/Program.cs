@@ -30,6 +30,7 @@ namespace MyCookbook
                 builder.Services.AddRazorPages();
                 builder.Services.AddRazorComponents()
                     .AddInteractiveServerComponents();
+                builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
 
                 var secretsProvider = builder.Services.AddSecretsProvider(builder);
@@ -76,6 +77,9 @@ namespace MyCookbook
                 app.MapRazorComponents<App>()
                     .AddInteractiveServerRenderMode();
                 app.MapBlazorHub().WithOrder(-1);
+
+                app.MapControllers();
+                app.MapMethods("/", [HttpMethods.Head], () => Results.StatusCode(200));
 
                 app.MapAdditionalIdentityEndpoints();
 
