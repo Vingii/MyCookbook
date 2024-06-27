@@ -16,7 +16,7 @@
                 ?.Where(x => "declension".Equals(x.source) && !DisallowedForms.Contains(x.form))
                 .Select(x => x.form)
                 .ToList() 
-                ?? new List<string>()
+                ?? new List<string>() { word.word }
             };
         }
     }

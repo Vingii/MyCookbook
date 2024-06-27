@@ -7,39 +7,36 @@ namespace LanguageDictionaryCleaner
         static void Main(string[] args)
         {
             string inputFilePath;
-            if (args.Length == 0)
+
+            if (args.Length != 0)
+            {
+                inputFilePath = args[0];
+
+                if (!File.Exists(inputFilePath))
+                {
+                    inputFilePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "\\" + inputFilePath;
+                }
+
+                DictionaryCleaner.ParseFile(inputFilePath);
+                return;
+            }
+
+            while (true)
             {
                 Console.WriteLine("Input file path:");
                 inputFilePath = Console.ReadLine() ?? "";
-            }
-            else
-            {
-                inputFilePath = args[0];
-            }
 
-            var outputPath = Path.GetDirectoryName(inputFilePath) + "\\" + Path.GetFileNameWithoutExtension(inputFilePath) + "_output" + Path.GetExtension(inputFilePath);
-
-            using var reader = new StreamReader(inputFilePath);
-            using var writer = new StreamWriter(outputPath);
-
-            string? line = reader.ReadLine();
-            while (line != null)
-            {
-                try
+                if (string.IsNullOrEmpty(inputFilePath))
                 {
-                    var wordDetails = JsonConvert.DeserializeObject<WordDetails>(line);
-                    var wordInflections = WordTransformer.GetInflections(wordDetails ?? new WordDetails());
-                    if (wordInflections.Inflections.Count > 0)
-                    {
-                        writer.WriteLine(JsonConvert.SerializeObject(wordInflections));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error parsing line: {ex}");
+                    return;
                 }
 
-                line = reader.ReadLine();
+                if (!File.Exists(inputFilePath))
+                {
+                    inputFilePath = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName + "\\" + inputFilePath;
+                }
+
+                DictionaryCleaner.ParseFile(inputFilePath);
             }
         }
     }

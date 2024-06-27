@@ -6,7 +6,7 @@ namespace MyCookbook.Services
 {
     public class MemoryLanguageDictionary : ILanguageDictionary
     {
-        private Dictionary<string, Collection<string>> Inflections { get; } = new Dictionary<string, Collection<string>>();
+        private Dictionary<string, List<Collection<string>>> Inflections { get; } = new Dictionary<string, List<Collection<string>>>();
 
         public MemoryLanguageDictionary(string directory)
         { 
@@ -19,7 +19,7 @@ namespace MyCookbook.Services
         public IEnumerable<string> WordInflections(string word)
         {
             word = word.ToLowerInvariant();
-            return Inflections.ContainsKey(word) ? Inflections[word] : new List<string> { word };
+            return Inflections.ContainsKey(word) ? Inflections[word].SelectMany(x => x) : new List<string>();
         }
 
         private void LoadDictionary(string filePath)
@@ -34,14 +34,14 @@ namespace MyCookbook.Services
                     var word = JsonConvert.DeserializeObject<WordInflections>(line);
                     if (word?.Word == null) continue;
 
-                    if (!Inflections.ContainsKey(word.Word))
-                    {
-                        Inflections[word.Word] = new Collection<string>();
-                    }
+                    word.Inflections = word.Inflections.Select(x => x.ToLowerInvariant()).OrderByDescending(x => x.Length).ToList();
 
-                    foreach (string inflection in word.Inflections.Where(x => !Inflections[word.Word].Contains(x)))
+                    var collection = new Collection<string>(word.Inflections);
+
+                    foreach (var inflection in word.Inflections)
                     {
-                        Inflections[word.Word].Add(inflection.ToLowerInvariant());
+                        if (!Inflections.ContainsKey(inflection)) Inflections[inflection] = new List<Collection<string>>();
+                        Inflections[inflection].Add(collection);
                     }
                 }
                 catch { }
