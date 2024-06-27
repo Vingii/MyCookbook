@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Linq;
 
 namespace LanguageDictionaryCleaner
 {
@@ -41,6 +42,11 @@ namespace LanguageDictionaryCleaner
                 inflectionGroups[baseWord].Add(word);
             }
 
+            foreach (var inflectionGroup in inflectionGroups)
+            {
+                if (!inflectionGroup.Value.Contains(inflectionGroup.Key)) inflectionGroup.Value.Add(inflectionGroup.Key);
+            }
+
             using var writer = new StreamWriter(outputPath);
             foreach (var (word, inflections) in inflectionGroups
                 .Where(x => x.Key.Length > 2 && x.Key.Length < 20 && !x.Key.Contains(" "))
@@ -50,7 +56,6 @@ namespace LanguageDictionaryCleaner
                 {
                     Word = word,
                     Inflections = inflections
-
                 }));
             }
         }

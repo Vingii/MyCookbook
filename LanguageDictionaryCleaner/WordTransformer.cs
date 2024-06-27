@@ -13,7 +13,7 @@
             {
                 Word = word.word,
                 Inflections = word.forms
-                ?.Where(x => "declension".Equals(x.source) && !DisallowedForms.Contains(x.form))
+                ?.Where(x => ("declension".Equals(x.source) || (x.tags != null && x.tags.Contains("plural"))) && !DisallowedForms.Contains(x.form))
                 .Select(x => x.form)
                 .ToList() 
                 ?? new List<string>() { word.word }
