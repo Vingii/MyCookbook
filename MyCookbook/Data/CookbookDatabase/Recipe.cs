@@ -20,7 +20,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public int? Duration { get; set; }
         public int Servings { get; set; }
         public DateTime? LastCooked { get; set; }
-        public Guid Guid { get; set; }
+        public Guid Guid { get; set; } = Guid.NewGuid();
 
         public virtual ICollection<Ingredient> Ingredients { get; set; }
         public virtual ICollection<Step> Steps { get; set; }
@@ -50,8 +50,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 Category = Category,
                 Duration = Duration,
                 Servings = Servings,
-                LastCooked = LastCooked,
-                Guid = Guid.NewGuid()
+                LastCooked = LastCooked
             };
         }
     }
