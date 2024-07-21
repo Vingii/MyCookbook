@@ -24,7 +24,7 @@
 
 <AuthorizeView>
     <Authorized>
-        <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+        <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
             <HeaderContent>
                 <MudTh>@Localizer["Ready"]</MudTh>

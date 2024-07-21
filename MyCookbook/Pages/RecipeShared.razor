@@ -21,7 +21,7 @@
 </div>
 <hr />
 
-<MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.Sm" 
+<MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" 
         Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true">
     <ColGroup>
         <col style="width:20px"/>

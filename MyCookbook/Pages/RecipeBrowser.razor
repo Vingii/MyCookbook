@@ -22,7 +22,7 @@
 <AuthorizeView>
     <Authorized>
         <br />
-        <MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+        <MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
                   EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
                   GroupBy="@(_groupByCategory ? _groupDefinition : null)" GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
