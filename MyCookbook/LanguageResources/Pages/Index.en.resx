@@ -120,6 +120,12 @@
   <data name="Dashboard" xml:space="preserve">
     <value>Dashboard</value>
   </data>
+  <data name="Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="LongestUncooked" xml:space="preserve">
+    <value>Long uncooked</value>
+  </data>
   <data name="Welcome" xml:space="preserve">
     <value>Welcome!</value>
   </data>

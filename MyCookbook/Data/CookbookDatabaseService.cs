@@ -36,6 +36,19 @@ namespace MyCookbook.Data
         {
             return await _context.Recipes
                  .Where(x => x.UserName == user)
+                 .Include(x => x.FavoriteRecipes)
+                 .AsNoTracking().ToListAsync();
+        }
+
+        public async Task<List<Recipe>> GetFavoriteRecipesAsync(string user)
+        {
+            return await _context.FavoriteRecipes
+                 .Where(x => x.UserName == user)
+                 .Join(_context.Recipes,
+                 x => x.RecipeId,
+                 x => x.Id,
+                 (favorite, recipe) => recipe)
+                 .Include(x => x.FavoriteRecipes)
                  .AsNoTracking().ToListAsync();
         }
 
@@ -142,6 +155,33 @@ namespace MyCookbook.Data
                 }
             }
             return highestIndex;
+        }
+
+        public async Task<FavoriteRecipe> AddFavoriteAsync(Recipe recipe, string user)
+        {
+            var favoriteRecipe = new FavoriteRecipe
+            {
+                UserName = user,
+                RecipeId = recipe.Id
+            };
+            await _context.FavoriteRecipes.AddAsync(favoriteRecipe);
+            await _context.SaveChangesAsync();
+            return favoriteRecipe;
+        }
+
+        public async Task<bool> DeleteFavoriteAsync(int recipeId, string user)
+        {
+            var foundFavorite = await
+                _context.FavoriteRecipes
+                .Where(x => x.RecipeId == recipeId && x.UserName == user)
+                .FirstOrDefaultAsync();
+
+            if (foundFavorite == null) return false;
+
+            _context.FavoriteRecipes.Remove(foundFavorite);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<Step> CreateStepAsync(Step step, string user)

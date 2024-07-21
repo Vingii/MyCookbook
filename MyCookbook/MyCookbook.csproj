@@ -41,6 +41,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="Components\RecipeTable.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <Content Update="Components\RecipeShareDialog.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

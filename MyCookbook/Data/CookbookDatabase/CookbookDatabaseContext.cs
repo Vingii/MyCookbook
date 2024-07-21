@@ -19,6 +19,7 @@ namespace MyCookbook.Data.CookbookDatabase
         }
 
         public virtual DbSet<Ingredient> Ingredients { get; set; }
+        public virtual DbSet<FavoriteRecipe> FavoriteRecipes { get; set; }
         public virtual DbSet<Recipe> Recipes { get; set; }
         public virtual DbSet<Step> Steps { get; set; }
 
@@ -74,6 +75,18 @@ namespace MyCookbook.Data.CookbookDatabase
                     .HasForeignKey(d => d.RecipeId)
                     .OnDelete(DeleteBehavior.ClientCascade)
                     .HasConstraintName("FK__Steps__RecipeId__5BE2A6F2");
+            });
+
+            modelBuilder.Entity<FavoriteRecipe>(entity =>
+            {
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.HasOne(d => d.Recipe)
+                    .WithMany(p => p.FavoriteRecipes)
+                    .HasForeignKey(d => d.RecipeId)
+                    .OnDelete(DeleteBehavior.ClientCascade);
             });
 
             OnModelCreatingPartial(modelBuilder);

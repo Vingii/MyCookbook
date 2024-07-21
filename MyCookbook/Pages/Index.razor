@@ -1,4 +1,6 @@
-﻿@using Microsoft.Extensions.Localization;
+﻿@using System.Security.Claims;
+@using Microsoft.Extensions.Localization;
+@using MyCookbook.Data
 @using MyCookbook.Services;
 @inject IStringLocalizer<Index> Localizer
 @inject LanguageNotifier LanguageNotifier
@@ -7,12 +9,54 @@
 
 <PageTitle>My Cookbook</PageTitle>
 
-<br />
 <h1>@Localizer["Dashboard"]</h1>
-
-@Localizer["Welcome"]
+<hr />
+<AuthorizeView>
+    <Authorized>
+        <RecipeTable @ref="_favoriteRecipeTable" UserIdentityName="@_userIdentityName"
+            Editable="false" TableName="@Localizer["Favorites"]"
+            RecipeGetter="@(async() => await @_favoriteRecipeTable.DbService.GetFavoriteRecipesAsync(_userIdentityName))"></RecipeTable>
+        <hr />
+        <RecipeTable @ref="_longUncookedRecipeTable" UserIdentityName="@_userIdentityName"
+            Editable="false" TableName="@Localizer["LongestUncooked"]"
+            RecipeGetter="@(async() => (await @_longUncookedRecipeTable.DbService.GetRecipesAsync(_userIdentityName)).OrderBy(x => x.LastCooked).Take(10))"></RecipeTable>
+    </Authorized>
+    <NotAuthorized>
+        <p>You're not signed in.</p>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
-    protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+
+    private RecipeTable _favoriteRecipeTable;
+    private RecipeTable _longUncookedRecipeTable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LanguageNotifier.SubscribeLanguageChange(this);
+
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null)
+            {
+                _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            }
+        }
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _favoriteRecipeTable.Load();
+            _longUncookedRecipeTable.Load();
+        }
+    }
+
     public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
 }

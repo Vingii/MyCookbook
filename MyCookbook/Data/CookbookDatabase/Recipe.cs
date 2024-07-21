@@ -24,6 +24,7 @@ namespace MyCookbook.Data.CookbookDatabase
 
         public virtual ICollection<Ingredient> Ingredients { get; set; }
         public virtual ICollection<Step> Steps { get; set; }
+        public virtual ICollection<FavoriteRecipe> FavoriteRecipes { get; set; }
 
         [NotMapped]
         public string DurationText
@@ -41,7 +42,6 @@ namespace MyCookbook.Data.CookbookDatabase
                 Duration = DateTimeUtils.AsMinutes(value);
             }
         }
-
         public Recipe Clone()
         {
             return new Recipe()
@@ -52,6 +52,11 @@ namespace MyCookbook.Data.CookbookDatabase
                 Servings = Servings,
                 LastCooked = LastCooked
             };
+        }
+
+        public bool IsFavorite(string userName)
+        {
+            return FavoriteRecipes.Any(x => x.UserName == userName);
         }
     }
 }

@@ -1,0 +1,215 @@
+﻿@using Microsoft.AspNetCore.Localization;
+@using Microsoft.Extensions.Localization
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@using MyCookbook.Services;
+@using System.Globalization;
+@using System.Web;
+@using MyCookbook.Utils
+@inject IStringLocalizer<RecipeTable> Localizer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject ILogger<RecipeTable> Logger
+@inject IDialogService DialogService
+@inject LanguageNotifier LanguageNotifier
+@inject CultureProvider CultureProvider
+@inherits OwningComponentBase<CookbookDatabaseService>
+
+<MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+          RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
+          EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
+          GroupBy="@(_groupByCategory ? _groupDefinition : null)" GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">@TableName</MudText>
+        <MudSpacer />
+        <MudCheckBox @bind-Checked="@_groupByCategory" Color="Color.Primary" Size="Size.Small">@Localizer["Group"]</MudCheckBox>
+        <MudSpacer />
+        <MudTextField @bind-Value="_recipeSearch" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.Name) : x.Name)">@Localizer["Name"]</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Category)">@Localizer["Category"]</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.Duration) : x.Duration ?? 0)">@Localizer["Duration"]</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.LastCooked) : x.LastCooked ?? DateTime.MinValue)">@Localizer["Cooked"]</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <GroupHeaderTemplate Context="group">
+        <MudTh Class="mud-table-cell-custom-group" colspan="5">
+            @($"{Localizer["Category"]}: {(string.IsNullOrEmpty(group.Key?.ToString()) ? Localizer["Uncategorized"] : group.Key)}")
+        </MudTh>
+    </GroupHeaderTemplate>
+    <RowTemplate Context="recipe">
+        <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
+        <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Category</MudTd>
+        <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
+        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", CultureProvider.SelectedCulture) ?? @Localizer["Never"])</MudTd>
+        <MudTd Style="text-align:right">
+            @if (Editable)
+            {
+                <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async () => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+            }
+            <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async() => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
+            <MudIcon Class="ma-0 cursor-pointer" Icon="@(recipe.IsFavorite(UserIdentityName) ? Icons.Material.Outlined.Star : Icons.Material.Outlined.StarBorder)"
+                @onclick="@(async() => await ToggleFavorite(recipe))" Size="Size.Small"></MudIcon>
+        </MudTd>
+    </RowTemplate>
+    <RowEditingTemplate Context="recipe">
+        <MudTd DataLabel="@Localizer["Name"]">
+            <MudTextField @bind-Value="@recipe.Name" OnKeyPress="CommitEdit" />
+        </MudTd>
+        <MudTd DataLabel="@Localizer["Category"]">
+            <MudTextField @bind-Value="@recipe.Category" OnKeyPress="CommitEdit" />
+        </MudTd>
+        <MudTd DataLabel="@Localizer["Duration"]">
+            <MudTextField @bind-Value="@recipe.DurationText" OnKeyPress="CommitEdit" />
+        </MudTd>
+    </RowEditingTemplate>
+    <EditButtonContent Context="button">
+        @if (Editable)
+        {
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+        }
+    </EditButtonContent>
+    <PagerContent>
+        <MudTablePager RowsPerPageString="@Localizer["RowsPerPage"]" InfoFormat="@($"{{first_item}}-{{last_item}} {Localizer["of"]} {{all_items}}")" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    [Parameter] public string UserIdentityName { get; set; }
+    [Parameter] public bool Editable { get; set; }
+    [Parameter] public string TableName { get; set; }
+    [Parameter] public Func<Task<IEnumerable<Recipe>>> RecipeGetter { get; set; }
+
+    public CookbookDatabaseService DbService => Service;
+
+    private bool _loading = true;
+    private bool _groupByCategory;
+    private string? _recipeSearch;
+
+    private TableGroupDefinition<Recipe> _groupDefinition = new()
+        {
+            Indentation = false,
+            Expandable = true,
+            IsInitiallyExpanded = false,
+            Selector = (e) => e.Category
+        };
+
+    private List<Recipe> _recipes = new List<Recipe>();
+
+    private MudTable<Recipe> _tableRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LanguageNotifier.SubscribeLanguageChange(this);
+    }
+
+    public async void Load()
+    {
+        if (!_loading) return;
+        _loading = false;
+        await RefreshRecipes();
+    }
+
+    private async Task OpenRecipe(Recipe recipe)
+    {
+        NavigationManager.NavigateTo($"Recipe/{recipe.Name}");
+    }
+
+    private void CommitEdit(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _tableRef.SetEditingItem(null);
+        }
+    }
+
+    private void CommitTableEdit(object element)
+    {
+        var recipe = (Recipe)element;
+        var result = Task.Run(() => @Service.UpdateRecipeAsync(recipe, UserIdentityName)).Result;
+    }
+
+    private async Task DeleteRecipe(Recipe recipe)
+    {
+        try
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters<ConfirmationDialog>();
+            parameters.Add(x => x.Action, Localizer["DeleteRecipe"]);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>(Localizer["DeleteRecipe"].Value.CapitalizeFirst(), parameters, options);
+            var dialogResult = await dialog.Result;
+
+            if (!dialogResult.Canceled)
+            {
+                var createResult = await @Service.DeleteRecipeAsync(recipe, UserIdentityName);
+                await RefreshRecipes();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to create recipe.");
+        }
+    }
+
+    private async Task CloneRecipe(Recipe recipe)
+    {
+        var result = await @Service.CloneRecipeAsync(recipe, _recipes.Select(x => x.Name), UserIdentityName);
+        await RefreshRecipes();
+    }
+
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        if (recipe.IsFavorite(UserIdentityName))
+        {
+            await Service.DeleteFavoriteAsync(recipe.Id, UserIdentityName);
+        }
+        else
+        {
+            await Service.AddFavoriteAsync(recipe, UserIdentityName);
+        }
+        await RefreshRecipes();
+    }
+
+    public async Task RefreshRecipes()
+    {
+        _recipes = (await RecipeGetter()).ToList();
+        StateHasChanged();
+    }
+
+    private async Task AddRecipe()
+    {
+        try
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters<NewEntryDialog>();
+            parameters.Add(x => x.EntryType, Localizer["recipe"]);
+            var dialog = await DialogService.ShowAsync<NewEntryDialog>("New recipe", parameters, options);
+            var dialogResult = await dialog.Result;
+
+            if (!dialogResult.Canceled)
+            {
+                var recipeName = dialogResult.Data.ToString();
+                var recipe = new Recipe { Name = recipeName };
+                var createResult = await @Service.CreateRecipeAsync(recipe, UserIdentityName);
+                await RefreshRecipes();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to create recipe.");
+        }
+    }
+
+    private bool Filter(Recipe recipe)
+    {
+        if (string.IsNullOrWhiteSpace(_recipeSearch))
+            return true;
+        if (recipe.Name != null && recipe.Name.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (recipe.Category != null && recipe.Category.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+}
