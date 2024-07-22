@@ -75,7 +75,7 @@
     {
         if (!firstRender) return;
 
-        DarkModeModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/DarkMode.js"));
+        DarkModeModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/Cookies.js"));
 
         var myCookie = await JSRuntime.InvokeAsync<string>("ReadCookie.ReadCookie", "DarkMode");
 

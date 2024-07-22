@@ -87,9 +87,5 @@
         }
     }
 
-    public void Dispose()
-    {
-        LanguageNotifier.UnsubscribeLanguageChange(this);
-        _recipeTable?.Dispose();
-    }
+    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
 }

@@ -18,7 +18,7 @@
             RecipeGetter="@(async() => await @_favoriteRecipeTable.DbService.GetFavoriteRecipesAsync(_userIdentityName))"></RecipeTable>
         <br />
         <RecipeTable @ref="_longUncookedRecipeTable" UserIdentityName="@_userIdentityName"
-            Editable="false" TableName="@Localizer["LongestUncooked"]"
+            Editable="false" Pagination="false" TableName="@Localizer["LongestUncooked"]"
             RecipeGetter="@(async() => (await @_longUncookedRecipeTable.DbService.GetRecipesAsync(_userIdentityName)).OrderBy(x => x.LastCooked).Take(10))"></RecipeTable>
     </Authorized>
     <NotAuthorized>

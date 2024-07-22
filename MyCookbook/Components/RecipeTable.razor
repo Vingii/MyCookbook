@@ -13,11 +13,13 @@
 @inject IDialogService DialogService
 @inject LanguageNotifier LanguageNotifier
 @inject CultureProvider CultureProvider
+@implements IDisposable
 @inherits OwningComponentBase<CookbookDatabaseService>
 
 <MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
           RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
           EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
+          RowsPerPage="@RowsPerPage" RowsPerPageChanged="rows => RowsPerPage = rows"
           GroupBy="@(_groupByCategory ? _groupDefinition : null)" GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
     <ToolBarContent>
         <MudText Typo="Typo.h6">@TableName</MudText>
@@ -70,15 +72,33 @@
         }
     </EditButtonContent>
     <PagerContent>
-        <MudTablePager RowsPerPageString="@Localizer["RowsPerPage"]" InfoFormat="@($"{{first_item}}-{{last_item}} {Localizer["of"]} {{all_items}}")" />
+        @if (Pagination)
+        {
+            <MudTablePager RowsPerPageString="@Localizer["RowsPerPage"]" InfoFormat="@($"{{first_item}}-{{last_item}} {Localizer["of"]} {{all_items}}")" />
+        }
     </PagerContent>
 </MudTable>
 
 @code {
     [Parameter] public string UserIdentityName { get; set; }
     [Parameter] public bool Editable { get; set; }
+    [Parameter] public bool Pagination { get; set; } = true;
     [Parameter] public string TableName { get; set; }
     [Parameter] public Func<Task<IEnumerable<Recipe>>> RecipeGetter { get; set; }
+
+    private int _rowsPerPage = 10;
+
+    public int RowsPerPage
+    {
+        get => _rowsPerPage;
+        set
+        {
+            _rowsPerPage = value;
+            CookieModule?.Value?.InvokeVoidAsync("addCookies", "RowsPerPage", value);
+        }
+    }
+
+    private Lazy<IJSObjectReference> CookieModule;
 
     public CookbookDatabaseService DbService => Service;
 
@@ -101,6 +121,18 @@
     protected override async Task OnInitializedAsync()
     {
         LanguageNotifier.SubscribeLanguageChange(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        CookieModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/Cookies.js"));
+
+        var myCookie = await JSRuntime.InvokeAsync<string>("ReadCookie.ReadCookie", "RowsPerPage");
+
+        RowsPerPage = myCookie != null && int.TryParse(myCookie, out var rowsPerPage) ? rowsPerPage : 10;
+        StateHasChanged();
     }
 
     public async void Load()
@@ -211,5 +243,12 @@
         return false;
     }
 
-    public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+    public async ValueTask DisposeAsync()
+    {
+        LanguageNotifier.UnsubscribeLanguageChange(this);
+        if (CookieModule != null && CookieModule.IsValueCreated)
+        {
+            await CookieModule.Value.DisposeAsync();
+        }
+    }
 }

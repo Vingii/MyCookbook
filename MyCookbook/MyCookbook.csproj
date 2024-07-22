@@ -15,6 +15,10 @@
 </ItemGroup>
 
 <ItemGroup>
+  <Content Remove="wwwroot\js\Cookies.js" />
+</ItemGroup>
+
+<ItemGroup>
   <None Remove="wwwroot\app.css" />
 </ItemGroup>
 
@@ -47,5 +51,8 @@
     <Content Update="Components\RecipeShareDialog.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+    <None Update="wwwroot\js\Cookies.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

@@ -36,7 +36,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        LanguageSelectorModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/LanguageSelector.js"));
+        LanguageSelectorModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/Cookies.js"));
     }
 
     protected override void OnInitialized()
