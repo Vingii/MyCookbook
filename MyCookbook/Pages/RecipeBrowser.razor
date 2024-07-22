@@ -55,6 +55,14 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _recipeTable.Load();
+        }
+    }
+
     private async Task AddRecipe()
     {
         try

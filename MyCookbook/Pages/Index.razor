@@ -16,7 +16,7 @@
         <RecipeTable @ref="_favoriteRecipeTable" UserIdentityName="@_userIdentityName"
             Editable="false" TableName="@Localizer["Favorites"]"
             RecipeGetter="@(async() => await @_favoriteRecipeTable.DbService.GetFavoriteRecipesAsync(_userIdentityName))"></RecipeTable>
-        <hr />
+        <br />
         <RecipeTable @ref="_longUncookedRecipeTable" UserIdentityName="@_userIdentityName"
             Editable="false" TableName="@Localizer["LongestUncooked"]"
             RecipeGetter="@(async() => (await @_longUncookedRecipeTable.DbService.GetRecipesAsync(_userIdentityName)).OrderBy(x => x.LastCooked).Take(10))"></RecipeTable>
@@ -46,7 +46,6 @@
                 _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
             }
         }
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -21,6 +21,10 @@
 </div>
 <hr />
 
+<MudText Class="ma-2">@(Localizer["Servings"]): @_recipe.Servings</MudText>
+
+<br/>
+
 <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" 
         Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true">
     <ColGroup>

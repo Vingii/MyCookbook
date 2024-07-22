@@ -138,6 +138,9 @@
   <data name="Ready" xml:space="preserve">
     <value>Ready</value>
   </data>
+  <data name="Servings" xml:space="preserve">
+    <value>Servings</value>
+  </data>
   <data name="Share" xml:space="preserve">
     <value>Share</value>
   </data>

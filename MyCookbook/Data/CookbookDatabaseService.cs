@@ -72,6 +72,7 @@ namespace MyCookbook.Data
             foundRecipe.Name = recipe.Name;
             foundRecipe.Category = recipe.Category;
             foundRecipe.Duration = recipe.Duration;
+            foundRecipe.Servings = recipe.Servings;
             await _context.SaveChangesAsync();
 
             return true;

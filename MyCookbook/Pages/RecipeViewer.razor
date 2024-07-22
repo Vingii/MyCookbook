@@ -22,6 +22,12 @@
 </div>
 <hr />
 
+<MudSlider @bind-Value="Servings" Min="1" Max="10" TickMarks="true" Color="Color.Info">
+    @Localizer["Servings"]: @_recipe.Servings
+</MudSlider>
+
+<br />
+
 <AuthorizeView>
     <Authorized>
         <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
@@ -135,6 +141,36 @@
     private Dictionary<int, bool> EditMode = new Dictionary<int, bool>();
     private Dictionary<int, bool> StepDone = new Dictionary<int, bool>();
     private Dictionary<int, bool> IngredientDone = new Dictionary<int, bool>();
+
+    private int Servings
+    {
+        get
+        {
+            return _recipe.Servings;
+        }
+        set
+        {
+            if (value == _recipe.Servings) return;
+            _recipe.Servings = value;
+            cts.Cancel();
+            cts = new();
+            Task.Run(() => UpdateRecipeDelayed(cts.Token));
+        }
+    }
+
+    CancellationTokenSource cts = new();
+
+    private async void BuscaActualizaciones()
+    {
+        await Task.Run(() => UpdateRecipeDelayed(cts.Token));
+    }
+
+    private void UpdateRecipeDelayed(CancellationToken token)
+    {
+        Thread.Sleep(1000);
+        if (token.IsCancellationRequested) return;
+        Service.UpdateRecipeAsync(_recipe, _userIdentityName);
+    }
 
     protected override async Task OnInitializedAsync()
     {
