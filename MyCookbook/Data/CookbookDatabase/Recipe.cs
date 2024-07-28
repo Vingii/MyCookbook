@@ -56,7 +56,7 @@ namespace MyCookbook.Data.CookbookDatabase
 
         public bool IsFavorite(string userName)
         {
-            return FavoriteRecipes.Any(x => x.UserName == userName);
+            return FavoriteRecipes != null && FavoriteRecipes.Any(x => x.UserName == userName);
         }
     }
 }

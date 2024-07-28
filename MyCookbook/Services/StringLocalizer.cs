@@ -10,13 +10,15 @@ namespace MyCookbook.Services
         public LocalizedString this[string name] => FindLocalizedString(name);
         public LocalizedString this[string name, params object[] arguments] => FindLocalizedString(name, arguments);
 
+        private readonly ILogger _logger;
         private readonly IOptions<LocalizationOptions> _localizationOptions;
         private readonly CultureProvider _cultureProvider;
 
-        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider)
+        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider, ILogger<EmailSender> logger)
         {
             _localizationOptions = localizationOptions;
             _cultureProvider = cultureProvider;
+            _logger = logger;
         }
 
         public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures)
@@ -25,12 +27,21 @@ namespace MyCookbook.Services
         }
         private LocalizedString FindLocalizedString(string key, object[]? arguments = default)
         {
-            var resourceManager = CreateResourceManager();
             LocalizedString result;
 
             try
             {
-                string value = resourceManager.GetString(key, _cultureProvider.SelectedCulture);
+                var resourceManager = CreateResourceManager();
+                var resourceManagerShared = CreateResourceManager(true);
+                string value;
+                try
+                {
+                    value = resourceManager.GetString(key, _cultureProvider.SelectedCulture);
+                }
+                catch
+                {
+                    value = resourceManagerShared.GetString(key, _cultureProvider.SelectedCulture);
+                }
 
                 if (arguments is not null)
                 {
@@ -39,20 +50,19 @@ namespace MyCookbook.Services
 
                 result = new(key, value, false, GetResourceLocalization());
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError($"Failed to localize string \"{key}\" with culture \"{_cultureProvider.SelectedCulture}\".", ex);
                 result = new(key, "", true, GetResourceLocalization());
             }
 
             return result;
         }
 
-        private ResourceManager CreateResourceManager()
+        private ResourceManager CreateResourceManager(bool shared = false)
         {
-            string resourceLocaltion = GetResourceLocalization();
-            var resourceManager = new ResourceManager(resourceLocaltion, Assembly.GetExecutingAssembly());
-
-            return resourceManager;
+            string resourceLocalization =  shared ? GetResourceLocalizationShared() : GetResourceLocalization();
+            return new ResourceManager(resourceLocalization, Assembly.GetExecutingAssembly());
         }
 
         private string GetResourceLocalization()
@@ -61,6 +71,11 @@ namespace MyCookbook.Services
             var nameParts = componentType.FullName.Split('.').ToList();
             nameParts.Insert(1, _localizationOptions.Value.ResourcesPath);
             return string.Join(".", nameParts);
+        }
+
+        private string GetResourceLocalizationShared()
+        {
+            return $"MyCookbook.{_localizationOptions.Value.ResourcesPath}.Shared";
         }
     }
 }

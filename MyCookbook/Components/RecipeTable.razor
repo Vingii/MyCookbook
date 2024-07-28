@@ -45,13 +45,16 @@
         <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
         <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", CultureProvider.SelectedCulture) ?? @Localizer["Never"])</MudTd>
         <MudTd Style="text-align:right">
-            @if (Editable)
+            @if (_signedIn)
             {
-                <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async () => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+                @if (Editable)
+                {
+                    <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async () => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
+                }
+                <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async() => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
+                <MudIcon Class="ma-0 cursor-pointer" Icon="@(recipe.IsFavorite(UserIdentityName) ? Icons.Material.Outlined.Star : Icons.Material.Outlined.StarBorder)"
+                         @onclick="@(async() => await ToggleFavorite(recipe))" Size="Size.Small"></MudIcon>
             }
-            <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async() => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
-            <MudIcon Class="ma-0 cursor-pointer" Icon="@(recipe.IsFavorite(UserIdentityName) ? Icons.Material.Outlined.Star : Icons.Material.Outlined.StarBorder)"
-                @onclick="@(async() => await ToggleFavorite(recipe))" Size="Size.Small"></MudIcon>
         </MudTd>
     </RowTemplate>
     <RowEditingTemplate Context="recipe">
@@ -66,13 +69,13 @@
         </MudTd>
     </RowEditingTemplate>
     <EditButtonContent Context="button">
-        @if (Editable)
+        @if (Editable && _signedIn)
         {
             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
         }
     </EditButtonContent>
     <PagerContent>
-        @if (Pagination)
+        @if (Pagination && _signedIn)
         {
             <MudTablePager RowsPerPageString="@Localizer["RowsPerPage"]" InfoFormat="@($"{{first_item}}-{{last_item}} {Localizer["of"]} {{all_items}}")" />
         }
@@ -102,6 +105,7 @@
 
     public CookbookDatabaseService DbService => Service;
 
+    private bool _signedIn = true;
     private bool _loading = true;
     private bool _groupByCategory;
     private string? _recipeSearch;
@@ -144,6 +148,7 @@
 
     private async Task OpenRecipe(Recipe recipe)
     {
+        if (!_signedIn) return;
         NavigationManager.NavigateTo($"Recipe/{recipe.Name}");
     }
 
@@ -204,7 +209,22 @@
 
     public async Task RefreshRecipes()
     {
-        _recipes = (await RecipeGetter()).ToList();
+        if (UserIdentityName != "")
+        {
+            _recipes = (await RecipeGetter()).ToList();
+            _signedIn = true;
+        }
+        else
+        {
+            _recipes = new List<Recipe>()
+            {
+                new Recipe()
+                {
+                    Name = Localizer["NotSignedIn"]
+                }
+            };
+            _signedIn = false;
+        }
         StateHasChanged();
     }
 

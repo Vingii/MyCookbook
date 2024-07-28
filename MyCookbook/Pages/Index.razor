@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Localization;
 @using MyCookbook.Data
 @using MyCookbook.Services;
+@using MyCookbook.Components;
 @inject IStringLocalizer<Index> Localizer
 @inject LanguageNotifier LanguageNotifier
 @implements IDisposable
@@ -11,20 +12,13 @@
 
 <h1>@Localizer["Dashboard"]</h1>
 <hr />
-<AuthorizeView>
-    <Authorized>
-        <RecipeTable @ref="_favoriteRecipeTable" UserIdentityName="@_userIdentityName"
-            Editable="false" TableName="@Localizer["Favorites"]"
-            RecipeGetter="@(async() => await @_favoriteRecipeTable.DbService.GetFavoriteRecipesAsync(_userIdentityName))"></RecipeTable>
-        <br />
-        <RecipeTable @ref="_longUncookedRecipeTable" UserIdentityName="@_userIdentityName"
-            Editable="false" Pagination="false" TableName="@Localizer["LongestUncooked"]"
-            RecipeGetter="@(async() => (await @_longUncookedRecipeTable.DbService.GetRecipesAsync(_userIdentityName)).OrderBy(x => x.LastCooked).Take(10))"></RecipeTable>
-    </Authorized>
-    <NotAuthorized>
-        <p>You're not signed in.</p>
-    </NotAuthorized>
-</AuthorizeView>
+<RecipeTable @ref="_favoriteRecipeTable" UserIdentityName="@_userIdentityName"
+    Editable="false" TableName="@Localizer["Favorites"]"
+    RecipeGetter="@(async() => await @_favoriteRecipeTable.DbService.GetFavoriteRecipesAsync(_userIdentityName))"></RecipeTable>
+<br />
+<RecipeTable @ref="_longUncookedRecipeTable" UserIdentityName="@_userIdentityName"
+    Editable="false" Pagination="false" TableName="@Localizer["LongestUncooked"]"
+    RecipeGetter="@(async() => (await @_longUncookedRecipeTable.DbService.GetRecipesAsync(_userIdentityName)).OrderBy(x => x.LastCooked).Take(10))"></RecipeTable>
 
 @code {
     [CascadingParameter]

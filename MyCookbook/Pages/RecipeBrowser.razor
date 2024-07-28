@@ -18,21 +18,14 @@
 @implements IDisposable
 
 <PageTitle>Recipe browser</PageTitle>
+<br />
+<RecipeTable @ref="_recipeTable" UserIdentityName="@_userIdentityName"
+    Editable="true" TableName="@Localizer["Recipes"]" RecipeGetter="@(async() => await @Service.GetRecipesAsync(_userIdentityName))"></RecipeTable>
+<br />
+<MudButton @onclick="AddRecipe" Variant="Variant.Filled" Color="Color.Primary">
+    @Localizer["NewRecipe"]
+</MudButton>
 
-<AuthorizeView>
-    <Authorized>
-        <br />
-        <RecipeTable @ref="_recipeTable" UserIdentityName="@_userIdentityName"
-            Editable="true" TableName="@Localizer["Recipes"]" RecipeGetter="@(async() => await @Service.GetRecipesAsync(_userIdentityName))"></RecipeTable>
-        <br />
-        <MudButton @onclick="AddRecipe" Variant="Variant.Filled" Color="Color.Primary">
-            @Localizer["NewRecipe"]
-        </MudButton>
-    </Authorized>
-    <NotAuthorized>
-        <p>You're not signed in.</p>
-    </NotAuthorized>
-</AuthorizeView>
 @code
 {
     [CascadingParameter]
@@ -65,6 +58,7 @@
 
     private async Task AddRecipe()
     {
+        if (_userIdentityName == "") return;
         try
         {
             var options = new DialogOptions { CloseOnEscapeKey = true };
