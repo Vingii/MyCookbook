@@ -17,6 +17,8 @@
 
 <PageTitle>Recipe - @_recipe.Name</PageTitle>
 <div class="d-flex align-center gap-4">
+    <MudIcon Class="ma-0 cursor-pointer" Icon="@(_recipe.IsFavorite(_userIdentityName) ? Icons.Material.Outlined.Star : Icons.Material.Outlined.StarBorder)"
+             @onclick="@(async() => await ToggleFavorite(_recipe))" Size="Size.Small"></MudIcon>
     <MudText Class="ma-2" Typo="Typo.h3">@_recipe.Name</MudText>
 </div>
 <hr />
@@ -136,6 +138,20 @@
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
         StateHasChanged();
+    }
+
+    private async Task ToggleFavorite(Recipe recipe)
+    {
+        if (recipe.IsFavorite(_userIdentityName))
+        {
+            await Service.DeleteFavoriteAsync(recipe.Id, _userIdentityName);
+        }
+        else
+        {
+            await Service.AddFavoriteAsync(recipe, _userIdentityName);
+        }
+
+        await RefreshRecipe();
     }
 
     private async Task ShareRecipe()

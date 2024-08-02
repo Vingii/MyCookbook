@@ -20,6 +20,7 @@ namespace MyCookbook.Data
                  .Where(x => x.UserName == user && x.Name == name)
                  .Include(x => x.Ingredients)
                  .Include(x => x.Steps)
+                 .Include(x => x.FavoriteRecipes)
                  .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
         }
 
@@ -29,6 +30,7 @@ namespace MyCookbook.Data
                  .Where(x => x.Guid == new Guid(id))
                  .Include(x => x.Ingredients)
                  .Include(x => x.Steps)
+                 .Include(x => x.FavoriteRecipes)
                  .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
         }
 
@@ -110,27 +112,33 @@ namespace MyCookbook.Data
             return true;
         }
 
-        public async Task<Recipe> CloneRecipeAsync(Recipe recipe, IEnumerable<string> existingRecipes, string user)
+        public async Task<Recipe> CloneRecipeAsync(Recipe recipe, string user)
         {
             recipe = await GetDetailedRecipeAsync(recipe.Name, recipe.UserName) ?? recipe;
             var newRecipe = recipe.Clone();
             newRecipe.UserName = user;
             var name = newRecipe.Name;
-            var highestIndex = GetHighestRecipeNameIndex(ref name, existingRecipes);
-            newRecipe.Name = $"{name} ({highestIndex + 1})";
+            (name, int highestIndex) = await GetHighestRecipeNameIndex(name, user);
+            newRecipe.Name = highestIndex >= 0 ? $"{name} ({highestIndex + 1})" : name;
             _context.Recipes.Add(newRecipe);
             await _context.SaveChangesAsync();
 
             newRecipe.Ingredients = recipe.Ingredients.Select(x => x.Clone(recipe)).ToList();
             newRecipe.Steps = recipe.Steps.Select(x => x.Clone(recipe)).ToList();
+
             await _context.SaveChangesAsync();
+
+            if (recipe.FavoriteRecipes != null && recipe.FavoriteRecipes.Any(x => x.UserName == user))
+            {
+                await AddFavoriteAsync(newRecipe, user);
+            }
 
             return newRecipe;
         }
 
-        private int GetHighestRecipeNameIndex(ref string name, IEnumerable<string> existingRecipes)
+        private async Task<(string, int)> GetHighestRecipeNameIndex(string name, string user)
         {
-            var highestIndex = 0;
+            var highestIndex = -1;
             var namePattern = @$"(.*) \(\d+\)";
             Regex nameRegex = new Regex(namePattern);
 
@@ -143,9 +151,11 @@ namespace MyCookbook.Data
             var indexPattern = @$"{name} \((\d+)\)";
             Regex indexRegex = new Regex(indexPattern);
 
-            foreach (var recipe in existingRecipes)
+            var recipes = await GetRecipesAsync(user);
+
+            foreach (var recipe in recipes)
             {
-                matches = indexRegex.Match(recipe);
+                matches = indexRegex.Match(recipe.Name);
                 if (matches.Success)
                 {
                     var index = int.Parse(matches.Groups[1].Value);
@@ -154,8 +164,12 @@ namespace MyCookbook.Data
                         highestIndex = index;
                     }
                 }
+                else if (highestIndex == -1 && recipe.Name == name)
+                {
+                    highestIndex = 0;
+                }
             }
-            return highestIndex;
+            return (name, highestIndex);
         }
 
         public async Task<FavoriteRecipe> AddFavoriteAsync(Recipe recipe, string user)

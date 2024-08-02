@@ -56,7 +56,31 @@ namespace MyCookbook
 
             services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-            services.AddIdentity<ApplicationUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+            Action<IdentityOptions> identityOptions = isDev
+                ? options =>
+                    {
+                        options.Password.RequireDigit = false;
+                        options.Password.RequireLowercase = false;
+                        options.Password.RequireNonAlphanumeric = false;
+                        options.Password.RequireUppercase = false;
+                        options.Password.RequiredLength = 1;
+                        options.Password.RequiredUniqueChars = 1;
+                        options.SignIn.RequireConfirmedEmail = false;
+                        options.SignIn.RequireConfirmedAccount = false;
+                    }
+                : options =>
+                    {
+                        options.Password.RequireDigit = false;
+                        options.Password.RequireLowercase = false;
+                        options.Password.RequireNonAlphanumeric = false;
+                        options.Password.RequireUppercase = false;
+                        options.Password.RequiredLength = 8;
+                        options.Password.RequiredUniqueChars = 1;
+                        options.SignIn.RequireConfirmedAccount = true;
+                    };
+
+
+            services.AddIdentity<ApplicationUser, IdentityRole>(identityOptions)
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
@@ -78,16 +102,6 @@ namespace MyCookbook
                 services.AddTransient<IEmailSender, EmailSender>();
             }
             services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
-            services.Configure<IdentityOptions>(options =>
-            {
-                options.Password.RequireDigit = false;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequiredLength = 8;
-                options.Password.RequiredUniqueChars = 1;
-            });
         }
     }
 }

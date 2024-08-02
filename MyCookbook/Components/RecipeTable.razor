@@ -40,10 +40,12 @@
         </MudTh>
     </GroupHeaderTemplate>
     <RowTemplate Context="recipe">
-        <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Name</MudTd>
+        <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">
+            @if (recipe.UserName == UserIdentityName) { <b>@recipe.Name</b> } else { @recipe.Name }
+        </MudTd>
         <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Category</MudTd>
         <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
-        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", CultureProvider.SelectedCulture) ?? @Localizer["Never"])</MudTd>
+        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", CultureProvider.SelectedCulture) ?? "-")</MudTd>
         <MudTd Style="text-align:right">
             @if (_signedIn)
             {
@@ -148,6 +150,12 @@
 
     private async Task OpenRecipe(Recipe recipe)
     {
+        if (recipe.UserName != UserIdentityName)
+        {
+            NavigationManager.NavigateTo($"Recipe/Shared/{recipe.Guid}");
+            return;
+        }
+
         if (!_signedIn) return;
         NavigationManager.NavigateTo($"Recipe/{recipe.Name}");
     }
@@ -190,7 +198,7 @@
 
     private async Task CloneRecipe(Recipe recipe)
     {
-        var result = await @Service.CloneRecipeAsync(recipe, _recipes.Select(x => x.Name), UserIdentityName);
+        var result = await @Service.CloneRecipeAsync(recipe, UserIdentityName);
         await RefreshRecipes();
     }
 
