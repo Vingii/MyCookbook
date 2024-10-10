@@ -1,6 +1,8 @@
 ﻿using Azure;
 using Azure.Communication.Email;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using MyCookbook.Logging;
+using System.Reflection;
 
 namespace MyCookbook.Services;
 public class EmailSender : IEmailSender
@@ -17,6 +19,7 @@ public class EmailSender : IEmailSender
 
     public async Task SendEmailAsync(string toEmail, string subject, string message)
     {
+        using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
         var response = await _client.SendAsync(
             WaitUntil.Completed,
             senderAddress: "DoNotReply@cookbookapp.xyz",

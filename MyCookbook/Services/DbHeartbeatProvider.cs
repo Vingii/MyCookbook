@@ -1,5 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
+using MyCookbook.Logging;
 using Serilog;
+using System.Reflection;
 
 namespace MyCookbook.Services
 {
@@ -28,6 +30,7 @@ namespace MyCookbook.Services
 
         private void SendHeartbeat()
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             try
             {
                 Connection.Open();

@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileSystemGlobbing.Internal;
-using MyCookbook.Data.CookbookDatabase;
 using System.Text.RegularExpressions;
+using MyCookbook.Data.CookbookDatabase;
+using MyCookbook.Logging;
+using System.Reflection;
 
 namespace MyCookbook.Data
 {
@@ -16,6 +17,7 @@ namespace MyCookbook.Data
 
         public async Task<Recipe?> GetDetailedRecipeAsync(string name, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             return await _context.Recipes
                  .Where(x => x.UserName == user && x.Name == name)
                  .Include(x => x.Ingredients)
@@ -26,6 +28,7 @@ namespace MyCookbook.Data
 
         public async Task<Recipe?> GetDetailedRecipeByIdAsync(string id)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             return await _context.Recipes
                  .Where(x => x.Guid == new Guid(id))
                  .Include(x => x.Ingredients)
@@ -36,6 +39,7 @@ namespace MyCookbook.Data
 
         public async Task<List<Recipe>> GetRecipesAsync(string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             return await _context.Recipes
                  .Where(x => x.UserName == user)
                  .Include(x => x.FavoriteRecipes)
@@ -44,6 +48,7 @@ namespace MyCookbook.Data
 
         public async Task<List<Recipe>> GetFavoriteRecipesAsync(string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             return await _context.FavoriteRecipes
                  .Where(x => x.UserName == user)
                  .Join(_context.Recipes,
@@ -56,6 +61,7 @@ namespace MyCookbook.Data
 
         public async Task<Recipe> CreateRecipeAsync(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             recipe.UserName = user;
             await _context.Recipes.AddAsync(recipe);
             await _context.SaveChangesAsync();
@@ -64,6 +70,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> UpdateRecipeAsync(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundRecipe =
                 _context.Recipes
                 .Where(x => x.Id == recipe.Id && x.UserName == user)
@@ -82,6 +89,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> UpdateRecipeLastCookedAsync(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundRecipe =
                 _context.Recipes
                 .Where(x => x.Id == recipe.Id && x.UserName == user)
@@ -97,6 +105,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> DeleteRecipeAsync(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundRecipe =
                 _context.Recipes
                 .Where(x => x.Id == recipe.Id && x.UserName == user)
@@ -114,6 +123,7 @@ namespace MyCookbook.Data
 
         public async Task<Recipe> CloneRecipeAsync(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             recipe = await GetDetailedRecipeAsync(recipe.Name, recipe.UserName) ?? recipe;
             var newRecipe = recipe.Clone();
             newRecipe.UserName = user;
@@ -138,6 +148,7 @@ namespace MyCookbook.Data
 
         private async Task<(string, int)> GetHighestRecipeNameIndex(string name, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var highestIndex = -1;
             var namePattern = @$"(.*) \(\d+\)";
             Regex nameRegex = new Regex(namePattern);
@@ -174,6 +185,7 @@ namespace MyCookbook.Data
 
         public async Task<FavoriteRecipe> AddFavoriteAsync(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var favoriteRecipe = new FavoriteRecipe
             {
                 UserName = user,
@@ -186,6 +198,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> DeleteFavoriteAsync(int recipeId, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundFavorite = await
                 _context.FavoriteRecipes
                 .Where(x => x.RecipeId == recipeId && x.UserName == user)
@@ -201,6 +214,7 @@ namespace MyCookbook.Data
 
         public async Task<Step> CreateStepAsync(Step step, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             step.UserName = user;
             await _context.Steps.AddAsync(step);
             await _context.SaveChangesAsync();
@@ -209,6 +223,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> UpdateStepDescriptionAsync(Step step, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             if (step.Description.Length > 10000) return false;
 
             var foundStep =
@@ -226,6 +241,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> IncreaseStepOrder(Step step, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundStep =
                 _context.Steps
                 .Where(x => x.Id == step.Id && x.UserName == user)
@@ -248,6 +264,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> DecreaseStepOrder(Step step, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundStep =
                 _context.Steps
                 .Where(x => x.Id == step.Id && x.UserName == user)
@@ -270,6 +287,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> DeleteStepAsync(Step step, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundStep = await
                 _context.Steps
                 .Where(x => x.Id == step.Id && x.UserName == user)
@@ -296,6 +314,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> FixStepsOrder(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundSteps = await _context.Steps
                 .Where(x => x.RecipeId == recipe.Id && x.UserName == user).OrderBy(x => x.Order).ToListAsync();
 
@@ -311,6 +330,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> FixIngredientsOrder(Recipe recipe, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundIngredients = await _context.Ingredients
                 .Where(x => x.RecipeId == recipe.Id && x.UserName == user).OrderBy(x => x.Order).ToListAsync();
 
@@ -326,6 +346,7 @@ namespace MyCookbook.Data
 
         public async Task<Ingredient> CreateIngredientAsync(Ingredient ingredient, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             ingredient.UserName = user;
             await _context.Ingredients.AddAsync(ingredient);
             await _context.SaveChangesAsync();
@@ -334,6 +355,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> UpdateIngredientAsync(Ingredient ingredient, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundIngredient =
                 _context.Ingredients
                 .Where(x => x.Id == ingredient.Id && x.UserName == user)
@@ -350,6 +372,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> DeleteIngredientAsync(Ingredient ingredient, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundIngredient =
                 _context.Ingredients
                 .Where(x => x.Id == ingredient.Id && x.UserName == user)
@@ -376,6 +399,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> IncreaseIngredientOrder(Ingredient ingredient, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundIngredient =
                 _context.Ingredients
                 .Where(x => x.Id == ingredient.Id && x.UserName == user)
@@ -398,6 +422,7 @@ namespace MyCookbook.Data
 
         public async Task<bool> DecreaseIngredientOrder(Ingredient ingredient, string user)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var foundIngredient =
                 _context.Ingredients
                 .Where(x => x.Id == ingredient.Id && x.UserName == user)

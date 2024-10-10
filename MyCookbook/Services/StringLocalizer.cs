@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using MyCookbook.Logging;
 using System.Reflection;
 using System.Resources;
 
@@ -16,6 +17,7 @@ namespace MyCookbook.Services
 
         public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider, ILogger<EmailSender> logger)
         {
+            using var timeLogger = new TimeLogger(MethodBase.GetCurrentMethod());
             _localizationOptions = localizationOptions;
             _cultureProvider = cultureProvider;
             _logger = logger;
@@ -27,6 +29,7 @@ namespace MyCookbook.Services
         }
         private LocalizedString FindLocalizedString(string key, object[]? arguments = default)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             LocalizedString result;
 
             try
@@ -61,12 +64,14 @@ namespace MyCookbook.Services
 
         private ResourceManager CreateResourceManager(bool shared = false)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             string resourceLocalization =  shared ? GetResourceLocalizationShared() : GetResourceLocalization();
             return new ResourceManager(resourceLocalization, Assembly.GetExecutingAssembly());
         }
 
         private string GetResourceLocalization()
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var componentType = typeof(TComponent);
             var nameParts = componentType.FullName.Split('.').ToList();
             nameParts.Insert(1, _localizationOptions.Value.ResourcesPath);

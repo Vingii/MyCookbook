@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Localization;
+using MyCookbook.Logging;
 using MyCookbook.Utils;
 using System.Globalization;
+using System.Reflection;
 
 namespace MyCookbook.Services
 {
@@ -15,6 +17,7 @@ namespace MyCookbook.Services
 
         public CultureProvider(string defaultCulture, string[] supportedCultures)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             DefaultCulture = defaultCulture;
             SupportedCultures = supportedCultures;
             SupportedLanguages = supportedCultures.ToDictionary(x => x,
@@ -25,6 +28,7 @@ namespace MyCookbook.Services
 
         public override Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             string inputCulture = httpContext.Request.Cookies[CookieRequestCultureProvider.DefaultCookieName] ?? "";
             var result = CookieRequestCultureProvider.ParseCookieValue(inputCulture);
 

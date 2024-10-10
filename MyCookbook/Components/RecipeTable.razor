@@ -137,7 +137,7 @@
 
         var myCookie = await JSRuntime.InvokeAsync<string>("ReadCookie.ReadCookie", "RowsPerPage");
 
-        RowsPerPage = myCookie != null && int.TryParse(myCookie, out var rowsPerPage) ? rowsPerPage : 10;
+        _rowsPerPage = myCookie != null && int.TryParse(myCookie, out var rowsPerPage) ? rowsPerPage : 10;
         StateHasChanged();
     }
 
