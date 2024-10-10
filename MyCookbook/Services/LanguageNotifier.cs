@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MyCookbook.Logging;
 using System.Reflection;
 
 namespace MyCookbook.Services
@@ -13,6 +14,7 @@ namespace MyCookbook.Services
 
         public void NotifyLanguageChange()
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             foreach (var component in _subscribedComponents)
             {
                 if (component is not null)

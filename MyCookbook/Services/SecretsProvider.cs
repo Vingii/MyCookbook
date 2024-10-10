@@ -1,6 +1,8 @@
 ﻿using Azure.Core;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using MyCookbook.Logging;
+using System.Reflection;
 
 namespace MyCookbook.Services
 {
@@ -15,6 +17,7 @@ namespace MyCookbook.Services
 
         public string GetSecret(string key)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             return Builder.Environment.IsProduction()
                 ? GetAzureSecret(key)
                 : Builder.Configuration[key];
@@ -22,6 +25,7 @@ namespace MyCookbook.Services
 
         private string GetAzureSecret(string key)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var options = new SecretClientOptions()
             {
                 Retry =

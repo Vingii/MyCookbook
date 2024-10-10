@@ -1,8 +1,10 @@
 ﻿@using System.Security.Claims;
 @using Microsoft.Extensions.Localization;
 @using MyCookbook.Data
+@using MyCookbook.Logging
 @using MyCookbook.Services;
 @using MyCookbook.Components;
+@using System.Reflection
 @inject IStringLocalizer<Index> Localizer
 @inject LanguageNotifier LanguageNotifier
 @implements IDisposable
@@ -30,6 +32,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
         LanguageNotifier.SubscribeLanguageChange(this);
 
         if (authenticationStateTask != null)
@@ -46,6 +49,7 @@
     {
         if (firstRender)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             _favoriteRecipeTable?.Load();
             _longUncookedRecipeTable?.Load();
         }

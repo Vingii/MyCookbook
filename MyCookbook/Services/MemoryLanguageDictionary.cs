@@ -1,6 +1,8 @@
-﻿using MyCookbook.Model;
+﻿using MyCookbook.Logging;
+using MyCookbook.Model;
 using Newtonsoft.Json;
 using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace MyCookbook.Services
 {
@@ -24,6 +26,7 @@ namespace MyCookbook.Services
 
         private void LoadDictionary(string filePath)
         {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             using var reader = new StreamReader(filePath);
 
             string? line = reader.ReadLine();
