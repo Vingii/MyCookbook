@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using MyCookbook.Logging;
+using MySql.Data.MySqlClient;
 using Serilog;
 using System.Reflection;
 
@@ -7,13 +8,13 @@ namespace MyCookbook.Services
 {
     public class DbHeartbeatProvider
     {
-        private SqlConnection Connection { get; }
-        private SqlCommand Command { get; }
+        private MySqlConnection Connection { get; }
+        private MySqlCommand Command { get; }
 
         public DbHeartbeatProvider(string connectionString)
         {
-            Connection = new SqlConnection(connectionString);
-            Command = new SqlCommand("Select 1", Connection);
+            Connection = new MySqlConnection(connectionString);
+            Command = new MySqlCommand("Select 1", Connection);
         }
 
         public void Start()
@@ -34,7 +35,7 @@ namespace MyCookbook.Services
             try
             {
                 Connection.Open();
-                using (SqlDataReader reader = Command.ExecuteReader())
+                using (MySqlDataReader reader = Command.ExecuteReader())
                 {
                     reader.Read();
                 }

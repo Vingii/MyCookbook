@@ -11,8 +11,9 @@ namespace MyCookbook.Services
         private Dictionary<string, List<Collection<string>>> Inflections { get; } = new Dictionary<string, List<Collection<string>>>();
 
         public MemoryLanguageDictionary(string directory)
-        { 
-            foreach (var file in Directory.GetFiles("wwwroot\\" + directory))
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", directory);
+            foreach (var file in Directory.GetFiles(path))
             {
                 LoadDictionary(file);
             }

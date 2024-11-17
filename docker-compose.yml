@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  mycookbook:
+    image: ${DOCKER_REGISTRY-}mycookbook
+    build:
+      context: .
+      dockerfile: MyCookbook/Dockerfile

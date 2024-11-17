@@ -20,9 +20,14 @@ namespace MyCookbook
             try
             {
                 // Add services to the container.
-                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+                var connectionString = builder.Configuration.GetConnectionString("MyCookbookConnection") ?? throw new InvalidOperationException("Connection string 'MyCookbookConnection' not found.");
+
                 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
+                    options.UseMySQL(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
+
+                builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
+                    options.UseMySQL(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
+
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
                 new DbHeartbeatProvider(connectionString).Start();
@@ -44,10 +49,20 @@ namespace MyCookbook
 
                 builder.Services.AddScoped<CookbookDatabaseService>();
 
-                builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
                 var app = builder.Build();
+
+                app.UseStaticFiles();
+
+                using (var scope = app.Services.CreateScope())
+                {
+                    var services = scope.ServiceProvider;
+
+                    var appContext = services.GetRequiredService<ApplicationDbContext>();
+                    appContext.Database.Migrate();
+
+                    var cookbookContext = services.GetRequiredService<CookbookDatabaseContext>();
+                    cookbookContext.Database.Migrate();
+                }
 
                 // Configure the HTTP request pipeline.
                 if (app.Environment.IsDevelopment())

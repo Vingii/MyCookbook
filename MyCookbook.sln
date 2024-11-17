@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyCookbook", "MyCookbook\My
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LanguageDictionaryCleaner", "LanguageDictionaryCleaner\LanguageDictionaryCleaner.csproj", "{CDA2497E-7492-46B8-A244-8A96608995CB}"
 EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{DF1AF4F5-6B93-4814-959A-31E529637E1E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{CDA2497E-7492-46B8-A244-8A96608995CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CDA2497E-7492-46B8-A244-8A96608995CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CDA2497E-7492-46B8-A244-8A96608995CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF1AF4F5-6B93-4814-959A-31E529637E1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF1AF4F5-6B93-4814-959A-31E529637E1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF1AF4F5-6B93-4814-959A-31E529637E1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF1AF4F5-6B93-4814-959A-31E529637E1E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
