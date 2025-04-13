@@ -23,7 +23,7 @@ namespace MyCookbook.Data
                  .Include(x => x.Ingredients)
                  .Include(x => x.Steps)
                  .Include(x => x.FavoriteRecipes)
-                 .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
+                 .AsSplitQuery().FirstOrDefaultAsync();
         }
 
         public async Task<Recipe?> GetDetailedRecipeByIdAsync(string id)

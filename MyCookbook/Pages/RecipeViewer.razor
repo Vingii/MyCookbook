@@ -32,7 +32,7 @@
     <Authorized>
         <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
                   RowEditCommit="CommitTableEdit" CanCancelEdit="true" OnPreviewEditClick="PreviewEditClick" T="Ingredient"
-                  EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
+                  EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton" >
             <HeaderContent>
                 <MudTh>@Localizer["Ready"]</MudTh>
                 <MudTh>@Localizer["Ingredient"]</MudTh>
@@ -57,10 +57,10 @@
             <RowEditingTemplate Context="ingredient">
                 <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
                 <MudTd DataLabel="@Localizer["Ingredient"]">
-                    <MudTextField @bind-Value="@ingredient.Name" @ref="IngredientEditFields[ingredient]" Immediate="true" OnKeyDown="(e) => OnIngredientNameKeyDown(e, ingredient)" />
+                    <MudTextField @bind-Value="@ingredient.Name" @ref="IngredientEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientNameKeyDown(e, ingredient)" />
                 </MudTd>
                 <MudTd DataLabel="@Localizer["Amount"]">
-                    <MudTextField @bind-Value="@ingredient.Amount" @ref="IngredientAmountEditFields[ingredient]" Immediate="true" OnKeyDown="(e) => OnIngredientAmountKeyDown(e, ingredient)" />
+                    <MudTextField @bind-Value="@ingredient.Amount" @ref="IngredientAmountEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientAmountKeyDown(e, ingredient)" />
                 </MudTd>
             </RowEditingTemplate>
             <EditButtonContent Context="button">
@@ -80,7 +80,7 @@
                 <MudPaper Class="pa-2 ma-2" Outlined="true">
                     <MudStack Row="true" Justify="Justify.SpaceAround">
                         <MudCheckBox @bind-Checked="@StepDone[step.Order]" Color="Color.Primary"></MudCheckBox>
-                        @if (EditMode[step.Order])
+                        @if (EditMode[step])
                         {
                             <MudTextField @ref="StepEditFields[step]" Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
                                   ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" OnKeyDown="(e) => OnStepKeyDown(e, step)"  />
@@ -131,7 +131,7 @@
     {
         Nothing,
         LastStep,
-        LastIngredient,
+        Ingredient,
         SelectedStep
     }
 
@@ -147,13 +147,13 @@
     private bool _loading = true;
 
     private Recipe _recipe = new Recipe();
-    private Dictionary<int, bool> EditMode = new Dictionary<int, bool>();
+    private Dictionary<Step, bool> EditMode = new Dictionary<Step, bool>();
     private Dictionary<int, bool> StepDone = new Dictionary<int, bool>();
     private Dictionary<int, bool> IngredientDone = new Dictionary<int, bool>();
 
     private Dictionary<Step, MudTextField<string>> StepEditFields = new Dictionary<Step, MudTextField<string>>();
-    private Dictionary<Ingredient, MudTextField<string>> IngredientEditFields = new Dictionary<Ingredient, MudTextField<string>>();
-    private Dictionary<Ingredient, MudTextField<string>> IngredientAmountEditFields = new Dictionary<Ingredient, MudTextField<string>>();
+    private MudTextField<string>? IngredientEditField;
+    private MudTextField<string>? IngredientAmountEditField;
     private ToFocus Focus;
     private Step StepToFocus;
 
@@ -175,16 +175,17 @@
 
     CancellationTokenSource cts = new();
 
-    private async void OnIngredientNameKeyDown(KeyboardEventArgs e, Ingredient ingredient)
+    private async Task OnIngredientNameKeyDown(KeyboardEventArgs e, Ingredient ingredient)
     {
-        if (e.Key == "Enter")
+        if (e.Key == "Enter" && !e.ShiftKey)
         {
-            await IngredientAmountEditFields[ingredient].FocusAsync();
+            if (IngredientAmountEditField != null) await IngredientAmountEditField.FocusAsync();
             StateHasChanged();
         }
         else if (e.Key == "Delete")
         {
             await DeleteIngredient(ingredient);
+            _ingredientTable?.SetEditingItem(null);
             StateHasChanged();
         }
         else if (e.Key == "Escape")
@@ -192,6 +193,7 @@
             if (ingredient.Name == "" || ingredient.Name == null)
             {
                 await DeleteIngredient(ingredient);
+                _ingredientTable?.SetEditingItem(null);
                 StateHasChanged();
             }
             else
@@ -202,22 +204,23 @@
         }
     }
 
-    private async void OnIngredientAmountKeyDown(KeyboardEventArgs e, Ingredient ingredient)
+    private async Task OnIngredientAmountKeyDown(KeyboardEventArgs e, Ingredient ingredient)
     {
-        if (e.Key == "Enter")
+        if (e.Key == "Enter" && !e.ShiftKey)
         {
-            ingredient.Amount = IngredientAmountEditFields[ingredient].Text;
             CommitTableEdit(ingredient);
+            _ingredientTable?.SetEditingItem(null);
             if (ingredient == _recipe.Ingredients.LastOrDefault())
             {
                 await AddIngredient();
             }
-            Focus = ToFocus.LastIngredient;
+            Focus = ToFocus.Ingredient;
             StateHasChanged();
         }
         else if (e.Key == "Delete")
         {
             await DeleteIngredient(ingredient);
+            _ingredientTable?.SetEditingItem(null);
             StateHasChanged();
         }
         else if (e.Key == "Escape")
@@ -225,6 +228,7 @@
             if (ingredient.Name == "" || ingredient.Name == null)
             {
                 await DeleteIngredient(ingredient);
+                _ingredientTable?.SetEditingItem(null);
                 StateHasChanged();
             }
             else
@@ -237,13 +241,13 @@
 
     private async void OnStepKeyDown(KeyboardEventArgs e, Step step)
     {
-        if (e.Key == "Enter")
+        if (e.Key == "Enter" && !e.ShiftKey)
         {
             if (StepEditFields[step].Text != null)
             {
                 await UpdateStepDescription(step, StepEditFields[step].Text);
             }
-            EditMode[step.Order] = false;
+            EditMode[step] = false;
             if (step == _recipe.Steps.LastOrDefault())
             {
                 await AddStep();
@@ -268,7 +272,7 @@
             }
             else
             {
-                EditMode[step.Order] = false;
+                EditMode[step] = false;
                 StateHasChanged();
             }
         }
@@ -276,7 +280,7 @@
 
     private void OnStepEditChanged(bool e, Step step)
     {
-        EditMode[step.Order] = e;
+        EditMode[step] = e;
 
         if (!e) return;
 
@@ -318,8 +322,8 @@
             case ToFocus.LastStep:
                 await StepEditFields[_recipe.Steps.Last()].FocusAsync();
                 break;
-            case ToFocus.LastIngredient:
-                await IngredientEditFields[_recipe.Ingredients.Last()].FocusAsync();
+            case ToFocus.Ingredient:
+                if (IngredientEditField != null) await IngredientEditField.FocusAsync();
                 break;
             default:
                 break;
@@ -330,7 +334,7 @@
     private void PreviewEditClick(object element)
     {
         var ingredient = (Ingredient)element;
-        Focus = ToFocus.LastIngredient;
+        Focus = ToFocus.Ingredient;
         StateHasChanged();
     }
 
@@ -343,7 +347,6 @@
     private async Task DeleteIngredient(Ingredient ingredient)
     {
         var result = await @Service.DeleteIngredientAsync(ingredient, _userIdentityName);
-        await RefreshRecipe();
     }
 
     private async Task RefreshRecipe(bool cleanup = false)
@@ -373,26 +376,17 @@
 
         if (cleanup)
         {
-            var needsRefresh = false;
             foreach (var step in _recipe.Steps.Where(s => s.Description == null || s.Description == ""))
             {
                 var result = await @Service.DeleteStepAsync(step, _userIdentityName);
-                needsRefresh = true;
             }
             foreach (var ingredient in _recipe.Ingredients.Where(s => s.Name == null || s.Name == ""))
             {
                 var result = await @Service.DeleteIngredientAsync(ingredient, _userIdentityName);
-                needsRefresh = true;
-            }
-
-            if (needsRefresh)
-            {
-                await RefreshRecipe();
-                return;
             }
         }
 
-        EditMode = _recipe.Steps.ToDictionary(x => x.Order, x => false);
+        EditMode = _recipe.Steps.ToDictionary(x => x, x => false);
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
         StateHasChanged();
@@ -406,11 +400,11 @@
             Order = _recipe.Ingredients.Count + 1,
             Name = ""
         };
+        IngredientDone[_recipe.Ingredients.Count + 1] = false;
         var createResult = await @Service.CreateIngredientAsync(ingredient, _userIdentityName);
-        await RefreshRecipe();
-        _ingredientTable.SetSelectedItem(_recipe.Ingredients.Last());
-        _ingredientTable.SetEditingItem(_recipe.Ingredients.Last());
-        Focus = ToFocus.LastIngredient;
+        _ingredientTable.SetSelectedItem(ingredient);
+        _ingredientTable.SetEditingItem(ingredient);
+        Focus = ToFocus.Ingredient;
         StateHasChanged();
     }
 
@@ -421,9 +415,9 @@
             RecipeId = _recipe.Id,
             Order = _recipe.Steps.Count + 1
         };
+        EditMode[step] = true;
+        StepDone[_recipe.Steps.Count + 1] = false;
         var createResult = await @Service.CreateStepAsync(step, _userIdentityName);
-        await RefreshRecipe();
-        EditMode[EditMode.Count] = true;
         Focus = ToFocus.LastStep;
         StateHasChanged();
     }
@@ -431,7 +425,6 @@
     private async Task DeleteStep(Step step)
     {
         var result = await @Service.DeleteStepAsync(step, _userIdentityName);
-        await RefreshRecipe();
     }
 
     private async Task UpdateStepDescription(Step step, string description)
@@ -443,25 +436,21 @@
     private async Task DecreaseIngredientOrder(Ingredient ingredient)
     {
         var result = await @Service.DecreaseIngredientOrder(ingredient, _userIdentityName);
-        await RefreshRecipe();
     }
 
     private async Task IncreaseIngredientOrder(Ingredient ingredient)
     {
         var result = await @Service.IncreaseIngredientOrder(ingredient, _userIdentityName);
-        await RefreshRecipe();
     }
 
     private async Task DecreaseStepOrder(Step step)
     {
         var result = await @Service.DecreaseStepOrder(step, _userIdentityName);
-        await RefreshRecipe();
     }
 
     private async Task IncreaseStepOrder(Step step)
     {
         var result = await @Service.IncreaseStepOrder(step, _userIdentityName);
-        await RefreshRecipe();
     }
 
     private void FinishCooking()
