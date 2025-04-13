@@ -101,7 +101,7 @@
                         }
                         <MudStack>
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
-                            <MudToggleIconButton Size="@Size.Medium" Class="pa-0"
+                            <MudToggleIconButton Size="@Size.Medium" Class="pa-0" Toggled="EditMode[step]"
                                              Icon="@Icons.Material.Outlined.Edit" Title="Edit" ToggledChanged="(e) => OnStepEditChanged(e, step)"
                                              ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
                         </MudStack>

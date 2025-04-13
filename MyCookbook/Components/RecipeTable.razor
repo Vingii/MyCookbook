@@ -180,7 +180,7 @@
         {
             var options = new DialogOptions { CloseOnEscapeKey = true };
             var parameters = new DialogParameters<ConfirmationDialog>();
-            parameters.Add(x => x.Action, Localizer["DeleteRecipe"]);
+            parameters.Add(x => x.Action, $"{Localizer["DeleteRecipe"]} {recipe.Name}");
             var dialog = await DialogService.ShowAsync<ConfirmationDialog>(Localizer["DeleteRecipe"].Value.CapitalizeFirst(), parameters, options);
             var dialogResult = await dialog.Result;
 

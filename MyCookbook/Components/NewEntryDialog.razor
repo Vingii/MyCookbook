@@ -11,7 +11,9 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="Name" Label="@Localizer["Name"]" Variant="Variant.Text"></MudTextField>
+        <MudFocusTrap>
+            <MudTextField @ref="TextField" @bind-Value="Name" Label="@Localizer["Name"]" Variant="Variant.Text" Immediate="true" OnKeyDown="OnKeyDown"></MudTextField>
+        </MudFocusTrap>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -25,6 +27,8 @@
 
     private string Name { get; set; }
 
+    private MudTextField<string> TextField { get; set; }
+
     private void Submit()
     {
         MudDialog.Close(DialogResult.Ok(Name));
@@ -34,4 +38,12 @@
 
     protected override void OnInitialized() => LanguageNotifier.SubscribeLanguageChange(this);
     public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            Submit();
+        }
+    }
 }
