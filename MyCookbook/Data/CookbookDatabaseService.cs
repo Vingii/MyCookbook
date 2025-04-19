@@ -23,6 +23,7 @@ namespace MyCookbook.Data
                  .Include(x => x.Ingredients)
                  .Include(x => x.Steps)
                  .Include(x => x.FavoriteRecipes)
+                 .Include(x => x.Tags)
                  .AsSplitQuery().FirstOrDefaultAsync();
         }
 
@@ -34,6 +35,7 @@ namespace MyCookbook.Data
                  .Include(x => x.Ingredients)
                  .Include(x => x.Steps)
                  .Include(x => x.FavoriteRecipes)
+                 .Include(x => x.Tags)
                  .AsNoTracking().AsSplitQuery().FirstOrDefaultAsync();
         }
 
@@ -43,6 +45,7 @@ namespace MyCookbook.Data
             return await _context.Recipes
                  .Where(x => x.UserName == user)
                  .Include(x => x.FavoriteRecipes)
+                 .Include(x => x.Tags)
                  .AsNoTracking().ToListAsync();
         }
 
@@ -56,6 +59,7 @@ namespace MyCookbook.Data
                  x => x.Id,
                  (favorite, recipe) => recipe)
                  .Include(x => x.FavoriteRecipes)
+                 .Include(x => x.Tags)
                  .AsNoTracking().ToListAsync();
         }
 
@@ -111,6 +115,7 @@ namespace MyCookbook.Data
                 .Where(x => x.Id == recipe.Id && x.UserName == user)
                 .Include(x => x.Ingredients)
                 .Include(x => x.Steps)
+                .Include(x => x.Tags)
                 .FirstOrDefault();
 
             if (foundRecipe == null) return false;
@@ -135,6 +140,7 @@ namespace MyCookbook.Data
 
             newRecipe.Ingredients = recipe.Ingredients.Select(x => x.Clone(recipe)).ToList();
             newRecipe.Steps = recipe.Steps.Select(x => x.Clone(recipe)).ToList();
+            newRecipe.Tags = recipe.Tags.Select(x => x.Clone(recipe)).ToList();
 
             await _context.SaveChangesAsync();
 
@@ -440,6 +446,26 @@ namespace MyCookbook.Data
 
             await _context.SaveChangesAsync();
 
+            return true;
+        }
+
+        public async Task<List<Tag>> GetAllTags(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            return await _context.Tags.Where(x => x.UserName == user).AsNoTracking().ToListAsync();
+        }
+
+        public async Task<bool> AddTag(Recipe recipe, string user, string name)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var tag = new Tag
+            {
+                UserName = user,
+                RecipeId = recipe.Id,
+                Name = name,
+            };
+
+            await _context.Tags.AddAsync(tag);
             return true;
         }
     }

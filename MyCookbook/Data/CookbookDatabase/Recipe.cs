@@ -25,6 +25,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public virtual ICollection<Ingredient> Ingredients { get; set; }
         public virtual ICollection<Step> Steps { get; set; }
         public virtual ICollection<FavoriteRecipe> FavoriteRecipes { get; set; }
+        public virtual ICollection<Tag> Tags { get; set; }
 
         [NotMapped]
         public string DurationText
