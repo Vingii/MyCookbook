@@ -182,7 +182,7 @@
             if (IngredientAmountEditField != null) await IngredientAmountEditField.FocusAsync();
             StateHasChanged();
         }
-        else if (e.Key == "Delete")
+        else if (e.Key == "Delete" && e.CtrlKey)
         {
             await DeleteIngredient(ingredient);
             _ingredientTable?.SetEditingItem(null);
@@ -217,7 +217,7 @@
             Focus = ToFocus.Ingredient;
             StateHasChanged();
         }
-        else if (e.Key == "Delete")
+        else if (e.Key == "Delete" && e.CtrlKey)
         {
             await DeleteIngredient(ingredient);
             _ingredientTable?.SetEditingItem(null);
@@ -254,7 +254,7 @@
             }
             StateHasChanged();
         }
-        else if (e.Key == "Delete")
+        else if (e.Key == "Delete" && e.CtrlKey)
         {
             await DeleteStep(step);
             StateHasChanged();
