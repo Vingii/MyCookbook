@@ -1,0 +1,8 @@
+.mud-table-cell {
+    padding: 4px 4px 4px 4px !important;
+    padding-inline-start: 4px !important;
+    padding-inline-end: 4px !important;
+}
+.mud-table-container {
+    overflow-y: hidden !important
+}

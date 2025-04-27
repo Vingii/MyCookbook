@@ -130,7 +130,7 @@
     <value>ingredient</value>
   </data>
   <data name="NewIngredient" xml:space="preserve">
-    <value>Add Ingredient</value>
+    <value>Add</value>
   </data>
   <data name="NewStep" xml:space="preserve">
     <value>Add Step</value>

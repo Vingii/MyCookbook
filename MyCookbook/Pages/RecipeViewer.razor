@@ -15,6 +15,8 @@
 @inherits OwningComponentBase<CookbookDatabaseService>
 @implements IDisposable
 
+<link rel="stylesheet" href="css/RecipeViewer.css">
+
 <PageTitle>Recipe - @Name</PageTitle>
 <div class="d-flex align-center gap-4">
     <MudText Class="ma-2" Typo="Typo.h3">@Name</MudText>
@@ -22,104 +24,99 @@
 </div>
 <hr />
 
-<MudSlider @bind-Value="Servings" Min="1" Max="10" TickMarks="true" Color="Color.Info">
-    @Localizer["Servings"]: @_recipe.Servings
-</MudSlider>
-
-<br />
-
 <AuthorizeView>
     <Authorized>
-        <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
-                  RowEditCommit="CommitTableEdit" CanCancelEdit="true" OnPreviewEditClick="PreviewEditClick" T="Ingredient"
-                  EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton" >
-            <HeaderContent>
-                <MudTh>@Localizer["Ready"]</MudTh>
-                <MudTh>@Localizer["Ingredient"]</MudTh>
-                <MudTh>@Localizer["Amount"]</MudTh>
-                <MudTh></MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate Context="ingredient">
-                <MudTd Style="text-align:right">
-                    <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                </MudTd>
-                <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
-                <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
-                <MudTd Style="text-align:right">
-                    <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
-                </MudTd>
-                <MudTd DataLabel="Icons" Style="text-align:right">
+        <MudSlider @bind-Value="Servings" Min="1" Max="10" TickMarks="true" Color="Color.Info">
+            @Localizer["Servings"]: @_recipe.Servings
+        </MudSlider>
+        <br />
+        <MudGrid>
+            <MudItem sm="12" md="6">
+                <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+                      RowEditCommit="CommitTableEdit" CanCancelEdit="true" OnPreviewEditClick="PreviewEditClick" T="Ingredient"
+                      EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton" >
+                <HeaderContent>
+                    <MudTh>@Localizer["Ready"]</MudTh>
+                    <MudTh>@Localizer["Ingredient"]</MudTh>
+                    <MudTh>@Localizer["Amount"]</MudTh>
+                    <MudTh Class="d-flex align-content-end justify-content-end" colspan="2" >
+                        <MudButton @onclick="AddIngredient" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">
+                            @Localizer["NewIngredient"]
+                        </MudButton>
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate Context="ingredient">
+                    <MudTd Style="text-align:right">
+                        <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                    </MudTd>
+                    <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
+                    <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
+                    <MudTd DataLabel="Icons" Style="text-align:right">
+                        <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
                         <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseIngredientOrder(ingredient))" />
                         <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseIngredientOrder(ingredient))" />
-                </MudTd>
-            </RowTemplate>
-            <RowEditingTemplate Context="ingredient">
-                <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                <MudTd DataLabel="@Localizer["Ingredient"]">
-                    <MudTextField @bind-Value="@ingredient.Name" @ref="IngredientEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientNameKeyDown(e, ingredient)" />
-                </MudTd>
-                <MudTd DataLabel="@Localizer["Amount"]">
-                    <MudTextField @bind-Value="@ingredient.Amount" @ref="IngredientAmountEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientAmountKeyDown(e, ingredient)" />
-                </MudTd>
-            </RowEditingTemplate>
-            <EditButtonContent Context="button">
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
-            </EditButtonContent>
-        </MudTable>
-        <br />
-        <MudButton @onclick="AddIngredient" Variant="Variant.Filled" Color="Color.Primary">
-            @Localizer["NewIngredient"]
-        </MudButton>
-        <hr />
-        <MudPaper Class="pa-1 mt-1" Elevation="0">
-            @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
-            {
-                var text = $"{step.Order}. {step.Description}";
-                var highlights = _recipe.Ingredients.SelectMany(x => x.Name.Split(" ")).SelectMany(LanguageDictionary.WordInflections);
-                <MudPaper Class="pa-2 ma-2" Outlined="true">
-                    <MudStack Row="true" Justify="Justify.SpaceAround">
-                        <MudCheckBox @bind-Checked="@StepDone[step.Order]" Color="Color.Primary"></MudCheckBox>
-                        @if (EditMode[step])
-                        {
-                            <MudTextField @ref="StepEditFields[step]" Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
-                                  ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" OnKeyDown="(e) => OnStepKeyDown(e, step)"  />
-                        }
-                        else if (StepDone[step.Order])
-                        {
-                            <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
-                                @(text.Length > 20 ? text.Substring(0, 20) + "..." : text)
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere; white-space: pre-line">
-                                <MudHighlighter Class="mud-primary-text" Style="background-color:transparent;font-weight:bold"
-                                    Text="@text"
-                                    HighlightedTexts="@highlights" />
-                            </MudText>
-                        }
-                        <MudStack>
+                    </MudTd>
+                </RowTemplate>
+                <RowEditingTemplate Context="ingredient">
+                    <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                    <MudTd DataLabel="@Localizer["Ingredient"]">
+                        <MudTextField @bind-Value="@ingredient.Name" @ref="IngredientEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientNameKeyDown(e, ingredient)" />
+                    </MudTd>
+                    <MudTd DataLabel="@Localizer["Amount"]">
+                        <MudTextField @bind-Value="@ingredient.Amount" @ref="IngredientAmountEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientAmountKeyDown(e, ingredient)" />
+                    </MudTd>
+                </RowEditingTemplate>
+                <EditButtonContent Context="button">
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+                </EditButtonContent>
+                </MudTable>
+            </MudItem>
+            <MudItem sm="12" md="6">
+                <MudPaper Class="pa-1 mt-1" Elevation="0">
+                @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
+                {
+                    var text = $"{step.Order}. {step.Description}";
+                    var highlights = _recipe.Ingredients.SelectMany(x => x.Name.Split(" ")).SelectMany(LanguageDictionary.WordInflections);
+                    <MudPaper Class="pa-0 ma-0" Outlined="true">
+                        <MudStack Row="true" Justify="Justify.SpaceAround" Spacing="0">
+                            @if (EditMode[step])
+                            {
+                                <MudTextField @ref="StepEditFields[step]" Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
+                                      ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" OnKeyDown="(e) => OnStepKeyDown(e, step)"  />
+                            }
+                            else if (StepDone[step.Order])
+                            {
+                                <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
+                                    @(text.Length > 20 ? text.Substring(0, 20) + "..." : text)
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere; white-space: pre-line">
+                                    <MudHighlighter Class="mud-primary-text" Style="background-color:transparent;font-weight:bold"
+                                        Text="@text"
+                                        HighlightedTexts="@highlights" />
+                                </MudText>
+                            }
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
                             <MudToggleIconButton Size="@Size.Medium" Class="pa-0" Toggled="EditMode[step]"
-                                             Icon="@Icons.Material.Outlined.Edit" Title="Edit" ToggledChanged="(e) => OnStepEditChanged(e, step)"
-                                             ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
-                        </MudStack>
-                        <MudStack>
+                                                Icon="@Icons.Material.Outlined.Edit" Title="Edit" ToggledChanged="(e) => OnStepEditChanged(e, step)"
+                                                ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseStepOrder(step))" />
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
                         </MudStack>
-                    </MudStack>
-                </MudPaper>
-            }
-            <br />
-            <MudButton @onclick="AddStep" Variant="Variant.Filled" Color="Color.Primary">
-                @Localizer["NewStep"]
-            </MudButton>
-            <MudButton @onclick="FinishCooking" Variant="Variant.Filled" Color="Color.Success">
-                @Localizer["FinishCooking"]
-            </MudButton>
-        </MudPaper>
+                    </MudPaper>
+                }
+                <br />
+                <MudButton @onclick="AddStep" Variant="Variant.Filled" Color="Color.Primary">
+                    @Localizer["NewStep"]
+                </MudButton>
+                <MudButton @onclick="FinishCooking" Variant="Variant.Filled" Color="Color.Success">
+                    @Localizer["FinishCooking"]
+                </MudButton>
+            </MudPaper>
+            </MudItem>
+        </MudGrid>
     </Authorized>
     <NotAuthorized>
         <p>@Localizer["NotSignedIn"]</p>

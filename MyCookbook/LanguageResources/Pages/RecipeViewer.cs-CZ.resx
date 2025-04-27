@@ -130,7 +130,7 @@
     <value>ingredienci</value>
   </data>
   <data name="NewIngredient" xml:space="preserve">
-    <value>Přidat ingredienci</value>
+    <value>Přidat</value>
   </data>
   <data name="NewStep" xml:space="preserve">
     <value>Přidat krok</value>
