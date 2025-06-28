@@ -129,9 +129,6 @@
   <data name="Duration" xml:space="preserve">
     <value>Celková doba přípravy</value>
   </data>
-  <data name="Group" xml:space="preserve">
-    <value>Seskupit</value>
-  </data>
   <data name="Name" xml:space="preserve">
     <value>Název</value>
   </data>

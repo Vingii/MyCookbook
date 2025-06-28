@@ -23,6 +23,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public virtual DbSet<Tag> Tags { get; set; }
         public virtual DbSet<Recipe> Recipes { get; set; }
         public virtual DbSet<Step> Steps { get; set; }
+        public virtual DbSet<UserPreference> UserPreferences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -88,6 +89,21 @@ namespace MyCookbook.Data.CookbookDatabase
                     .WithMany(p => p.FavoriteRecipes)
                     .HasForeignKey(d => d.RecipeId)
                     .OnDelete(DeleteBehavior.ClientCascade);
+            });
+
+            modelBuilder.Entity<UserPreference>(entity =>
+            {
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.Property(e => e.Key)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.Property(e => e.Value)
+                    .IsRequired()
+                    .HasMaxLength(450);
             });
 
             modelBuilder.Entity<Tag>(entity =>

@@ -20,8 +20,14 @@ namespace MyCookbook
 
         public static void AddFeedbackProvider(this IServiceCollection services, ISecretsProvider secretsProvider, ConfigurationManager config)
         {
-            var feedbackProvider = new CannyFeedbackProvider(secretsProvider.GetSecret("CannyKey"), config["CannyFeedbackUrl"], config["CannyBoardId"], config["CannyUserId"]);
-            services.AddSingleton<IFeedbackProvider>(feedbackProvider);
+            services.AddScoped<IFeedbackProvider>(sp =>
+            {
+                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+                var client = httpClientFactory.CreateClient();
+
+                return new JiraFeedbackProvider(client, config["JiraDomain"], secretsProvider.GetSecret("JiraEmail"), secretsProvider.GetSecret("JiraKey"), config["JiraProjectKey"]
+                );
+            });
         }
 
         public static void AddLanguageDictionary(this IServiceCollection services)

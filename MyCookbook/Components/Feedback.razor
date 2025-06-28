@@ -2,9 +2,9 @@
 @using MyCookbook.Services;
 @using System.Web;
 @inject ILogger<Feedback> Logger
-@inject IFeedbackProvider FeedbackProvider
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <MudIconButton Icon="@Icons.Material.Filled.BugReport" Color="Color.Inherit" OnClick="@(async (e) => await OpenDialog())" Disabled="@DisableInteractivity" />
 
@@ -15,18 +15,26 @@
     {
         try
         {
-            var options = new DialogOptions { CloseOnEscapeKey = true };
-            var dialog = await DialogService.ShowAsync<FeedbackDialog>("New recipe", options);
+            var options = new DialogOptions { CloseOnEscapeKey = true, DisableBackdropClick = false };
+            var dialog = await DialogService.ShowAsync<FeedbackDialog>("Feedback", options);
             var dialogResult = await dialog.Result;
 
-            if (!dialogResult.Canceled)
+            if (!dialogResult.Canceled && dialogResult.Data is FeedbackResult feedbackData)
             {
-                await FeedbackProvider.ProvideFeedback(dialogResult.Data.ToString());
+                if (feedbackData.Text == null)
+                {
+                    Snackbar.Add("There was an error submitting your feedback.", Severity.Error);
+                }
+                else
+                {
+                    Snackbar.Add("Feedback submitted successfully!", Severity.Success);
+                }
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to provide feedback.");
+            Logger.LogError(ex, "Failed to submit feedback.");
+            Snackbar.Add("There was an error submitting your feedback.", Severity.Error);
         }
     }
 }

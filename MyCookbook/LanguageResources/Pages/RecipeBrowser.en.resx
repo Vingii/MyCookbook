@@ -129,9 +129,6 @@
   <data name="Duration" xml:space="preserve">
     <value>Duration</value>
   </data>
-  <data name="Group" xml:space="preserve">
-    <value>Group</value>
-  </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>

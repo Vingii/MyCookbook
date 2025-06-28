@@ -153,6 +153,7 @@
     private MudTextField<string>? IngredientAmountEditField;
     private ToFocus Focus;
     private Step StepToFocus;
+    private Ingredient? IngredientToFocus;
 
     private int Servings
     {
@@ -305,7 +306,7 @@
             }
         }
 
-        await RefreshRecipe(true);
+        await RefreshRecipe();
         _loading = false;
     }
 
@@ -320,6 +321,13 @@
                 await StepEditFields[_recipe.Steps.Last()].FocusAsync();
                 break;
             case ToFocus.Ingredient:
+                if (IngredientToFocus != null)
+                {
+                    _ingredientTable.SetSelectedItem(IngredientToFocus);
+                    _ingredientTable.SetEditingItem(IngredientToFocus);
+                    IngredientToFocus = null;
+                    StateHasChanged();
+                }
                 if (IngredientEditField != null) await IngredientEditField.FocusAsync();
                 break;
             default:
@@ -344,9 +352,16 @@
     private async Task DeleteIngredient(Ingredient ingredient)
     {
         var result = await @Service.DeleteIngredientAsync(ingredient, _userIdentityName);
+        int removedOrder = ingredient.Order;
+        _recipe.Ingredients.Remove(ingredient);
+        foreach (var itemToUpdate in _recipe.Ingredients.Where(i => i.Order > removedOrder))
+        {
+            itemToUpdate.Order--;
+        }
+        StateHasChanged();
     }
 
-    private async Task RefreshRecipe(bool cleanup = false)
+    private async Task RefreshRecipe()
     {
         _ingredientTable?.SetEditingItem(null);
         _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
@@ -371,18 +386,6 @@
             _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
         }
 
-        if (cleanup)
-        {
-            foreach (var step in _recipe.Steps.Where(s => s.Description == null || s.Description == ""))
-            {
-                var result = await @Service.DeleteStepAsync(step, _userIdentityName);
-            }
-            foreach (var ingredient in _recipe.Ingredients.Where(s => s.Name == null || s.Name == ""))
-            {
-                var result = await @Service.DeleteIngredientAsync(ingredient, _userIdentityName);
-            }
-        }
-
         EditMode = _recipe.Steps.ToDictionary(x => x, x => false);
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
@@ -391,17 +394,18 @@
 
     private async Task AddIngredient()
     {
+        _ingredientTable?.SetEditingItem(null);
         var ingredient = new Ingredient()
         {
             RecipeId = _recipe.Id,
-            Order = _recipe.Ingredients.Count + 1,
+            Order = _recipe.Ingredients.Any() ? _recipe.Ingredients.Max(i => i.Order) + 1 : 1,
             Name = ""
         };
-        IngredientDone[_recipe.Ingredients.Count + 1] = false;
         var createResult = await @Service.CreateIngredientAsync(ingredient, _userIdentityName);
-        _ingredientTable.SetSelectedItem(ingredient);
-        _ingredientTable.SetEditingItem(ingredient);
+        _recipe.Ingredients.Add(ingredient);
+        IngredientDone[ingredient.Order] = false;
         Focus = ToFocus.Ingredient;
+        IngredientToFocus = ingredient;
         StateHasChanged();
     }
 
@@ -410,11 +414,12 @@
         var step = new Step()
         {
             RecipeId = _recipe.Id,
-            Order = _recipe.Steps.Count + 1
+            Order = _recipe.Steps.Any() ? _recipe.Steps.Max(s => s.Order) + 1 : 1
         };
-        EditMode[step] = true;
-        StepDone[_recipe.Steps.Count + 1] = false;
         var createResult = await @Service.CreateStepAsync(step, _userIdentityName);
+        _recipe.Steps.Add(step);
+        EditMode[step] = true;
+        StepDone[step.Order] = false;
         Focus = ToFocus.LastStep;
         StateHasChanged();
     }
@@ -422,6 +427,16 @@
     private async Task DeleteStep(Step step)
     {
         var result = await @Service.DeleteStepAsync(step, _userIdentityName);
+        int removedOrder = step.Order;
+        _recipe.Steps.Remove(step);
+        EditMode.Remove(step);
+
+        foreach (var itemToUpdate in _recipe.Steps.Where(s => s.Order > removedOrder))
+        {
+            itemToUpdate.Order--;
+        }
+
+        StateHasChanged();
     }
 
     private async Task UpdateStepDescription(Step step, string description)
@@ -432,22 +447,58 @@
 
     private async Task DecreaseIngredientOrder(Ingredient ingredient)
     {
+        if (ingredient.Order <= 1) return;
         var result = await @Service.DecreaseIngredientOrder(ingredient, _userIdentityName);
+        var otherIngredient = _recipe.Ingredients.FirstOrDefault(i => i.Order == ingredient.Order - 1);
+
+        if (otherIngredient != null)
+        {
+            ingredient.Order--;
+            otherIngredient.Order++;
+            StateHasChanged();
+        }
     }
 
     private async Task IncreaseIngredientOrder(Ingredient ingredient)
     {
+        if (ingredient.Order >= _recipe.Ingredients.Count) return;
         var result = await @Service.IncreaseIngredientOrder(ingredient, _userIdentityName);
+        var otherIngredient = _recipe.Ingredients.FirstOrDefault(i => i.Order == ingredient.Order + 1);
+
+        if (otherIngredient != null)
+        {
+            ingredient.Order++;
+            otherIngredient.Order--;
+            StateHasChanged();
+        }
     }
 
     private async Task DecreaseStepOrder(Step step)
     {
+        if (step.Order <= 1) return;
         var result = await @Service.DecreaseStepOrder(step, _userIdentityName);
+
+        var otherStep = _recipe.Steps.FirstOrDefault(s => s.Order == step.Order - 1);
+        if (otherStep != null)
+        {
+            step.Order--;
+            otherStep.Order++;
+            StateHasChanged();
+        }
     }
 
     private async Task IncreaseStepOrder(Step step)
     {
+        if (step.Order >= _recipe.Steps.Count) return;
         var result = await @Service.IncreaseStepOrder(step, _userIdentityName);
+
+        var otherStep = _recipe.Steps.FirstOrDefault(s => s.Order == step.Order + 1);
+        if (otherStep != null)
+        {
+            step.Order++;
+            otherStep.Order--;
+            StateHasChanged();
+        }
     }
 
     private void FinishCooking()

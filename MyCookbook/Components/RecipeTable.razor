@@ -19,20 +19,18 @@
 <MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
           RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
           EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
-          RowsPerPage="@RowsPerPage" RowsPerPageChanged="rows => RowsPerPage = rows"
-          GroupBy="@(_groupByCategory ? _groupDefinition : null)" GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
+          RowsPerPage="@_rowsPerPage" RowsPerPageChanged="async (rows) => await SetRowsPerPage(rows)"
+          GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
     <ToolBarContent>
         <MudText Typo="Typo.h6">@TableName</MudText>
-        <MudSpacer />
-        <MudCheckBox @bind-Checked="@_groupByCategory" Color="Color.Primary" Size="Size.Small">@Localizer["Group"]</MudCheckBox>
         <MudSpacer />
         <MudTextField @bind-Value="_recipeSearch" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
     <HeaderContent>
-        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.Name) : x.Name)">@Localizer["Name"]</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Recipe, object>(x => x.Name)">@Localizer["Name"]</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Category)">@Localizer["Category"]</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.Duration) : x.Duration ?? 0)">@Localizer["Duration"]</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => _groupByCategory ? (x.Category, x.LastCooked) : x.LastCooked ?? DateTime.MinValue)">@Localizer["Cooked"]</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.Duration ?? 0)">@Localizer["Duration"]</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Recipe, object>(x => x.LastCooked ?? DateTime.MinValue)">@Localizer["Cooked"]</MudTableSortLabel></MudTh>
     </HeaderContent>
     <GroupHeaderTemplate Context="group">
         <MudTh Class="mud-table-cell-custom-group" colspan="5">
@@ -61,13 +59,13 @@
     </RowTemplate>
     <RowEditingTemplate Context="recipe">
         <MudTd DataLabel="@Localizer["Name"]">
-            <MudTextField @bind-Value="@recipe.Name" OnKeyPress="CommitEdit" />
+            <MudTextField Immediate="true" @bind-Value="@recipe.Name" OnKeyPress="CommitEdit" />
         </MudTd>
         <MudTd DataLabel="@Localizer["Category"]">
-            <MudTextField @bind-Value="@recipe.Category" OnKeyPress="CommitEdit" />
+            <MudTextField Immediate="true" @bind-Value="@recipe.Category" OnKeyPress="CommitEdit" />
         </MudTd>
         <MudTd DataLabel="@Localizer["Duration"]">
-            <MudTextField @bind-Value="@recipe.DurationText" OnKeyPress="CommitEdit" />
+            <MudTextField Immediate="true" @bind-Value="@recipe.DurationText" OnKeyPress="CommitEdit" />
         </MudTd>
     </RowEditingTemplate>
     <EditButtonContent Context="button">
@@ -93,32 +91,11 @@
 
     private int _rowsPerPage = 10;
 
-    public int RowsPerPage
-    {
-        get => _rowsPerPage;
-        set
-        {
-            _rowsPerPage = value;
-            CookieModule?.Value?.InvokeVoidAsync("addCookies", "RowsPerPage", value);
-        }
-    }
-
-    private Lazy<IJSObjectReference> CookieModule;
-
     public CookbookDatabaseService DbService => Service;
 
     private bool _signedIn = true;
     private bool _loading = true;
-    private bool _groupByCategory;
     private string? _recipeSearch;
-
-    private TableGroupDefinition<Recipe> _groupDefinition = new()
-        {
-            Indentation = false,
-            Expandable = true,
-            IsInitiallyExpanded = false,
-            Selector = (e) => e.Category
-        };
 
     private List<Recipe> _recipes = new List<Recipe>();
 
@@ -132,12 +109,8 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-
-        CookieModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/Cookies.js"));
-
-        var myCookie = await JSRuntime.InvokeAsync<string>("ReadCookie.ReadCookie", "RowsPerPage");
-
-        _rowsPerPage = myCookie != null && int.TryParse(myCookie, out var rowsPerPage) ? rowsPerPage : 10;
+        var rowsPerPagePreference = await Service.GetUserPreference("RowsPerPage", UserIdentityName);
+        _rowsPerPage = rowsPerPagePreference != null && int.TryParse(rowsPerPagePreference, out var rowsPerPage) ? rowsPerPage : 10;
         StateHasChanged();
     }
 
@@ -146,6 +119,12 @@
         if (!_loading) return;
         _loading = false;
         await RefreshRecipes();
+    }
+
+    private async Task SetRowsPerPage(int rows)
+    {
+        _rowsPerPage = rows;
+        await Service.UpdateUserPreference("RowsPerPage", rows.ToString(), UserIdentityName);
     }
 
     private async Task OpenRecipe(Recipe recipe)
@@ -164,7 +143,9 @@
     {
         if (e.Key == "Enter")
         {
+            var item = _tableRef.SelectedItem;
             _tableRef.SetEditingItem(null);
+            CommitTableEdit(item);
         }
     }
 
@@ -274,9 +255,5 @@
     public async ValueTask DisposeAsync()
     {
         LanguageNotifier.UnsubscribeLanguageChange(this);
-        if (CookieModule != null && CookieModule.IsValueCreated)
-        {
-            await CookieModule.Value.DisposeAsync();
-        }
     }
 }

@@ -32,6 +32,7 @@ namespace MyCookbook
                     .AddInteractiveServerComponents();
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
+                builder.Services.AddHttpClient();
 
                 var secretsProvider = builder.Services.AddSecretsProvider(builder);
                 builder.Services.AddFeedbackProvider(secretsProvider, config);
@@ -42,10 +43,10 @@ namespace MyCookbook
                 Log.Logger = BuildLogger(secretsProvider);
                 builder.Host.UseSerilog(Log.Logger);
 
-                builder.Services.AddScoped<CookbookDatabaseService>();
+                builder.Services.AddTransient<CookbookDatabaseService>();
 
-                builder.Services.AddDbContext<CookbookDatabaseContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>
+                    options.UseSqlServer(connectionString + ";MultipleActiveResultSets=True"));
 
                 var app = builder.Build();
 
