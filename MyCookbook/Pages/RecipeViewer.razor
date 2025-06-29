@@ -93,9 +93,8 @@
                             else
                             {
                                 <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere; white-space: pre-line">
-                                    <MudHighlighter Class="mud-primary-text" Style="background-color:transparent;font-weight:bold"
-                                        Text="@text"
-                                        HighlightedTexts="@highlights" />
+                                    <HighlightText Class="mud-primary-text" Style="background-color:transparent;font-weight:bold;padding:0"
+                                        Text="@text" Terms="@highlights" />
                                 </MudText>
                             }
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
