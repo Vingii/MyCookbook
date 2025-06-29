@@ -1,0 +1,55 @@
+﻿@if (Segments.Any())
+{
+    @foreach (var segment in Segments)
+    {
+        if (segment.IsHighlighted)
+        {
+            <span class="@Class" style="@Style">@segment.Content</span>
+        }
+        else
+        {
+            @segment.Content
+        }
+    }
+}
+else
+{
+    @Text
+}
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public IEnumerable<string>? Terms { get; set; } = Enumerable.Empty<string>();
+    [Parameter] public string Class { get; set; } = "highlight";
+    [Parameter] public string? Style { get; set; }
+
+    private List<TextSegment> Segments { get; } = new();
+
+    private record TextSegment(string Content, bool IsHighlighted);
+
+    protected override void OnParametersSet()
+    {
+        ProcessText();
+    }
+
+    private void ProcessText()
+    {
+        Segments.Clear();
+
+        if (string.IsNullOrEmpty(Text) || !Terms.Any() || Terms.All(string.IsNullOrWhiteSpace))
+        {
+            Segments.Add(new TextSegment(Text, false));
+            return;
+        }
+
+        var pattern = $"(?<!\\w)({string.Join("|", Terms.Where(t => !string.IsNullOrWhiteSpace(t)).Select(System.Text.RegularExpressions.Regex.Escape))})(?!\\w)";
+
+        var parts = System.Text.RegularExpressions.Regex.Split(Text, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        foreach (var part in parts.Where(p => !string.IsNullOrEmpty(p)))
+        {
+            bool isMatch = Terms.Any(term => term.Equals(part, StringComparison.OrdinalIgnoreCase));
+            Segments.Add(new TextSegment(part, isMatch));
+        }
+    }
+}
