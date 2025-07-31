@@ -6,12 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-MyCookbook-94a01692-2198-4064-8628-81c676655f3a</UserSecretsId>
     <PackageProjectUrl>https://localhost:44390</PackageProjectUrl>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
-
+      
 <ItemGroup>
-    <None Include="wwwroot\**">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+  <Content Update="wwwroot\**">
+    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+  </Content>
 </ItemGroup>
 
 <ItemGroup>
@@ -19,15 +21,6 @@
   <Content Remove="C\**" />
   <EmbeddedResource Remove="C\**" />
   <None Remove="C\**" />
-</ItemGroup>
-
-<ItemGroup>
-  <Content Remove="wwwroot\css\RecipeViewer.css" />
-  <Content Remove="wwwroot\js\Cookies.js" />
-</ItemGroup>
-
-<ItemGroup>
-  <None Remove="wwwroot\app.css" />
 </ItemGroup>
 
   <ItemGroup>
@@ -45,6 +38,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.2" />
     <PackageReference Include="MudBlazor" Version="6.20.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
@@ -59,11 +53,5 @@
     <Content Update="Components\RecipeShareDialog.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
-    <None Update="wwwroot\css\RecipeViewer.css">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="wwwroot\js\Cookies.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  mycookbook-app:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+    networks:
+      - web-proxy
+
+networks:
+  web-proxy:
+    external: true

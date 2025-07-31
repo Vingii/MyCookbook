@@ -12,7 +12,7 @@ namespace MyCookbook.Services
 
         public MemoryLanguageDictionary(string directory)
         { 
-            foreach (var file in Directory.GetFiles("wwwroot\\" + directory))
+            foreach (var file in Directory.GetFiles(directory))
             {
                 LoadDictionary(file);
             }
