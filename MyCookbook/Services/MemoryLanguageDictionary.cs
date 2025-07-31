@@ -10,9 +10,10 @@ namespace MyCookbook.Services
     {
         private Dictionary<string, List<Collection<string>>> Inflections { get; } = new Dictionary<string, List<Collection<string>>>();
 
-        public MemoryLanguageDictionary(string directory)
+        public MemoryLanguageDictionary(IWebHostEnvironment env)
         { 
-            foreach (var file in Directory.GetFiles(directory))
+            string dictionaryFolderPath = Path.Combine(env.WebRootPath, "Static", "Dictionaries");
+            foreach (var file in Directory.GetFiles(dictionaryFolderPath))
             {
                 LoadDictionary(file);
             }

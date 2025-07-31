@@ -10,7 +10,7 @@ using Serilog.Sinks.Grafana.Loki;
 
 namespace MyCookbook
 {
-    public static class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
@@ -34,7 +34,7 @@ namespace MyCookbook
                 builder.Services.AddHttpClient();
                 
                 builder.Services.AddFeedbackProvider(config);
-                builder.Services.AddLanguageDictionary();
+                builder.Services.AddSingleton<ILanguageDictionary, MemoryLanguageDictionary>();
                 builder.Services.AddCultureLocalization(config);
                 builder.Services.AddAuth(config, builder.Environment.IsDevelopment());
 
@@ -60,9 +60,15 @@ namespace MyCookbook
                     try
                     {
                         var cookbookDbContext = services.GetRequiredService<CookbookDatabaseContext>();
-                        cookbookDbContext.Database.Migrate(); 
+                        if (cookbookDbContext.Database.IsRelational())
+                        {
+                            cookbookDbContext.Database.Migrate();
+                        }
                         var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
-                        applicationDbContext.Database.Migrate(); 
+                        if (applicationDbContext.Database.IsRelational())
+                        {
+                            applicationDbContext.Database.Migrate();
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -71,7 +77,6 @@ namespace MyCookbook
                     }
                 }
 
-                // Configure the HTTP request pipeline.
                 if (app.Environment.IsDevelopment())
                 {
                     app.UseMigrationsEndPoint();

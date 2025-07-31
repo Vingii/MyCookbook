@@ -22,12 +22,6 @@ namespace MyCookbook
             });
         }
 
-        public static void AddLanguageDictionary(this IServiceCollection services)
-        {
-            var dictionary = new MemoryLanguageDictionary(Path.Combine("wwwroot","Static","Dictionaries"));
-            services.AddSingleton<ILanguageDictionary>(dictionary);
-        }
-
         public static void AddCultureLocalization(this IServiceCollection services, ConfigurationManager config)
         {
 

@@ -37,12 +37,7 @@ namespace MyCookbook.Services
                 SelectedLanguage = httpContext.Request.GetTypedHeaders()
                            .AcceptLanguage
                            ?.OrderByDescending(x => x.Quality ?? 1)
-                           .FirstOrDefault()?.Value.ToString() ?? DefaultCulture;
-
-                if (!SupportedCultures.Contains(SelectedLanguage))
-                {
-                    SelectedLanguage = DefaultCulture;
-                }
+                           .FirstOrDefault(x => SupportedCultures.Contains(x.Value.ToString()))?.Value.ToString() ?? DefaultCulture;
 
                 result = new(SelectedLanguage);
             }

@@ -16,13 +16,6 @@
   </Content>
 </ItemGroup>
 
-<ItemGroup>
-  <Compile Remove="C\**" />
-  <Content Remove="C\**" />
-  <EmbeddedResource Remove="C\**" />
-  <None Remove="C\**" />
-</ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Azure.Communication.Email" Version="1.0.1" />
     <PackageReference Include="Azure.Identity" Version="1.12.0" />
