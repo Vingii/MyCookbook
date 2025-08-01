@@ -8,6 +8,7 @@
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
     <DockerServiceName>mycookbook-app</DockerServiceName>
+	<AdditionalComposeFilePaths>docker-compose.dev.yml</AdditionalComposeFilePaths>
   </PropertyGroup>
   <ItemGroup>
     <None Include="docker-compose.dev.yml">

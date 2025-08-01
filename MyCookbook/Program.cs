@@ -94,12 +94,12 @@ namespace MyCookbook
                 app.UseHttpsRedirection();
                 app.UseForwardedHeaders();
                 app.UseRouting();
-                app.UseAntiforgery();
 
                 app.UseStaticFiles();
 
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.UseAntiforgery();
 
                 app.MapRazorComponents<App>()
                     .AddInteractiveServerRenderMode();

@@ -15,7 +15,7 @@ namespace MyCookbook.Services
         private readonly IOptions<LocalizationOptions> _localizationOptions;
         private readonly CultureProvider _cultureProvider;
 
-        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider, ILogger<EmailSender> logger)
+        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider, ILogger<MailgunEmailSender> logger)
         {
             using var timeLogger = new TimeLogger(MethodBase.GetCurrentMethod());
             _localizationOptions = localizationOptions;

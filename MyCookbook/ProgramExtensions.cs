@@ -89,9 +89,9 @@ namespace MyCookbook
                })
                .AddCookie("Cookies");
 
-            if (!isDev)
+            if (isDev)
             {
-                services.AddTransient<IEmailSender, EmailSender>();
+                services.AddTransient<IEmailSender, MailgunEmailSender>();
             }
             services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
         }
