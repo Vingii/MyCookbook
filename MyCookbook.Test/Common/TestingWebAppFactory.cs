@@ -14,6 +14,8 @@ namespace MyCookbook.Test.Common
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            var dbGuid = Guid.NewGuid();
+
             builder.ConfigureServices(services =>
             {
                 var dbContextDescriptor = services.SingleOrDefault(
@@ -45,12 +47,12 @@ namespace MyCookbook.Test.Common
 
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    options.UseInMemoryDatabase("InMemoryApplicationDbForTesting");
+                    options.UseInMemoryDatabase($"InMemoryApplicationDbForTesting{dbGuid}");
                 });
 
                 services.AddDbContextFactory<CookbookDatabaseContext>(options =>
                 {
-                    options.UseInMemoryDatabase("InMemoryCookbookDbForTesting");
+                    options.UseInMemoryDatabase($"InMemoryCookbookDbForTesting{dbGuid}");
                 });
 
                 services.AddTransient(_ => new TestDbContextFactory());

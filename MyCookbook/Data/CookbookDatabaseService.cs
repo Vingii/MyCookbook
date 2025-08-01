@@ -15,7 +15,7 @@ namespace MyCookbook.Data
             _contextFactory = contextFactory;
         }
 
-        private async Task<CookbookDatabaseContext> GetContext()
+        public async Task<CookbookDatabaseContext> GetContext()
         {
             return await _contextFactory.CreateDbContextAsync();
         }

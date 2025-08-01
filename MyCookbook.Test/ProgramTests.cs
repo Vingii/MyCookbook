@@ -4,7 +4,7 @@ using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Test.Common;
 
-namespace MyCookbook.Tests
+namespace MyCookbook.Test
 {
     public class ProgramTests : IClassFixture<TestingWebAppFactory<Program>>
     {

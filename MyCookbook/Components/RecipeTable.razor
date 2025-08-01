@@ -16,7 +16,7 @@
 @implements IDisposable
 @inherits OwningComponentBase<CookbookDatabaseService>
 
-<MudTable @ref="_tableRef" Items="@_recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
+<MudTable @ref="_tableRef" Items="@Recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
           RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
           EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
           RowsPerPage="@_rowsPerPage" RowsPerPageChanged="async (rows) => await SetRowsPerPage(rows)"
@@ -92,12 +92,12 @@
     private int _rowsPerPage = 10;
 
     public CookbookDatabaseService DbService => Service;
+    public List<Recipe> Recipes = new List<Recipe>();
 
     private bool _signedIn = true;
     private bool _loading = true;
     private string? _recipeSearch;
 
-    private List<Recipe> _recipes = new List<Recipe>();
 
     private MudTable<Recipe> _tableRef;
 
@@ -114,11 +114,14 @@
         StateHasChanged();
     }
 
-    public async void Load()
+    public async Task Load()
     {
         if (!_loading) return;
         _loading = false;
-        await RefreshRecipes();
+        await InvokeAsync(async () =>
+        {
+            await RefreshRecipes();
+        });
     }
 
     private async Task SetRowsPerPage(int rows)
@@ -200,12 +203,12 @@
     {
         if (UserIdentityName != "")
         {
-            _recipes = (await RecipeGetter()).ToList();
+            Recipes = (await RecipeGetter()).ToList();
             _signedIn = true;
         }
         else
         {
-            _recipes = new List<Recipe>()
+            Recipes = new List<Recipe>()
             {
                 new Recipe()
                 {
