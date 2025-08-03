@@ -6,8 +6,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
     networks:
-      - web-proxy
+      - proxy-net
 
 networks:
-  web-proxy:
+  proxy-net:
     external: true
