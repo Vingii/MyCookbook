@@ -100,7 +100,7 @@
         if (authenticationStateTask != null)
         {
             var user = (await authenticationStateTask).User;
-            if (user.Identity != null)
+            if (user.Identity != null && user.FindFirst(ClaimTypes.Name)?.Value.Equals("guest", StringComparison.InvariantCultureIgnoreCase) == false)
             {
                 _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
             }
