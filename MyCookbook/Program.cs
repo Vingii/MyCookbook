@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using MudBlazor.Services;
 using MyCookbook.Components;
 using MyCookbook.Data;
@@ -57,6 +58,16 @@ namespace MyCookbook
                 var app = builder.Build();
 
                 app.UseForwardedHeaders();
+
+                app.Use((context, next) =>
+                {
+                    if (context.Request.Headers.TryGetValue("X-Forwarded-Proto", out StringValues proto))
+                    {
+                        context.Request.Scheme = proto;
+                    }
+
+                    return next();
+                });
 
                 using (var scope = app.Services.CreateScope())
                 {
