@@ -138,13 +138,7 @@ namespace MyCookbook
 
         private static Serilog.ILogger BuildLogger(IConfiguration config)
         {
-            var appSettingsConfiguration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
-                .Build();
-
-            var grafanaSections = appSettingsConfiguration.GetSection("Serilog").GetSection("WriteTo")
+            var grafanaSections = config.GetSection("Serilog").GetSection("WriteTo")
                 .GetChildren().Where(x => x.GetSection("Name").Value == "GrafanaLoki");
 
             var credentials = CreateGrafanaCredentials(config);
