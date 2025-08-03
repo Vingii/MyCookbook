@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using MyCookbook.Components;
@@ -25,32 +26,57 @@ namespace MyCookbook
                     options.UseSqlServer(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-                new DbHeartbeatProvider(connectionString).Start();
-
                 builder.Services.AddRazorPages();
                 builder.Services.AddRazorComponents()
                     .AddInteractiveServerComponents();
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
                 builder.Services.AddHttpClient();
-
-                var secretsProvider = builder.Services.AddSecretsProvider(builder);
-                builder.Services.AddFeedbackProvider(secretsProvider, config);
-                builder.Services.AddLanguageDictionary();
+                
+                builder.Services.AddFeedbackProvider(config);
+                builder.Services.AddSingleton<ILanguageDictionary, MemoryLanguageDictionary>();
                 builder.Services.AddCultureLocalization(config);
-                builder.Services.AddAuth(secretsProvider, builder.Environment.IsDevelopment());
+                builder.Services.AddAuth(config, builder.Environment.IsDevelopment());
 
-                Log.Logger = BuildLogger(secretsProvider);
+                Log.Logger = BuildLogger(config);
                 builder.Host.UseSerilog(Log.Logger);
 
                 builder.Services.AddTransient<CookbookDatabaseService>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>
-                    options.UseSqlServer(connectionString + ";MultipleActiveResultSets=True"));
+                    options.UseSqlServer(connectionString + ";MultipleActiveResultSets=True", providerOptions => providerOptions.EnableRetryOnFailure()));
+
+                builder.Services.Configure<ForwardedHeadersOptions>(options =>
+                {
+                    options.ForwardedHeaders =
+                        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                });
 
                 var app = builder.Build();
 
-                // Configure the HTTP request pipeline.
+                using (var scope = app.Services.CreateScope())
+                {
+                    var services = scope.ServiceProvider;
+                    try
+                    {
+                        var cookbookDbContext = services.GetRequiredService<CookbookDatabaseContext>();
+                        if (cookbookDbContext.Database.IsRelational())
+                        {
+                            cookbookDbContext.Database.Migrate();
+                        }
+                        var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
+                        if (applicationDbContext.Database.IsRelational())
+                        {
+                            applicationDbContext.Database.Migrate();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "An error occurred while migrating the database.");
+                        throw; 
+                    }
+                }
+
                 if (app.Environment.IsDevelopment())
                 {
                     app.UseMigrationsEndPoint();
@@ -66,14 +92,15 @@ namespace MyCookbook
                 app.UseSerilogRequestLogging();
 
                 app.UseHttpsRedirection();
-
+                app.UseForwardedHeaders();
                 app.UseRouting();
-                app.UseAntiforgery();
 
                 app.UseStaticFiles();
 
+                app.UseMiddleware<HeaderAuthenticationMiddleware>();
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.UseAntiforgery();
 
                 app.MapRazorComponents<App>()
                     .AddInteractiveServerRenderMode();
@@ -88,7 +115,7 @@ namespace MyCookbook
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Host Terminated Unexpectedly");
+                Console.WriteLine($"HOST TERMINATED UNEXPECTEDLY: {ex}");
             }
             finally
             {
@@ -96,7 +123,7 @@ namespace MyCookbook
             }
         }
 
-        private static Serilog.ILogger BuildLogger(ISecretsProvider secretsProvider)
+        private static Serilog.ILogger BuildLogger(IConfiguration config)
         {
             var appSettingsConfiguration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -107,7 +134,7 @@ namespace MyCookbook
             var grafanaSections = appSettingsConfiguration.GetSection("Serilog").GetSection("WriteTo")
                 .GetChildren().Where(x => x.GetSection("Name").Value == "GrafanaLoki");
 
-            var credentials = CreateGrafanaCredentials(secretsProvider);
+            var credentials = CreateGrafanaCredentials(config);
 
             var grafanaLoginSettings = new Dictionary<string, string>();
             foreach (var section in grafanaSections)
@@ -131,10 +158,9 @@ namespace MyCookbook
             return logger;
         }
 
-        private static LokiCredentials CreateGrafanaCredentials(ISecretsProvider secretsProvider)
+        private static LokiCredentials CreateGrafanaCredentials(IConfiguration config)
         {
-            var grafanaToken = secretsProvider.GetSecret("GrafanaKey");
-            return new LokiCredentials { Login = "912173", Password = grafanaToken };
+            return new LokiCredentials { Login = config["Grafana:Login"], Password = config["Grafana:Key"] };
         }
     }
 }

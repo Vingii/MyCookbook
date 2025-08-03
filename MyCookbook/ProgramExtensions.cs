@@ -11,29 +11,15 @@ namespace MyCookbook
 {
     public static class ProgramExtensions
     {
-        public static ISecretsProvider AddSecretsProvider(this IServiceCollection services, WebApplicationBuilder builder)
-        {
-            var secretsProvider = new SecretsProvider(builder);
-            services.AddSingleton<ISecretsProvider>(secretsProvider);
-            return secretsProvider;
-        }
-
-        public static void AddFeedbackProvider(this IServiceCollection services, ISecretsProvider secretsProvider, ConfigurationManager config)
+        public static void AddFeedbackProvider(this IServiceCollection services, IConfiguration config)
         {
             services.AddScoped<IFeedbackProvider>(sp =>
             {
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var client = httpClientFactory.CreateClient();
 
-                return new JiraFeedbackProvider(client, config["JiraDomain"], secretsProvider.GetSecret("JiraEmail"), secretsProvider.GetSecret("JiraKey"), config["JiraProjectKey"]
-                );
+                return new JiraFeedbackProvider(client, config["Jira:Domain"], config["Jira:Email"], config["Jira:Key"], config["Jira:ProjectKey"]);
             });
-        }
-
-        public static void AddLanguageDictionary(this IServiceCollection services)
-        {
-            var dictionary = new MemoryLanguageDictionary("Static/Dictionaries");
-            services.AddSingleton<ILanguageDictionary>(dictionary);
         }
 
         public static void AddCultureLocalization(this IServiceCollection services, ConfigurationManager config)
@@ -54,7 +40,8 @@ namespace MyCookbook
                     };
             });
         }
-        public static void AddAuth(this IServiceCollection services, ISecretsProvider secretsProvider, bool isDev)
+        
+        public static void AddAuth(this IServiceCollection services, IConfiguration config, bool isDev)
         {
             services.AddCascadingAuthenticationState();
             services.AddScoped<IdentityUserAccessor>();
@@ -74,17 +61,16 @@ namespace MyCookbook
                         options.SignIn.RequireConfirmedEmail = false;
                         options.SignIn.RequireConfirmedAccount = false;
                     }
-                : options =>
-                    {
-                        options.Password.RequireDigit = false;
-                        options.Password.RequireLowercase = false;
-                        options.Password.RequireNonAlphanumeric = false;
-                        options.Password.RequireUppercase = false;
-                        options.Password.RequiredLength = 8;
-                        options.Password.RequiredUniqueChars = 1;
-                        options.SignIn.RequireConfirmedAccount = true;
-                    };
-
+            : options =>
+                {
+                    options.Password.RequireDigit = false;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequiredLength = 8;
+                    options.Password.RequiredUniqueChars = 1;
+                    options.SignIn.RequireConfirmedAccount = true;
+                };
 
             services.AddIdentity<ApplicationUser, IdentityRole>(identityOptions)
                 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -98,14 +84,14 @@ namespace MyCookbook
                 })
                .AddGoogle(options =>
                {
-                   options.ClientId = secretsProvider.GetSecret("Authentication:Google:ClientId");
-                   options.ClientSecret = secretsProvider.GetSecret("Authentication:Google:ClientSecret");
+                   options.ClientId = config["Google:ClientId"];
+                   options.ClientSecret = config["Google:ClientSecret"];
                })
                .AddCookie("Cookies");
 
-            if (!isDev)
+            if (isDev)
             {
-                services.AddTransient<IEmailSender, EmailSender>();
+                services.AddTransient<IEmailSender, MailgunEmailSender>();
             }
             services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
         }
