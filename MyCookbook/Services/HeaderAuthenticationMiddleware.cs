@@ -11,12 +11,18 @@ public class HeaderAuthenticationMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue("X-Authentik-Username", out var userName))
+        if (context.Request.Headers.TryGetValue("X-Authentik-Uid", out var userId) &&
+            !string.IsNullOrEmpty(userId))
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, userName.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
             };
+
+            if (context.Request.Headers.TryGetValue("X-Authentik-Username", out var userName))
+            {
+                claims.Add(new Claim(ClaimTypes.Name, userName.ToString()));
+            }
 
             if (context.Request.Headers.TryGetValue("X-Authentik-Email", out var email))
             {
