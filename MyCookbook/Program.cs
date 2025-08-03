@@ -54,6 +54,8 @@ namespace MyCookbook
 
                 var app = builder.Build();
 
+                app.UseForwardedHeaders();
+
                 using (var scope = app.Services.CreateScope())
                 {
                     var services = scope.ServiceProvider;
@@ -92,7 +94,6 @@ namespace MyCookbook
                 app.UseSerilogRequestLogging();
 
                 app.UseHttpsRedirection();
-                app.UseForwardedHeaders();
                 app.UseRouting();
 
                 app.UseStaticFiles();
