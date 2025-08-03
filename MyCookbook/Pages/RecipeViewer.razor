@@ -98,11 +98,11 @@
                                 </MudText>
                             }
                             <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseStepOrder(step))" />
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
                             <MudToggleIconButton Size="@Size.Medium" Class="pa-0" Toggled="EditMode[step]"
                                                 Icon="@Icons.Material.Outlined.Edit" Title="Edit" ToggledChanged="(e) => OnStepEditChanged(e, step)"
                                                 ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
-                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseStepOrder(step))" />
-                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
                         </MudStack>
                     </MudPaper>
                 }
