@@ -69,24 +69,6 @@ namespace MyCookbook
                     return next();
                 });
 
-                app.Use((context, next) =>
-                {
-                    // Only log requests for the main page to avoid clutter
-                    if (context.Request.Path == "/")
-                    {
-                        Log.Information("--- REQUEST RECEIVED ---");
-                        Log.Information("Request Scheme: {Scheme}", context.Request.Scheme);
-                        Log.Information("Request Host: {Host}", context.Request.Host);
-                        Log.Information("--- HEADERS ---");
-                        foreach (var header in context.Request.Headers)
-                        {
-                            Log.Information("{HeaderKey}: {HeaderValue}", header.Key, header.Value);
-                        }
-                        Log.Information("--- END HEADERS ---");
-                    }
-                    return next();
-                });
-
                 using (var scope = app.Services.CreateScope())
                 {
                     var services = scope.ServiceProvider;
