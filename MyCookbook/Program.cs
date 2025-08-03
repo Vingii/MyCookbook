@@ -110,8 +110,8 @@ namespace MyCookbook
 
                 app.UseStaticFiles();
 
-                app.UseMiddleware<HeaderAuthenticationMiddleware>();
                 app.UseAuthentication();
+                app.UseMiddleware<HeaderAuthenticationMiddleware>();
                 app.UseAuthorization();
                 app.UseAntiforgery();
 

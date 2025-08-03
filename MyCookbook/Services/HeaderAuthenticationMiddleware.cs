@@ -11,14 +11,14 @@ public class HeaderAuthenticationMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue("X-authentik-username", out var userName))
+        if (context.Request.Headers.TryGetValue("X-Authentik-Username", out var userName))
         {
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, userName.ToString()),
             };
 
-            if (context.Request.Headers.TryGetValue("X-authentik-email", out var email))
+            if (context.Request.Headers.TryGetValue("X-Authentik-Email", out var email))
             {
                 claims.Add(new Claim(ClaimTypes.Email, email.ToString()));
             }
