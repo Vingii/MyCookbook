@@ -106,7 +106,6 @@ namespace MyCookbook
 
                 app.UseSerilogRequestLogging();
 
-                app.UseHttpsRedirection();
                 app.UseRouting();
 
                 app.UseStaticFiles();
