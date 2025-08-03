@@ -69,22 +69,6 @@ namespace MyCookbook
                     return next();
                 });
 
-                app.Use((context, next) =>
-                {
-                    // Log all headers for the initial request
-                    Log.Information("--- INCOMING HEADERS ---");
-                    foreach (var header in context.Request.Headers)
-                    {
-                        Log.Information("{HeaderKey}: {HeaderValue}", header.Key, header.Value);
-                    }
-                    Log.Information("--- END HEADERS ---");
-
-                    // Also log the scheme the app thinks it has
-                    Log.Information("Request Scheme: {Scheme}", context.Request.Scheme);
-
-                    return next();
-                });
-
                 using (var scope = app.Services.CreateScope())
                 {
                     var services = scope.ServiceProvider;
