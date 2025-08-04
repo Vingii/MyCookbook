@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Logging;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MyCookbook.Data
 {
@@ -530,6 +531,102 @@ namespace MyCookbook.Data
             var context = await GetContext();
             var preference = await context.UserPreferences.Where(x => x.UserName == user && x.Key == key).AsNoTracking().FirstOrDefaultAsync();
             return preference?.Value;
+        }
+
+        public async Task<string> Export(string user)
+        {
+            var context = await GetContext();
+
+            var recipes = await context.Recipes
+                .Where(r => r.UserName == user)
+                .Include(r => r.Ingredients)
+                .Include(r => r.Steps)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+            };
+
+            return JsonSerializer.Serialize(recipes, options);
+        }
+
+        public async Task Import(string importDataJson, string user)
+        {
+            var context = await GetContext();
+
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve
+            };
+
+            var importData = JsonSerializer.Deserialize<JsonElement>(importDataJson, options);
+
+            var importedRecipes = JsonSerializer.Deserialize<List<Recipe>>(importData.GetRawText(), options) ?? new();
+
+            var strategy = context.Database.CreateExecutionStrategy();
+
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await context.Database.BeginTransactionAsync();
+                try
+                {
+                    var existingRecipes = await context.Recipes.Where(r => r.UserName == user).ToListAsync();
+                    if (existingRecipes.Any())
+                    {
+                        context.Recipes.RemoveRange(existingRecipes);
+                        await context.SaveChangesAsync();
+                    }
+
+                    var oldRecipeIdToNewRecipeIdMap = new Dictionary<int, int>();
+
+                    foreach (var recipe in importedRecipes)
+                    {
+                        var oldRecipeId = recipe.Id;
+
+                        recipe.Id = 0;
+                        recipe.UserName = user;
+
+                        var originalIngredients = recipe.Ingredients?.ToList() ?? [];
+                        recipe.Ingredients?.Clear();
+                        var originalSteps = recipe.Steps?.ToList() ?? [];
+                        recipe.Steps?.Clear();
+                        var originalTags = recipe.Tags?.ToList() ?? [];
+                        recipe.Tags?.Clear();
+
+                        context.Recipes.Add(recipe);
+                        await context.SaveChangesAsync();
+
+                        oldRecipeIdToNewRecipeIdMap[oldRecipeId] = recipe.Id;
+
+                        foreach (var ingredient in originalIngredients)
+                        {
+                            ingredient.Id = 0;
+                            ingredient.RecipeId = recipe.Id;
+                            ingredient.UserName = user;
+                            context.Ingredients.Add(ingredient);
+                        }
+                        foreach (var step in originalSteps)
+                        {
+                            step.Id = 0;
+                            step.RecipeId = recipe.Id;
+                            step.UserName = user;
+                            context.Steps.Add(step);
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
     }
 }

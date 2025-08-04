@@ -57,6 +57,17 @@
         navigatorLanguages = function () {
             return Promise.resolve(navigator.languages);
         };
+        window.BlazorDownloadFile = function (fileName, content) {
+            var file = new File([content], fileName, { type: "application/json" });
+            var url = URL.createObjectURL(file);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
     </script>
 </body>
 </html>
