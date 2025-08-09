@@ -19,7 +19,8 @@ public class HeaderAuthenticationMiddleware
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString())
             };
 
-            if (context.Request.Headers.TryGetValue("X-Authentik-Username", out var userName))
+            if ((context.Request.Headers.TryGetValue("X-Authentik-Name", out var userName) && userName != "")
+                || context.Request.Headers.TryGetValue("X-Authentik-Username", out userName))
             {
                 claims.Add(new Claim(ClaimTypes.Name, userName.ToString()));
             }

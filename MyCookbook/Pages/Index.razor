@@ -12,7 +12,7 @@
 
 <PageTitle>My Cookbook</PageTitle>
 
-<h1>@Localizer["Dashboard"]</h1>
+<h1>@(_userName == "" ? Localizer["Dashboard"] : $"Welcome, {_userName}!")</h1>
 <hr />
 <RecipeTable @ref="_favoriteRecipeTable" UserIdentityName="@_userIdentityName"
     Editable="false" TableName="@Localizer["Favorites"]"
@@ -26,6 +26,7 @@
     [CascadingParameter]
     private Task<AuthenticationState>? authenticationStateTask { get; set; }
     private string _userIdentityName = "";
+    private string _userName = "";
 
     private RecipeTable _favoriteRecipeTable;
     private RecipeTable _longUncookedRecipeTable;
@@ -41,6 +42,7 @@
             if (user.Identity != null && user.FindFirst(ClaimTypes.Name)?.Value.StartsWith("guest-", StringComparison.InvariantCultureIgnoreCase) == false)
             {
                 _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+                _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? "";
             }
         }
     }

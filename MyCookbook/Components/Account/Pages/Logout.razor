@@ -1,5 +1,6 @@
 ﻿@page "/Account/Logout"
 
+@using System.Security.Claims;
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
@@ -8,15 +9,29 @@
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
 
 <PageTitle>Log out</PageTitle>
 
 @code {
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity?.AuthenticationType == "HeaderAuth")
+            {
+                NavigationManager.NavigateTo(
+                    $"{Configuration["COOKBOOK_AUTHENTIK_URL"]}/application/o/cookbook/end-session/?post_logout_redirect_uri={Configuration["COOKBOOK_URL"]}", true);
+            }
+        }
+
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             await SignInManager.SignOutAsync();
