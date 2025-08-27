@@ -1,0 +1,62 @@
+﻿@using MyCookbook.Data.CookbookDatabase
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Fastfood" Class="mr-3" /> Add Meal
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAutocomplete T="Recipe"
+                         Label="Select Recipe"
+                         Variant="Variant.Outlined"
+                         @bind-Value="_selectedRecipe"
+                         SearchFunc="@SearchRecipes"
+                         ToStringFunc="@(r => r == null ? null : r.Name)"
+                         Clearable="true"
+                         Dense="true"
+                         Required="true"
+                         RequiredError="Recipe is required!"
+                         AdornmentIcon="@Icons.Material.Filled.Search"
+                         AdornmentColor="Color.Primary" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(_selectedRecipe == null)">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<Recipe> Recipes { get; set; } = new(); // List of all available recipes
+
+    private Recipe? _selectedRecipe;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Submit()
+    {
+        if (_selectedRecipe != null)
+        {
+            MudDialog.Close(DialogResult.Ok(_selectedRecipe));
+        }
+    }
+
+    // This function provides dynamic search results for MudAutocomplete
+    private async Task<IEnumerable<Recipe>> SearchRecipes(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return await Task.FromResult(Recipes.OrderBy(r => r.Name));
+        }
+
+        return await Task.FromResult(
+            Recipes.Where(r => r.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
+                   .OrderBy(r => r.Name)
+        );
+    }
+}

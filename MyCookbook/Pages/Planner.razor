@@ -1,0 +1,394 @@
+﻿@page "/planner"
+@using Microsoft.AspNetCore.Identity;
+@using MyCookbook.Components;
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@using Microsoft.Extensions.Localization;
+@using MyCookbook.Services;
+@using System.Security.Claims;
+@using MyCookbook.Utils;
+@inject IStringLocalizer<Planner> Localizer
+@inject LanguageNotifier LanguageNotifier
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject ILogger<Planner> Logger
+@inject IDialogService DialogService
+@inject CultureProvider CultureProvider
+@inject IJSRuntime JSRuntime
+@inherits OwningComponentBase<CookbookDatabaseService>
+@implements IDisposable
+
+<PageTitle>Planner</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-8">
+    <MudText Typo="Typo.h3" Class="mb-4">Meal Planner</MudText>
+
+    @if (_userIdentityName == "")
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4">
+            Please log in to view and manage your meal plan.
+        </MudAlert>
+    }
+    else if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        <MudText Typo="Typo.body2">Loading meal plan and recipes...</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            @for (int weekIndex = 0; weekIndex < 3; weekIndex++) // Loop twice for two weeks
+            {
+                var currentWeekIndex = weekIndex;
+                <MudItem xs="12">
+                    @* Each week occupies a full row (12 columns) *@
+                    <MudText Typo="Typo.h5" Class="my-3">
+                        @StartOfWeek(DateTime.Today).AddDays(currentWeekIndex * 7).ToString(CultureProvider.SelectedCulture.DateTimeFormat.MonthDayPattern, CultureProvider.SelectedCulture)
+                    </MudText>
+
+                    @* Inner MudGrid for days within the week *@
+                    <MudGrid Spacing="2">
+                        @for (int dayIndex = 0; dayIndex < 7; dayIndex++) // Loop 7 times for days in the current week
+                        {
+                            var dayOffset = (currentWeekIndex * 7) + dayIndex; // Calculate overall day offset
+                            var day = StartOfWeek(DateTime.Today).AddDays(dayOffset);
+                            var dateOnly = DateOnly.FromDateTime(day);
+                            var plannedMealsForDay = Plan.GetValueOrDefault(dateOnly, new List<PlannedRecipe>());
+
+                            <MudItem xs="12" sm="6" md="6" lg="4" xl="3">
+                                @* Your original day sizing *@
+                                <MudPaper Elevation="2" Class="@(dateOnly == DateOnly.FromDateTime(DateTime.Today) ? "pa-4 d-flex flex-column mud-background-light mud-border-primary" : "pa-4 d-flex flex-column")"
+                                          style="height: 100%; min-height: 100px; border-width: 1px; border-style: solid; border-color: var(--mud-palette-lines-default);" ondragover="event.preventDefault();"
+                                          @ondrop="(e) => OnDrop(e, dateOnly)">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <MudText Typo="Typo.h6">@dateOnly.ToString($"ddd, {CultureProvider.SelectedCulture.DateTimeFormat.MonthDayPattern}", CultureProvider.SelectedCulture)</MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" OnClick="() => AddPlan(dateOnly)" />
+                                    </div>
+
+                                    @if (plannedMealsForDay.Any())
+                                    {
+                                        <MudList Dense="true">
+                                            @foreach (var plannedRecipe in plannedMealsForDay)
+                                            {
+                                                <MudListItem draggable="true"
+                                                             @ondragstart="(e) => OnDragStart(e, plannedRecipe)"
+                                                             Class="mud-elevation-1 pa-2 my-1">
+                                                    <div class="d-flex align-center flex-grow-1" style="min-width: 0;">
+                                                        <MudIconButton Icon="@GetPlannedRecipeIcon(plannedRecipe)" Size="Size.Small" Color="Color.Primary" OnClick="() => TogglePlannedRecipeType(plannedRecipe)" Class="mr-2" />
+
+                                                        <span class="mr-2 flex-grow-1" style="white-space: normal; overflow-wrap: break-word; word-break: normal; min-width: 0;">
+                                                            <MudText Typo="Typo.body2">@plannedRecipe.Recipe.Name</MudText>
+                                                        </span>
+                                                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Color="Color.Info" OnClick="() => OpenRecipeInNewTab(plannedRecipe.Recipe)" Class="ml-auto" />
+                                                        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" Color="Color.Info" OnClick="() => DuplicatePlan(plannedRecipe)" />
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => ConfirmRemovePlannedRecipe(plannedRecipe)" />
+                                                    </div>
+                                                </MudListItem>
+                                            }
+                                        </MudList>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary mt-auto">@Localizer["No meals planned for this day."]</MudText>
+                                    }
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+    private bool _isLoading = true;
+
+    private Dictionary<DateOnly, List<PlannedRecipe>> Plan { get; set; } = new Dictionary<DateOnly, List<PlannedRecipe>>();
+    private List<Recipe> Recipes { get; set; } = new List<Recipe>();
+
+    // Drag & Drop State
+    private PlannedRecipe? _draggedRecipe;
+    private DateOnly _draggedRecipeOriginalDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LanguageNotifier.SubscribeLanguageChange(this);
+
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null && user.Identity.IsAuthenticated && !user.FindFirst(ClaimTypes.Name)?.Value.StartsWith("guest-", StringComparison.InvariantCultureIgnoreCase) == true)
+            {
+                _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _userIdentityName != "")
+        {
+            await LoadPlannerData();
+            _isLoading = false;
+            StateHasChanged(); // Notify UI that data is loaded
+        }
+        else if (firstRender && _userIdentityName == "")
+        {
+            _isLoading = false; // No user, stop loading spinner
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadPlannerData()
+    {
+        try
+        {
+            Plan = await Service.GetPlannedRecipesAsync(_userIdentityName);
+            Recipes = await Service.GetRecipesAsync(_userIdentityName);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load planner data.");
+            // Optionally, show a MudSnackbar for the user
+            DialogService.Show<MudDialog>("Error", new DialogParameters() { ["ContentText"] = "Failed to load meal plan. Please try again." });
+        }
+    }
+
+    private DateTime StartOfWeek(DateTime dt)
+    {
+        int diff = (7 + (dt.DayOfWeek - CultureProvider.SelectedCulture.DateTimeFormat.FirstDayOfWeek)) % 7;
+        return dt.AddDays(-1 * diff).Date;
+    }
+
+    private string GetPlannedRecipeIcon(PlannedRecipe plannedRecipe)
+    {
+        return plannedRecipe.FromFridge
+            ? Icons.Material.Filled.Kitchen
+            : Icons.Material.Filled.Fastfood;
+    }
+
+    private async Task TogglePlannedRecipeType(PlannedRecipe plannedRecipe)
+    {
+        plannedRecipe.FromFridge = !plannedRecipe.FromFridge;
+        await Service.UpdatePlannedRecipeAsync(plannedRecipe, _userIdentityName);
+        StateHasChanged();
+    }
+
+    private async Task OpenRecipeInNewTab(Recipe recipe)
+    {
+        var url = $"/recipe/{recipe.Name}";
+        await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    // --- Add Plan (Dialog) ---
+    private async Task AddPlan(DateOnly dateOnly)
+    {
+        if (_userIdentityName == "" || _isLoading) return;
+
+        var parameters = new DialogParameters
+        {
+            { "Recipes", Recipes }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<AddMealDialog>("Add Meal", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Recipe selectedRecipe)
+        {
+            try
+            {
+                var newPlannedRecipe = new PlannedRecipe
+                {
+                    UserName = _userIdentityName,
+                    Date = dateOnly,
+                    RecipeId = selectedRecipe.Id
+                };
+
+                await Service.CreatePlannedRecipeAsync(newPlannedRecipe, _userIdentityName);
+
+                newPlannedRecipe.Recipe = selectedRecipe;
+
+                if (!Plan.ContainsKey(dateOnly))
+                {
+                    Plan[dateOnly] = new List<PlannedRecipe>();
+                }
+                Plan[dateOnly].Add(newPlannedRecipe);
+                Plan[dateOnly] = Plan[dateOnly].OrderBy(pr => pr.Recipe.Name).ToList(); // Re-sort
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to add planned recipe.");
+                DialogService.Show<MudDialog>("Error", new DialogParameters() { ["ContentText"] = "Failed to add meal. Please try again." });
+            }
+        }
+    }
+
+    // --- Remove Plan ---
+    private async Task ConfirmRemovePlannedRecipe(PlannedRecipe plannedRecipeToRemove)
+    {
+        if (_userIdentityName == "" || _isLoading) return;
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var result = await DialogService.ShowMessageBox(
+            $"Delete {plannedRecipeToRemove.Recipe.Name}?",
+            "Are you sure you want to remove this meal from your plan?",
+            yesText: "Delete", cancelText: "Cancel", options: options
+        );
+
+        if (result == true) // User clicked 'Delete'
+        {
+            await RemovePlan(plannedRecipeToRemove); // Proceed with deletion
+        }
+    }
+
+    private async Task RemovePlan(PlannedRecipe plannedRecipeToRemove)
+    {
+        if (_userIdentityName == "" || _isLoading) return;
+
+        try
+        {
+            await Service.DeletePlannedRecipeAsync(plannedRecipeToRemove, _userIdentityName);
+
+            // Update UI state
+            if (Plan.TryGetValue(plannedRecipeToRemove.Date, out var plannedRecipesList))
+            {
+                plannedRecipesList.Remove(plannedRecipeToRemove);
+                if (!plannedRecipesList.Any())
+                {
+                    Plan.Remove(plannedRecipeToRemove.Date); // Remove date entry if no meals left
+                }
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to remove planned recipe.");
+            DialogService.Show<MudDialog>("Error", new DialogParameters() { ["ContentText"] = "Failed to remove meal. Please try again." });
+        }
+    }
+
+    // --- Drag and Drop Logic ---
+    private void OnDragStart(DragEventArgs e, PlannedRecipe plannedRecipe)
+    {
+        _draggedRecipe = plannedRecipe;
+        _draggedRecipeOriginalDate = plannedRecipe.Date;
+
+        if (e.DataTransfer == null) return;
+
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private async Task OnDrop(DragEventArgs e, DateOnly targetDate)
+    {
+        if (_draggedRecipe == null || _draggedRecipe.Date == targetDate || _isLoading)
+        {
+            _draggedRecipe = null; // Reset
+            _draggedRecipeOriginalDate = default;
+            return;
+        }
+
+        // Perform the move logic
+        try
+        {
+            // Update the planned recipe's date
+            var recipeToUpdate = _draggedRecipe; // Capture for update
+            recipeToUpdate.Date = targetDate;
+            await Service.UpdatePlannedRecipeAsync(recipeToUpdate, _userIdentityName);
+
+            // Update UI state: Remove from original date, add to new date
+            if (Plan.TryGetValue(_draggedRecipeOriginalDate, out var originalList))
+            {
+                originalList.Remove(_draggedRecipe);
+                if (!originalList.Any())
+                {
+                    Plan.Remove(_draggedRecipeOriginalDate);
+                }
+            }
+
+            if (!Plan.ContainsKey(targetDate))
+            {
+                Plan[targetDate] = new List<PlannedRecipe>();
+            }
+            Plan[targetDate].Add(_draggedRecipe);
+            Plan[targetDate] = Plan[targetDate].OrderBy(pr => pr.Recipe.Name).ToList(); // Re-sort new list
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to move planned recipe via drag and drop.");
+            DialogService.Show<MudDialog>("Error", new DialogParameters() { ["ContentText"] = "Failed to move meal. Please try again." });
+
+            // Revert the UI if the database update failed
+            if (_draggedRecipe != null)
+            {
+                _draggedRecipe.Date = _draggedRecipeOriginalDate; // Revert for UI consistency
+                if (!Plan.ContainsKey(_draggedRecipeOriginalDate))
+                {
+                    Plan[_draggedRecipeOriginalDate] = new List<PlannedRecipe>();
+                }
+                Plan[_draggedRecipeOriginalDate].Add(_draggedRecipe);
+                if (Plan.TryGetValue(targetDate, out var targetList))
+                {
+                    targetList.Remove(_draggedRecipe);
+                    if (!targetList.Any()) Plan.Remove(targetDate);
+                }
+                StateHasChanged();
+            }
+        }
+        finally
+        {
+            _draggedRecipe = null; // Reset dragged item
+            _draggedRecipeOriginalDate = default; // Reset
+        }
+    }
+
+    private async Task DuplicatePlan(PlannedRecipe plannedRecipeToDuplicate)
+    {
+        if (_userIdentityName == "" || _isLoading) return;
+
+        try
+        {
+            var newPlannedRecipe = new PlannedRecipe
+            {
+                UserName = _userIdentityName,
+                Date = plannedRecipeToDuplicate.Date,
+                FromFridge = plannedRecipeToDuplicate.FromFridge,
+                RecipeId = plannedRecipeToDuplicate.RecipeId
+            };
+
+            await Service.CreatePlannedRecipeAsync(newPlannedRecipe, _userIdentityName);
+
+            newPlannedRecipe.Recipe = plannedRecipeToDuplicate.Recipe;
+
+            if (!Plan.ContainsKey(newPlannedRecipe.Date))
+            {
+                Plan[newPlannedRecipe.Date] = new List<PlannedRecipe>();
+            }
+            Plan[newPlannedRecipe.Date].Add(newPlannedRecipe);
+            Plan[newPlannedRecipe.Date] = Plan[newPlannedRecipe.Date].OrderBy(pr => pr.Recipe.Name).ToList();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to duplicate planned recipe.");
+            DialogService.Show<MudDialog>("Error", new DialogParameters() { ["ContentText"] = "Failed to duplicate meal. Please try again." });
+        }
+    }
+
+    public void Dispose()
+    {
+        LanguageNotifier.UnsubscribeLanguageChange(this);
+    }
+}

@@ -14,3 +14,9 @@ services:
   db:
     ports:
       - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 1s
+      timeout: 1s
+      retries: 1
+      start_period: 1s

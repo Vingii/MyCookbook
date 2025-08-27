@@ -73,6 +73,17 @@ namespace MyCookbook.Data
                  .AsNoTracking().ToListAsync();
         }
 
+        public async Task<Dictionary<DateOnly, List<PlannedRecipe>>> GetPlannedRecipesAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            var plannedRecipes = await context.PlannedRecipes
+                .Include(x => x.Recipe)
+                 .AsNoTracking().ToListAsync();
+
+            return plannedRecipes.GroupBy(x => x.Date).ToDictionary(x => x.Key, x => x.ToList());
+        }
+
         public async Task<Recipe> CreateRecipeAsync(Recipe recipe, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
@@ -81,6 +92,51 @@ namespace MyCookbook.Data
             await context.Recipes.AddAsync(recipe);
             await context.SaveChangesAsync();
             return recipe;
+        }
+
+        public async Task<PlannedRecipe> CreatePlannedRecipeAsync(PlannedRecipe recipe, string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            recipe.UserName = user;
+            await context.PlannedRecipes.AddAsync(recipe);
+            await context.SaveChangesAsync();
+            return recipe;
+        }
+
+        public async Task<bool> DeletePlannedRecipeAsync(PlannedRecipe recipe, string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            var foundRecipe =
+                context.PlannedRecipes
+                .Where(x => x.Id == recipe.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundRecipe == null) return false;
+
+            context.PlannedRecipes.Remove(foundRecipe);
+            await context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> UpdatePlannedRecipeAsync(PlannedRecipe recipe, string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            var foundRecipe =
+                context.PlannedRecipes
+                .Where(x => x.Id == recipe.Id && x.UserName == user)
+                .FirstOrDefault();
+
+            if (foundRecipe == null) return false;
+
+            foundRecipe.Date = recipe.Date;
+            foundRecipe.FromFridge = recipe.FromFridge;
+            await context.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<bool> UpdateRecipeAsync(Recipe recipe, string user)

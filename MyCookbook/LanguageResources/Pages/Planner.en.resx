@@ -117,16 +117,34 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Dashboard" xml:space="preserve">
-    <value>Dashboard</value>
+  <data name="Amount" xml:space="preserve">
+    <value>Amount</value>
   </data>
-  <data name="Planner" xml:space="preserve">
-    <value>Planner</value>
+  <data name="FinishCooking" xml:space="preserve">
+    <value>Finish Cooking</value>
   </data>
-  <data name="RandomRecipe" xml:space="preserve">
-    <value>Random Recipe</value>
+  <data name="Ingredient" xml:space="preserve">
+    <value>Ingredient</value>
   </data>
-  <data name="RecipeBrowser" xml:space="preserve">
-    <value>Recipe Browser</value>
+  <data name="IngredientLowercase" xml:space="preserve">
+    <value>ingredient</value>
+  </data>
+  <data name="NewIngredient" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="NewStep" xml:space="preserve">
+    <value>Add Step</value>
+  </data>
+  <data name="No meals planned for this day." xml:space="preserve">
+    <value>No meals planned.</value>
+  </data>
+  <data name="Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Servings" xml:space="preserve">
+    <value>Servings</value>
+  </data>
+  <data name="Share" xml:space="preserve">
+    <value>Share</value>
   </data>
 </root>

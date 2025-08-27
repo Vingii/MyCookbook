@@ -82,11 +82,6 @@ namespace MyCookbook
                     options.DefaultScheme = IdentityConstants.ApplicationScheme;
                     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
                 })
-               .AddGoogle(options =>
-               {
-                   options.ClientId = config["Google:ClientId"];
-                   options.ClientSecret = config["Google:ClientSecret"];
-               })
                .AddCookie("Cookies");
 
             if (isDev)

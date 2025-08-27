@@ -120,6 +120,9 @@
   <data name="Dashboard" xml:space="preserve">
     <value>Úvod</value>
   </data>
+  <data name="Planner" xml:space="preserve">
+    <value>Plán</value>
+  </data>
   <data name="RandomRecipe" xml:space="preserve">
     <value>Náhodný recept</value>
   </data>

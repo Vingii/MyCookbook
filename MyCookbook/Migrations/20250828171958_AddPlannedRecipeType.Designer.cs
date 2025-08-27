@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyCookbook.Data.CookbookDatabase;
 
@@ -11,9 +12,11 @@ using MyCookbook.Data.CookbookDatabase;
 namespace MyCookbook.Migrations
 {
     [DbContext(typeof(CookbookDatabaseContext))]
-    partial class CookbookDatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250828171958_AddPlannedRecipeType")]
+    partial class AddPlannedRecipeType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
