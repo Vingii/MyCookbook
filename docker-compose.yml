@@ -1,9 +1,10 @@
 services:
-  mycookbook-app:
+  mycookbook:
     build:
       context: .
       dockerfile: MyCookbook/Dockerfile
-    container_name: mycookbook-app
+    container_name: mycookbook
+    image: ${DOCKER_REGISTRY-}mycookbook
     environment:
       - ConnectionStrings__DefaultConnection=Server=db;Database=MyCookbookDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
     depends_on:

@@ -7,11 +7,11 @@
     <ProjectGuid>0fce7eaa-1acb-425b-8cf9-fe06f86ce260</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
-    <DockerServiceName>mycookbook-app</DockerServiceName>
+    <DockerServiceName>mycookbook</DockerServiceName>
 	<AdditionalComposeFilePaths>docker-compose.dev.yml</AdditionalComposeFilePaths>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="docker-compose.dev.yml">
+    <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
     <None Include="docker-compose.yml" />
