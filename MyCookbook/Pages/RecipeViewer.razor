@@ -2,6 +2,7 @@
 @using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
+@using MyCookbook.Model
 @using Microsoft.Extensions.Localization;
 @using MyCookbook.Services;
 @using System.Security.Claims;
@@ -20,7 +21,7 @@
 <PageTitle>Recipe - @Name</PageTitle>
 <div class="d-flex align-center gap-4">
     <MudText Class="ma-2" Typo="Typo.h3">@Name</MudText>
-    <MudButton Style="margin-left: auto" OnClick="@(async() => await ShareRecipe())" Variant="Variant.Filled" Color="Color.Primary">@Localizer["Share"]</MudButton>
+    <MudButton Style="margin-left: auto" OnClick="@(async () => await ShareRecipe())" Variant="Variant.Filled" Color="Color.Primary">@Localizer["Share"]</MudButton>
 </div>
 <hr />
 
@@ -33,79 +34,90 @@
         <MudGrid>
             <MudItem sm="12" md="6">
                 <MudTable @ref="_ingredientTable" Items="@_recipe.Ingredients.OrderBy(x => x.Order)" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
-                      RowEditCommit="CommitTableEdit" CanCancelEdit="true" OnPreviewEditClick="PreviewEditClick" T="Ingredient"
-                      EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton" >
-                <HeaderContent>
-                    <MudTh>@Localizer["Ready"]</MudTh>
-                    <MudTh>@Localizer["Ingredient"]</MudTh>
-                    <MudTh>@Localizer["Amount"]</MudTh>
-                    <MudTh Class="d-flex align-content-end justify-content-end" colspan="2" >
-                        <MudButton @onclick="AddIngredient" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">
-                            @Localizer["NewIngredient"]
-                        </MudButton>
-                    </MudTh>
-                </HeaderContent>
-                <RowTemplate Context="ingredient">
-                    <MudTd Style="text-align:right">
+                          RowEditCommit="CommitTableEdit" CanCancelEdit="true" OnPreviewEditClick="PreviewEditClick" T="Ingredient"
+                          EditButtonPosition="@TableEditButtonPosition.End" EditTrigger="@TableEditTrigger.EditButton">
+                    <HeaderContent>
+                        <MudTh>@Localizer["Ready"]</MudTh>
+                        <MudTh>@Localizer["Ingredient"]</MudTh>
+                        <MudTh>@Localizer["Amount"]</MudTh>
+                        <MudTh Class="d-flex align-content-end justify-content-end" colspan="2">
+                            <MudButton @onclick="AddIngredient" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">
+                                @Localizer["NewIngredient"]
+                            </MudButton>
+                        </MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="ingredient">
+                        <MudTd Style="text-align:right">
+                            <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
+                        </MudTd>
+                        <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
+                        <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
+                        <MudTd DataLabel="Icons" Style="text-align:right">
+                            <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async () => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async () => await DecreaseIngredientOrder(ingredient))" />
+                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async () => await IncreaseIngredientOrder(ingredient))" />
+                        </MudTd>
+                    </RowTemplate>
+                    <RowEditingTemplate Context="ingredient">
                         <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                    </MudTd>
-                    <MudTd DataLabel="@Localizer["Ingredient"]">@ingredient.Name</MudTd>
-                    <MudTd DataLabel="@Localizer["Amount"]">@ingredient.Amount</MudTd>
-                    <MudTd DataLabel="Icons" Style="text-align:right">
-                        <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async() => await DeleteIngredient(ingredient))" Size="Size.Small"></MudIcon>
-                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseIngredientOrder(ingredient))" />
-                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseIngredientOrder(ingredient))" />
-                    </MudTd>
-                </RowTemplate>
-                <RowEditingTemplate Context="ingredient">
-                    <MudCheckBox @bind-Checked="@IngredientDone[ingredient.Order]" Color="Color.Primary" Size="Size.Small"></MudCheckBox>
-                    <MudTd DataLabel="@Localizer["Ingredient"]">
-                        <MudTextField @bind-Value="@ingredient.Name" @ref="IngredientEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientNameKeyDown(e, ingredient)" />
-                    </MudTd>
-                    <MudTd DataLabel="@Localizer["Amount"]">
-                        <MudTextField @bind-Value="@ingredient.Amount" @ref="IngredientAmountEditField" Immediate="true" OnKeyDown="async(e) => await OnIngredientAmountKeyDown(e, ingredient)" />
-                    </MudTd>
-                </RowEditingTemplate>
-                <EditButtonContent Context="button">
-                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
-                </EditButtonContent>
+                        <MudTd DataLabel="@Localizer["Ingredient"]">
+                            <MudTextField @bind-Value="@ingredient.Name" @ref="IngredientEditField" Immediate="true" OnKeyDown="async (e) => await OnIngredientNameKeyDown(e, ingredient)" />
+                        </MudTd>
+                        <MudTd DataLabel="@Localizer["Amount"]">
+                            <MudTextField @bind-Value="@ingredient.Amount" @ref="IngredientAmountEditField" Immediate="true" OnKeyDown="async (e) => await OnIngredientAmountKeyDown(e, ingredient)" />
+                        </MudTd>
+                    </RowEditingTemplate>
+                    <EditButtonContent Context="button">
+                        <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Class="pa-0" OnClick="@button.ButtonAction" Disabled="@button.ButtonDisabled" />
+                    </EditButtonContent>
                 </MudTable>
             </MudItem>
             <MudItem sm="12" md="6">
-                <MudPaper Class="pa-1 mt-1" Elevation="0">
-                @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
-                {
-                    var text = $"{step.Order}. {step.Description}";
-                    var highlights = _recipe.Ingredients.SelectMany(x => x.Name.Split(" ")).SelectMany(LanguageDictionary.WordInflections);
-                    <MudPaper Class="pa-0 ma-0" Outlined="true">
-                        <MudStack Row="true" Justify="Justify.SpaceAround" Spacing="0">
-                            @if (EditMode[step])
+                <MudPaper Class="mt-1 recipe-steps-container" Elevation="0" Outlined="true" Rounded="xl">
+                    @foreach (var step in _recipe.Steps.OrderBy(x => x.Order))
+                    {
+                        var text = $"{step.Order}. {step.Description}";
+                        var highlights = _recipe.Ingredients.SelectMany(x => x.Name.Split(" ")).SelectMany(LanguageDictionary.WordInflections);
+
+                        <MudStack Row="true" Spacing="0" Class="step-row-container" AlignItems="AlignItems.Stretch">
+                            @if (_timelineSegments.ContainsKey(step))
                             {
-                                <MudTextField @ref="StepEditFields[step]" Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
-                                      ValueChanged="@(async(string s) => await UpdateStepDescription(step, s))" OnKeyDown="(e) => OnStepKeyDown(e, step)"  />
+                                <StepTimelineBarItem @key="step.Id"
+                                                     Segment="_timelineSegments[step]"
+                                                     OnSegmentColorChanged="@(async (args) => await UpdateSegmentColor(args.Segment, args.NewState))"
+                                                     OnSegmentDurationChanged="@(async (args) => await UpdateSegmentDuration(args.Segment, args.NewDuration))" />
                             }
-                            else if (StepDone[step.Order])
-                            {
-                                <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere">
-                                    @(text.Length > 20 ? text.Substring(0, 20) + "..." : text)
-                                </MudText>
-                            }
-                            else
-                            {
-                                <MudText Class="ma-2 flex-fill" Style="overflow-wrap: anywhere; white-space: pre-line">
-                                    <HighlightText Class="mud-primary-text" Style="background-color:transparent;font-weight:bold;padding:0"
-                                        Text="@text" Terms="@highlights" />
-                                </MudText>
-                            }
-                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async() => await DeleteStep(step))" />
-                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async() => await DecreaseStepOrder(step))" />
-                            <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async() => await IncreaseStepOrder(step))" />
-                            <MudToggleIconButton Size="@Size.Medium" Class="pa-0" Toggled="EditMode[step]"
-                                                Icon="@Icons.Material.Outlined.Edit" Title="Edit" ToggledChanged="(e) => OnStepEditChanged(e, step)"
-                                                ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
+                            <MudPaper Class="step-content-paper flex-grow-1" Elevation="0" Style="height: 100%;">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" Spacing="0">
+                                    <MudText Class="flex-fill step-description-content" Style="overflow-wrap: anywhere; white-space: pre-line">
+                                        @if (EditMode.ContainsKey(step) && EditMode[step])
+                                        {
+                                            <MudTextField @ref="StepEditFields[step]" Text="@step.Description" Label="Description" Variant="Variant.Text" DebounceInterval="1000" Lines="3"
+                                                          ValueChanged="@(async (string s) => await UpdateStepDescription(step, s))" OnKeyDown="(e) => OnStepKeyDown(e, step)" Class="step-description-textfield" />
+                                        }
+                                        else if (StepDone.ContainsKey(step.Order) && StepDone[step.Order])
+                                        {
+                                            @(text.Length > 20 ? text.Substring(0, 20) + "..." : text)
+                                        }
+                                        else
+                                        {
+                                            <HighlightText Class="mud-primary-text" Style="background-color:transparent;font-weight:bold;padding:0"
+                                                           Text="@text" Terms="@highlights" />
+                                        }
+                                    </MudText>
+                                    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="0">
+                                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.Delete" Class="pa-0" OnClick="@(async () => await DeleteStep(step))" />
+                                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowUp" Class="pa-0" OnClick="@(async () => await DecreaseStepOrder(step))" />
+                                        <MudIconButton Size="@Size.Medium" Icon="@Icons.Material.Outlined.KeyboardArrowDown" Class="pa-0" OnClick="@(async () => await IncreaseStepOrder(step))" />
+                                        <MudToggleIconButton Size="@Size.Medium" Class="pa-0" Toggled="EditMode.ContainsKey(step) && EditMode[step]"
+                                                             Icon="@Icons.Material.Outlined.Edit" Title="Edit" ToggledChanged="(e) => OnStepEditChanged(e, step)"
+                                                             ToggledIcon="@Icons.Material.Outlined.EditOff" ToggledTitle="On" />
+                                    </MudStack>
+                                </MudStack>
+                            </MudPaper>
                         </MudStack>
-                    </MudPaper>
-                }
+                    }
+                </MudPaper>
                 <br />
                 <MudButton @onclick="AddStep" Variant="Variant.Filled" Color="Color.Primary">
                     @Localizer["NewStep"]
@@ -113,7 +125,6 @@
                 <MudButton @onclick="FinishCooking" Variant="Variant.Filled" Color="Color.Success">
                     @Localizer["FinishCooking"]
                 </MudButton>
-            </MudPaper>
             </MudItem>
         </MudGrid>
     </Authorized>
@@ -153,6 +164,8 @@
     private ToFocus Focus;
     private Step StepToFocus;
     private Ingredient? IngredientToFocus;
+
+    private Dictionary<Step, StepTimelineSegment> _timelineSegments = new();
 
     private int Servings
     {
@@ -314,10 +327,16 @@
         switch (Focus)
         {
             case ToFocus.SelectedStep:
-                await StepEditFields[StepToFocus].FocusAsync();
+                if (StepEditFields.ContainsKey(StepToFocus) && StepEditFields[StepToFocus] != null)
+                {
+                    await StepEditFields[StepToFocus].FocusAsync();
+                }
                 break;
             case ToFocus.LastStep:
-                await StepEditFields[_recipe.Steps.Last()].FocusAsync();
+                if (_recipe.Steps.Any() && StepEditFields.ContainsKey(_recipe.Steps.Last()) && StepEditFields[_recipe.Steps.Last()] != null)
+                {
+                    await StepEditFields[_recipe.Steps.Last()].FocusAsync();
+                }
                 break;
             case ToFocus.Ingredient:
                 if (IngredientToFocus != null)
@@ -388,7 +407,22 @@
         EditMode = _recipe.Steps.ToDictionary(x => x, x => false);
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);
+
+        InitializeTimelineSegments();
         StateHasChanged();
+    }
+
+    private void InitializeTimelineSegments()
+    {
+        _timelineSegments.Clear();
+        foreach (var step in _recipe.Steps)
+        {
+            _timelineSegments[step] = new StepTimelineSegment
+            {
+                Id = Guid.NewGuid(),
+                Step = step
+            };
+        }
     }
 
     private async Task AddIngredient()
@@ -413,12 +447,20 @@
         var step = new Step()
         {
             RecipeId = _recipe.Id,
-            Order = _recipe.Steps.Any() ? _recipe.Steps.Max(s => s.Order) + 1 : 1
+            Order = _recipe.Steps.Any() ? _recipe.Steps.Max(s => s.Order) + 1 : 1,
+            Description = ""
         };
         var createResult = await @Service.CreateStepAsync(step, _userIdentityName);
         _recipe.Steps.Add(step);
         EditMode[step] = true;
         StepDone[step.Order] = false;
+
+        _timelineSegments[step] = new StepTimelineSegment
+        {
+            Id = Guid.NewGuid(),
+            Step = step
+        };
+
         Focus = ToFocus.LastStep;
         StateHasChanged();
     }
@@ -429,6 +471,7 @@
         int removedOrder = step.Order;
         _recipe.Steps.Remove(step);
         EditMode.Remove(step);
+        _timelineSegments.Remove(step);
 
         foreach (var itemToUpdate in _recipe.Steps.Where(s => s.Order > removedOrder))
         {
@@ -441,7 +484,7 @@
     private async Task UpdateStepDescription(Step step, string description)
     {
         step.Description = description;
-        var result = await @Service.UpdateStepDescriptionAsync(step, _userIdentityName);
+        var result = await @Service.UpdateStepAsync(step, _userIdentityName);
     }
 
     private async Task DecreaseIngredientOrder(Ingredient ingredient)
@@ -522,5 +565,106 @@
         }
     }
 
+    private async Task UpdateSegmentColor(StepTimelineSegment segment, StepType newColorState)
+    {
+        segment.Step.StepType = newColorState;
+        await Service.UpdateStepAsync(segment.Step, _userIdentityName);
+        StateHasChanged();
+    }
+
+    private async Task UpdateSegmentDuration(StepTimelineSegment segment, TimeSpan? newDuration)
+    {
+        segment.Step.Duration = newDuration;
+        await Service.UpdateStepAsync(segment.Step, _userIdentityName);
+        StateHasChanged();
+    }
+
     public void Dispose() => LanguageNotifier.UnsubscribeLanguageChange(this);
 }
+
+<style>
+    .step-row-container {
+        width: 100%;
+    }
+
+    .recipe-steps-container {
+        overflow: hidden;
+    }
+
+    .step-timeline-segment {
+        width: 40px;
+        flex-shrink: 0;
+        transition: background-color 0.2s ease-in-out;
+        cursor: pointer;
+        user-select: none;
+        border-right: 2px solid var(--mud-palette-lines-default);
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        height: 100%;
+    }
+
+    .mud-paper.rounded-xl > .step-row-container:first-of-type > .step-timeline-segment {
+        border-top-left-radius: var(--mud-shapes-border-radius-xl);
+    }
+
+    .mud-paper.rounded-xl > .step-row-container:last-of-type > .step-timeline-segment {
+        border-bottom-left-radius: var(--mud-shapes-border-radius-xl);
+        border-bottom: none;
+    }
+
+    .step-content-paper {
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .mud-paper.rounded-xl > .step-row-container:first-of-type > .step-content-paper {
+        border-top-right-radius: var(--mud-shapes-border-radius-xl);
+    }
+
+    .mud-paper.rounded-xl > .step-row-container:last-of-type > .step-content-paper {
+        border-bottom-right-radius: var(--mud-shapes-border-radius-xl);
+        border-bottom: none;
+    }
+
+    .mud-text-shadow {
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    .step-timeline-segment .mud-icon,
+    .step-timeline-segment .mud-text {
+        color: white !important;
+        padding: 0 !important;
+    }
+
+    .step-description-content {
+        padding: 8px 16px !important;
+        align-self: center;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+    }
+
+    .step-description-textfield .mud-input-control-input-container {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .step-description-textfield .mud-input-base {
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: transparent !important;
+        border-bottom: none !important;
+    }
+
+    .step-description-textfield .mud-input-control-input {
+        padding: 0 !important;
+    }
+
+    .step-description-textfield .mud-input-base.mud-input-focused {
+        background-color: var(--mud-palette-background-grey) !important;
+        border-bottom: 1px solid var(--mud-palette-primary) !important;
+    }
+
+    .step-description-textfield .mud-input-label {
+        color: var(--mud-palette-text-secondary) !important;
+        transform: translate(0, -12px) scale(0.75) !important; /* Keep label small and above */
+    }
+</style>

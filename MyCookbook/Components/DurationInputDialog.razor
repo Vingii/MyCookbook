@@ -1,0 +1,65 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Set Segment Duration
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudNumericField Label="Minutes"
+                             @bind-Value="_minutes"
+                             Variant="Variant.Filled"
+                             Min="0"
+                             Max="999"
+                             For="@(() => _minutes)" />
+            <MudNumericField Label="Seconds"
+                             @bind-Value="_seconds"
+                             Variant="Variant.Filled"
+                             Min="0"
+                             Max="59"
+                             For="@(() => _seconds)" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="ClearDuration">Clear</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Variant="Variant.Filled">Set</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public TimeSpan? CurrentDuration { get; set; }
+
+    private int? _minutes;
+    private int? _seconds;
+
+    protected override void OnInitialized()
+    {
+        if (CurrentDuration.HasValue)
+        {
+            _minutes = (int)CurrentDuration.Value.TotalMinutes;
+            _seconds = CurrentDuration.Value.Seconds;
+        }
+        else
+        {
+            _minutes = 0;
+            _seconds = 0;
+        }
+    }
+
+    private void Submit()
+    {
+        var duration = new TimeSpan(0, _minutes.GetValueOrDefault(), _seconds.GetValueOrDefault());
+        MudDialog.Close(DialogResult.Ok(duration));
+    }
+
+    private void ClearDuration()
+    {
+        MudDialog.Close(DialogResult.Ok<TimeSpan?>(null));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

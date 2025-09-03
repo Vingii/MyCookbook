@@ -1,0 +1,120 @@
+﻿@using MudBlazor
+@using System
+@using System.Threading.Tasks
+@using MyCookbook.Model
+
+<MudPaper Class="@SegmentCssClass"
+          @onclick="CycleColorState"
+          Outlined="false"
+          Square="true"
+          Elevation="0"
+          Style="display: flex; align-items: center; justify-content: center; position: relative; height: auto;">
+
+    <div @onclick="OpenDurationDialog" @onclick:stopPropagation="true"
+         style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
+
+        @if (Segment.Duration.HasValue)
+        {
+            <MudText Typo = "Typo.caption" Class = "mud-text-white mud-text-shadow" Style = "width: 100%; text-align: center; font-weight: bold; padding: 0; overflow-wrap: break-word; font-size: 0.7rem !important; line-height: 1.2;">
+                @FormatDuration(Segment.Duration.Value)
+            </MudText >
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Class="mud-text-white" Size="Size.Small" Style="opacity: 0.7;" />
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public StepTimelineSegment Segment { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<(StepTimelineSegment Segment, StepType NewState)> OnSegmentColorChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<(StepTimelineSegment Segment, TimeSpan? NewDuration)> OnSegmentDurationChanged { get; set; }
+
+    [Inject]
+    private IDialogService DialogService { get; set; } = default!;
+
+    private string SegmentCssClass => $"step-timeline-segment " +
+                                       (Segment.ColorState switch
+                                       {
+                                           StepType.Active => "mud-theme-primary",
+                                           StepType.SemiPassive => "mud-theme-info",
+                                           StepType.Passive => "mud-theme-success",
+                                           _ => "mud-theme-primary"
+                                       });
+
+    private async Task CycleColorState()
+    {
+        var nextState = Segment.ColorState switch
+        {
+            StepType.Passive => StepType.SemiPassive,
+            StepType.SemiPassive => StepType.Active,
+            StepType.Active => StepType.Passive,
+            _ => StepType.Passive
+        };
+        await OnSegmentColorChanged.InvokeAsync((Segment, nextState));
+    }
+
+    private async Task OpenDurationDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var parameters = new DialogParameters();
+        parameters.Add("CurrentDuration", Segment.Duration);
+
+        var dialog = await DialogService.ShowAsync<DurationInputDialog>("Set Duration", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is TimeSpan selectedDuration)
+        {
+            await OnSegmentDurationChanged.InvokeAsync((Segment, selectedDuration));
+        }
+        else if (!result.Canceled && result.Data == null)
+        {
+            await OnSegmentDurationChanged.InvokeAsync((Segment, null));
+        }
+    }
+
+    private string FormatDuration(TimeSpan duration)
+    {
+        if (duration == TimeSpan.Zero) return "0s";
+
+        int totalHours = (int)duration.TotalHours;
+        int remainingMinutes = duration.Minutes;
+        int remainingSeconds = duration.Seconds;
+
+        List<string> parts = new List<string>();
+
+        if (totalHours > 0)
+        {
+            parts.Add($"{totalHours}h");
+        }
+
+        if (remainingMinutes > 0)
+        {
+            parts.Add($"{remainingMinutes}m");
+        }
+
+        if (remainingSeconds > 0)
+        {
+            if (totalHours == 0 && remainingMinutes == 0)
+            {
+                parts.Add($"{remainingSeconds}s");
+            }
+            else if (totalHours > 0 || remainingMinutes > 0)
+            {
+                parts.Add($"{remainingSeconds}s");
+            }
+        }
+        else if (totalHours == 0 && remainingMinutes == 0 && remainingSeconds == 0)
+        {
+            return "0s";
+        }
+
+        return string.Join(" ", parts);
+    }
+}

@@ -301,7 +301,7 @@ namespace MyCookbook.Data
             return step;
         }
 
-        public async Task<bool> UpdateStepDescriptionAsync(Step step, string user)
+        public async Task<bool> UpdateStepAsync(Step step, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var context = await GetContext();
@@ -315,6 +315,8 @@ namespace MyCookbook.Data
             if (foundStep == null) return false;
 
             foundStep.Description = step.Description;
+            foundStep.Duration = step.Duration;
+            foundStep.StepType = step.StepType;
             await context.SaveChangesAsync();
 
             return true;

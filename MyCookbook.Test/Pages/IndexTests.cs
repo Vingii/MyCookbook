@@ -36,7 +36,7 @@ namespace MyCookbook.Test.Pages
 
             var cut = RenderComponent<MyCookbook.Pages.Index>();
 
-            Assert.Contains("<h1>Dashboard</h1>", cut.Markup);
+            Assert.Contains("<h1>Welcome, test-user!</h1>", cut.Markup);
             Assert.Contains("Favorites", cut.Markup);
             Assert.Contains("Long uncooked", cut.Markup);
 
@@ -55,7 +55,7 @@ namespace MyCookbook.Test.Pages
         {
             var cut = RenderComponent<MyCookbook.Pages.Index>();
 
-            Assert.Contains("<h1>Dashboard</h1>", cut.Markup);
+            Assert.Contains("<h1>Welcome, test-user!</h1>", cut.Markup);
 
             var recipeTables = cut.FindComponents<RecipeTable>();
             Assert.Equal(2, recipeTables.Count);
