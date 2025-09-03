@@ -19,6 +19,8 @@ namespace MyCookbook.Services
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             DefaultCulture = defaultCulture;
+            SelectedLanguage = defaultCulture;
+            SelectedCulture = new(defaultCulture);
             SupportedCultures = supportedCultures;
             SupportedLanguages = supportedCultures.ToDictionary(x => x,
                 x => CultureInfo.GetCultureInfo(x).IsNeutralCulture

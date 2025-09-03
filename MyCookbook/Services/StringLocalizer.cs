@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Localization;
+﻿using Microsoft.Extensions.DependencyModel;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using MyCookbook.Logging;
 using System.Reflection;
@@ -56,7 +57,7 @@ namespace MyCookbook.Services
             catch (Exception ex)
             {
                 _logger.LogError($"Failed to localize string \"{key}\" with culture \"{_cultureProvider.SelectedCulture}\".", ex);
-                result = new(key, "", true, GetResourceLocalization());
+                result = new(key, key, true, GetResourceLocalization());
             }
 
             return result;
@@ -66,7 +67,7 @@ namespace MyCookbook.Services
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             string resourceLocalization =  shared ? GetResourceLocalizationShared() : GetResourceLocalization();
-            return new ResourceManager(resourceLocalization, Assembly.GetExecutingAssembly());
+            return new ResourceManager(resourceLocalization, typeof(CookbookStringLocalizer<>).Assembly);
         }
 
         private string GetResourceLocalization()

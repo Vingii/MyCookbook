@@ -7,9 +7,10 @@ on:
 env:
   DOTNET_PROJECT_PATH: MyCookbook/MyCookbook.csproj
   TEST_PROJECT_PATH: MyCookbook.Test/MyCookbook.Test.csproj
-  PUBLISH_PROFILE_NAME: DockerPublish
+  SOLUTION_PATH: MyCookbook.sln
   DOCKER_IMAGE_NAME_REPO: vingii/mycookbook
-  DOTNET_VERSION: '7.0.x'
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_DIR: MyCookbook
 
 jobs:
   build_test_publish:
@@ -32,10 +33,10 @@ jobs:
             ${{ runner.os }}-nuget-
       
       - name: Restore dependencies
-        run: dotnet restore ${{ env.DOTNET_PROJECT_PATH }}
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
 
-      - name: Build project
-        run: dotnet build ${{ env.DOTNET_PROJECT_PATH }} -c Release --no-restore
+      - name: Build solution
+        run: dotnet build ${{ env.SOLUTION_PATH }} -c Release --no-restore
 
       - name: Run tests
         run: dotnet test ${{ env.TEST_PROJECT_PATH }} -c Release --no-build
@@ -60,21 +61,21 @@ jobs:
           echo "Detected image version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Publish Docker image with version tag
+      - name: Build Docker image with version tag
         run: |
-          echo "Publishing Docker image with version tag: ${{ steps.get_version.outputs.version }}"
-          dotnet publish ${{ env.DOTNET_PROJECT_PATH }} -c Release \
-            /p:PublishProfile=${{ env.PUBLISH_PROFILE_NAME }} \
-            /p:PublishImageTag=${{ steps.get_version.outputs.version }} \
-            /p:NoBuild=true
+          docker build -t ${{ env.DOCKER_IMAGE_NAME_REPO }}:${{ steps.get_version.outputs.version }} \
+            -f ${{ env.PROJECT_DIR }}/Dockerfile .
 
-      - name: Publish Docker image with 'latest' tag
+      - name: Push Docker image with version tag
+        run: docker push ${{ env.DOCKER_IMAGE_NAME_REPO }}:${{ steps.get_version.outputs.version }}
+
+      - name: Build Docker image with 'latest' tag
         run: |
-          echo "Publishing Docker image with 'latest' tag"
-          dotnet publish ${{ env.DOTNET_PROJECT_PATH }} -c Release \
-            /p:PublishProfile=${{ env.PUBLISH_PROFILE_NAME }} \
-            /p:PublishImageTag=latest \
-            /p:NoBuild=true
+          docker build -t ${{ env.DOCKER_IMAGE_NAME_REPO }}:latest \
+            -f ${{ env.PROJECT_DIR }}/Dockerfile .
+
+      - name: Push Docker image with 'latest' tag
+        run: docker push ${{ env.DOCKER_IMAGE_NAME_REPO }}:latest
 
       - name: Docker images pushed successfully!
         run: echo "Images for ${{ env.DOCKER_IMAGE_NAME_REPO }} pushed with tags ${{ steps.get_version.outputs.version }} and latest"
