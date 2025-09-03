@@ -33,7 +33,8 @@ namespace MyCookbook
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
                 builder.Services.AddHttpClient();
-                
+
+                builder.Services.AddSingleton<ChangelogService>();
                 builder.Services.AddFeedbackProvider(config);
                 builder.Services.AddSingleton<ILanguageDictionary, MemoryLanguageDictionary>();
                 builder.Services.AddCultureLocalization(config);

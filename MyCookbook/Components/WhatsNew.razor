@@ -1,0 +1,99 @@
+﻿@using Microsoft.AspNetCore.Localization;
+@using Microsoft.Extensions.Localization
+@using MyCookbook.Data
+@using MyCookbook.Data.CookbookDatabase
+@using MyCookbook.Model
+@using MyCookbook.Services;
+@using System.Globalization;
+@using System.Security.Claims;
+@using System.Web;
+@using MyCookbook.Utils
+@using System.Reflection
+@inject ILogger<Feedback> Logger
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject ChangelogService ChangelogService
+@inject ISnackbar Snackbar
+@inherits OwningComponentBase<CookbookDatabaseService>
+
+<MudIconButton Icon="@Icons.Material.Filled.NewReleases" Color="Color.Inherit" OnClick="@(async (e) => await OpenDialog())" />
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+    
+    private string? _currentAppVersion = Assembly.GetEntryAssembly()?
+                                     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                                     .InformationalVersion.Split('+').First();
+    private string? _userLastSeenVersion;
+    private List<ChangelogEntry> _newEntries = new List<ChangelogEntry>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null && user.FindFirst(ClaimTypes.Name)?.Value.StartsWith("guest-", StringComparison.InvariantCultureIgnoreCase) == false)
+            {
+                _userIdentityName = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            }
+        }
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _userIdentityName == "") return;
+
+        _userLastSeenVersion = await Service.GetUserPreference("LastSeenVersion", _userIdentityName);
+
+        try
+        {
+            if (_userLastSeenVersion == null)
+            {
+                _newEntries = await ChangelogService.GetLatestChangelogEntries(3);
+            }
+            else if (new Version(_currentAppVersion) > new Version(_userLastSeenVersion))
+            {
+                _newEntries = await ChangelogService.GetChangelogEntriesSinceVersion(_userLastSeenVersion);
+                await OpenDialog();
+            }
+            else
+            {
+                _newEntries = await ChangelogService.GetLatestChangelogEntries(1);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting changelog entries.");
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OpenDialog()
+    {
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                { "NewEntries", _newEntries }
+            };
+
+            var options = new DialogOptions { CloseOnEscapeKey = true, DisableBackdropClick = false };
+            var dialog = await DialogService.ShowAsync<WhatsNewDialog>("What's new", parameters, options);
+            var dialogResult = await dialog.Result;
+
+            if (_userLastSeenVersion != _currentAppVersion)
+            {
+                await Service.UpdateUserPreference("LastSeenVersion", _currentAppVersion, _userIdentityName);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error opening changelog.");
+            Snackbar.Add("Error opening changelog.", Severity.Error);
+        }
+    }
+}

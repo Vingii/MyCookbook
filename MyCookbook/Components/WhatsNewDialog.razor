@@ -1,0 +1,60 @@
+﻿@using MyCookbook.Model
+@using MyCookbook.Services
+@using MudBlazor
+
+@inject ChangelogService ChangelogService
+@inject ILogger<WhatsNewDialog> Logger
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.NewReleases" Class="mr-3" /> What's New!
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Class="d-flex justify-center" />
+            <MudText Align="Align.Center">Loading updates...</MudText>
+        }
+        else if (!NewEntries.Any())
+        {
+            <MudText>No new updates to show.</MudText>
+        }
+        else
+        {
+            @foreach (var entry in NewEntries)
+            {
+                <MudCard Class="mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Version @entry.Version</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@entry.ReleaseDate.ToString("yyyy-MM-dd")</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @((MarkupString)entry.RawHtml)
+                    </MudCardContent>
+                </MudCard>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public List<ChangelogEntry> NewEntries { get; set; }
+
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = false;
+    }
+
+    void Cancel() => MudDialog.Close(DialogResult.Ok(true));
+}
