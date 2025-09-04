@@ -87,8 +87,8 @@
                                                      OnSegmentColorChanged="@(async (args) => await UpdateSegmentColor(args.Segment, args.NewState))"
                                                      OnSegmentDurationChanged="@(async (args) => await UpdateSegmentDuration(args.Segment, args.NewDuration))" />
                             }
-                            <MudPaper Class="step-content-paper flex-grow-1" Elevation="0" Style="height: 100%;">
-                                <MudStack Row="true" Justify="Justify.SpaceBetween" Spacing="0">
+                            <MudPaper Class="step-content-paper flex-grow-1" AlignItems="AlignItems.Center" Elevation="0" Style="height: 100%;">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" Spacing="0" AlignItems="AlignItems.Center">
                                     <MudText Class="flex-fill step-description-content" Style="overflow-wrap: anywhere; white-space: pre-line">
                                         @if (EditMode.ContainsKey(step) && EditMode[step])
                                         {
@@ -636,10 +636,7 @@
 
     .step-description-content {
         padding: 8px 16px !important;
-        align-self: center;
         min-height: 48px;
-        display: flex;
-        align-items: center;
     }
 
     .step-description-textfield .mud-input-control-input-container {
