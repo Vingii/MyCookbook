@@ -53,6 +53,7 @@
             if (_userLastSeenVersion == null)
             {
                 _newEntries = await ChangelogService.GetLatestChangelogEntries(3);
+                await OpenDialog();
             }
             else if (new Version(_currentAppVersion) > new Version(_userLastSeenVersion))
             {
@@ -61,7 +62,7 @@
             }
             else
             {
-                _newEntries = await ChangelogService.GetLatestChangelogEntries(1);
+                _newEntries = await ChangelogService.GetLatestChangelogEntries(10);
             }
         }
         catch (Exception ex)
