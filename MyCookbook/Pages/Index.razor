@@ -12,8 +12,8 @@
 
 <PageTitle>My Cookbook</PageTitle>
 
-<h1>@(_userName == "" ? Localizer["Dashboard"] : $"Welcome, {_userName}!")</h1>
-<hr />
+<h1>@(_userName == "" ? Localizer["Dashboard"] : $"{Localizer["Welcome"]}, {_userName}!")</h1>
+<br />
 <RecipeTable @ref="_favoriteRecipeTable" UserIdentityName="@_userIdentityName"
     Editable="false" TableName="@Localizer["Favorites"]"
     RecipeGetter="@(async() => await @_favoriteRecipeTable.DbService.GetFavoriteRecipesAsync(_userIdentityName))"></RecipeTable>

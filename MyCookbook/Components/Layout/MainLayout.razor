@@ -9,9 +9,8 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar>
+    <MudAppBar Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" Disabled="@DisableInteractivity" />
-        My Cookbook
         <MudSpacer />
         <MudToolBar>
             <MudToggleIconButton Size="@Size.Medium" @bind-Toggled="@IsDarkMode"

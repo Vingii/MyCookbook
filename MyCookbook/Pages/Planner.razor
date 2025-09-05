@@ -21,8 +21,6 @@
 <PageTitle>Planner</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-8">
-    <MudText Typo="Typo.h3" Class="mb-4">Meal Planner</MudText>
-
     @if (_userIdentityName == "")
     {
         <MudAlert Severity="Severity.Info" Class="mb-4">
@@ -32,7 +30,7 @@
     else if (_isLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
-        <MudText Typo="Typo.body2">Loading meal plan and recipes...</MudText>
+        <MudText Typo="Typo.body2">Loading meal plan...</MudText>
     }
     else
     {
