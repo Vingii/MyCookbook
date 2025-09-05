@@ -14,13 +14,13 @@ namespace MyCookbook.Services
 
         private readonly ILogger _logger;
         private readonly IOptions<LocalizationOptions> _localizationOptions;
-        private readonly CultureProvider _cultureProvider;
+        private readonly UserSettings _userSettings;
 
-        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, CultureProvider cultureProvider, ILogger<MailgunEmailSender> logger)
+        public CookbookStringLocalizer(IOptions<LocalizationOptions> localizationOptions, UserSettings userSettings, ILogger<MailgunEmailSender> logger)
         {
             using var timeLogger = new TimeLogger(MethodBase.GetCurrentMethod());
             _localizationOptions = localizationOptions;
-            _cultureProvider = cultureProvider;
+            _userSettings = userSettings;
             _logger = logger;
         }
 
@@ -40,11 +40,11 @@ namespace MyCookbook.Services
                 string value;
                 try
                 {
-                    value = resourceManager.GetString(key, _cultureProvider.SelectedCulture);
+                    value = resourceManager.GetString(key, _userSettings.Culture);
                 }
                 catch
                 {
-                    value = resourceManagerShared.GetString(key, _cultureProvider.SelectedCulture);
+                    value = resourceManagerShared.GetString(key, _userSettings.Culture);
                 }
 
                 if (arguments is not null)
@@ -56,7 +56,7 @@ namespace MyCookbook.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to localize string \"{key}\" with culture \"{_cultureProvider.SelectedCulture}\".", ex);
+                _logger.LogError($"Failed to localize string \"{key}\" with culture \"{_userSettings.Culture}\".", ex);
                 result = new(key, key, true, GetResourceLocalization());
             }
 

@@ -13,6 +13,7 @@
 @inject IDialogService DialogService
 @inject LanguageNotifier LanguageNotifier
 @inject CultureProvider CultureProvider
+@inject UserSettings UserSettings
 @implements IDisposable
 @inherits OwningComponentBase<CookbookDatabaseService>
 
@@ -43,7 +44,7 @@
         </MudTd>
         <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Category</MudTd>
         <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
-        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", CultureProvider.SelectedCulture) ?? "-")</MudTd>
+        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async () => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", UserSettings.Culture) ?? "-")</MudTd>
         <MudTd Style="text-align:right">
             @if (_signedIn)
             {

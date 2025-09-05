@@ -1,5 +1,6 @@
 ﻿using Bunit;
 using Bunit.TestDoubles;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -34,12 +35,14 @@ namespace MyCookbook.Test.Common
 
             Services.AddFallbackServiceProvider(factory.Services);
             Services.AddMudServices();
+            Services.AddHttpContextAccessor();
             Services.AddSingleton(realServices.GetRequiredService<CookbookDatabaseService>());
             Services.AddSingleton(realServices.GetRequiredService<CultureProvider>());
             Services.AddSingleton(realServices.GetRequiredService<ILoggerFactory>());
             Services.AddSingleton(realServices.GetRequiredService<IOptions<LocalizationOptions>>());
             Services.AddSingleton(_dialogServiceMock.Object);
             Services.AddScoped<LanguageNotifier>();
+            Services.AddScoped<UserSettings>();
             Services.AddScoped(typeof(IStringLocalizer<>), typeof(CookbookStringLocalizer<>));
         }
 

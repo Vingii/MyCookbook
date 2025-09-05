@@ -6,8 +6,9 @@
 @inject IJSRuntime JSRuntime
 @inject LanguageNotifier LanguageNotifier
 @inject CultureProvider CultureProvider
+@inject UserSettings UserSettings
 
-<MudSelect @ref="selector" T="string" Dense="true" Margin="Margin.Dense" @bind-Value="Culture" AnchorOrigin="Origin.BottomCenter" Disabled="@DisableInteractivity" >
+<MudSelect @ref="selector" T="string" Dense="true" Margin="Margin.Dense" Value="@Culture" ValueChanged="@OnCultureChanged" AnchorOrigin="Origin.BottomCenter" Disabled="@DisableInteractivity">
     @foreach (var (culture, language) in Languages)
     {
         <MudSelectItem Value="@(culture)">@language</MudSelectItem>
@@ -23,11 +24,6 @@
     private string? Culture
     {
         get => _culture;
-        set
-        {
-            _culture = value;
-            OnChangeLanguage();
-        }
     }
 
     private bool DisableInteractivity => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).StartsWith("Account");
@@ -39,17 +35,33 @@
         LanguageSelectorModule = new(await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/Cookies.js"));
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        _culture = await UserSettings.GetLanguage();
+        LanguageNotifier.NotifyLanguageChange();
+    }
+
     protected override void OnInitialized()
     {
         Languages = CultureProvider.SupportedLanguages;
-        _culture = CultureProvider.SelectedLanguage;
     }
 
-    private void OnChangeLanguage()
+    private async Task OnCultureChanged(string newCulture)
     {
-        CultureProvider.SelectedCulture = CultureInfo.GetCultureInfo(Culture);
-        LanguageSelectorModule.Value.InvokeVoidAsync("addCookies", CookieRequestCultureProvider.DefaultCookieName,
-            CookieRequestCultureProvider.MakeCookieValue(new(CultureProvider.SelectedCulture, CultureProvider.SelectedCulture)));
+        if (newCulture == null || newCulture == _culture)
+        {
+            return;
+        }
+
+        _culture = newCulture;
+        await OnChangeLanguage(newCulture);
+    }
+
+    private async Task OnChangeLanguage(string newCulture)
+    {
+        await UserSettings.SetLanguage(newCulture);
+        await LanguageSelectorModule.Value.InvokeVoidAsync("addCookies", CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(new(UserSettings.Culture, UserSettings.Culture)));
         LanguageNotifier.NotifyLanguageChange();
     }
 

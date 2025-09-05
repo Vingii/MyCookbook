@@ -11,16 +11,12 @@ namespace MyCookbook.Services
         public string[] SupportedCultures { get; }
         public Dictionary<string, string> SupportedLanguages { get; }
 
-        public string SelectedLanguage { get; private set; }
-        public CultureInfo SelectedCulture { get; set; }
         public string DefaultCulture { get; set; }
 
         public CultureProvider(string defaultCulture, string[] supportedCultures)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             DefaultCulture = defaultCulture;
-            SelectedLanguage = defaultCulture;
-            SelectedCulture = new(defaultCulture);
             SupportedCultures = supportedCultures;
             SupportedLanguages = supportedCultures.ToDictionary(x => x,
                 x => CultureInfo.GetCultureInfo(x).IsNeutralCulture
@@ -36,21 +32,18 @@ namespace MyCookbook.Services
 
             if (result is null)
             {
-                SelectedLanguage = httpContext.Request.GetTypedHeaders()
+                var language = httpContext.Request.GetTypedHeaders()
                            .AcceptLanguage
                            ?.OrderByDescending(x => x.Quality ?? 1)
                            .FirstOrDefault(x => SupportedCultures.Contains(x.Value.ToString()))?.Value.ToString() ?? DefaultCulture;
 
-                result = new(SelectedLanguage);
+                result = new(language);
             }
             else
             {
-                SelectedLanguage = result.Cultures.First().Value;
+                var language = result.Cultures.First().Value;
+                result = new(language);
             }
-
-            SelectedCulture = CultureInfo.GetCultureInfo(SelectedLanguage);
-            CultureInfo.CurrentCulture = SelectedCulture;
-            CultureInfo.CurrentUICulture = SelectedCulture;
 
             return Task.FromResult<ProviderCultureResult?>(result);
         }

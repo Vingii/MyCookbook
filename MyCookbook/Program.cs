@@ -33,12 +33,14 @@ namespace MyCookbook
                 builder.Services.AddServerSideBlazor();
                 builder.Services.AddMudServices();
                 builder.Services.AddHttpClient();
+                builder.Services.AddHttpContextAccessor();
 
                 builder.Services.AddSingleton<ChangelogService>();
                 builder.Services.AddFeedbackProvider(config);
                 builder.Services.AddSingleton<ILanguageDictionary, MemoryLanguageDictionary>();
                 builder.Services.AddCultureLocalization(config);
                 builder.Services.AddAuth(config, builder.Environment.IsDevelopment());
+                builder.Services.AddScoped<UserSettings>();
 
                 Log.Logger = BuildLogger(config);
                 builder.Host.UseSerilog(Log.Logger);

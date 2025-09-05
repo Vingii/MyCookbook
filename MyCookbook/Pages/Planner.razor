@@ -14,6 +14,7 @@
 @inject ILogger<Planner> Logger
 @inject IDialogService DialogService
 @inject CultureProvider CultureProvider
+@inject UserSettings UserSettings
 @inject IJSRuntime JSRuntime
 @inherits OwningComponentBase<CookbookDatabaseService>
 @implements IDisposable
@@ -41,7 +42,7 @@
                 <MudItem xs="12">
                     @* Each week occupies a full row (12 columns) *@
                     <MudText Typo="Typo.h5" Class="my-3">
-                        @StartOfWeek(DateTime.Today).AddDays(currentWeekIndex * 7).ToString(CultureProvider.SelectedCulture.DateTimeFormat.MonthDayPattern, CultureProvider.SelectedCulture)
+                        @StartOfWeek(DateTime.Today).AddDays(currentWeekIndex * 7).ToString(UserSettings.Culture.DateTimeFormat.MonthDayPattern, UserSettings.Culture)
                     </MudText>
 
                     @* Inner MudGrid for days within the week *@
@@ -59,7 +60,7 @@
                                           style="height: 100%; min-height: 100px; border-width: 1px; border-style: solid; border-color: var(--mud-palette-lines-default);" ondragover="event.preventDefault();"
                                           @ondrop="(e) => OnDrop(e, dateOnly)">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <MudText Typo="Typo.h6">@dateOnly.ToString($"ddd, {CultureProvider.SelectedCulture.DateTimeFormat.MonthDayPattern}", CultureProvider.SelectedCulture)</MudText>
+                                        <MudText Typo="Typo.h6">@dateOnly.ToString($"ddd, {UserSettings.Culture.DateTimeFormat.MonthDayPattern}", UserSettings.Culture)</MudText>
                                         <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" OnClick="() => AddPlan(dateOnly)" />
                                     </div>
 
@@ -160,7 +161,7 @@
 
     private DateTime StartOfWeek(DateTime dt)
     {
-        int diff = (7 + (dt.DayOfWeek - CultureProvider.SelectedCulture.DateTimeFormat.FirstDayOfWeek)) % 7;
+        int diff = (7 + (dt.DayOfWeek - UserSettings.Culture.DateTimeFormat.FirstDayOfWeek)) % 7;
         return dt.AddDays(-1 * diff).Date;
     }
 
