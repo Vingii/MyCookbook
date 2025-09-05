@@ -78,8 +78,9 @@ namespace MyCookbook.Data
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var context = await GetContext();
             var plannedRecipes = await context.PlannedRecipes
+                .Where(x => x.UserName == user)
                 .Include(x => x.Recipe)
-                 .AsNoTracking().ToListAsync();
+                .AsNoTracking().ToListAsync();
 
             return plannedRecipes.GroupBy(x => x.Date).ToDictionary(x => x.Key, x => x.ToList());
         }
