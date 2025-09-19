@@ -26,7 +26,7 @@ namespace MyCookbook.Test.Pages
             RenderComponent<RandomRecipe>();
 
             var navigatedToUri = navManager.Uri.Replace(navManager.BaseUri, "");
-            var possibleUris = new[] { $"Recipe/{recipe1.Name}", $"Recipe/{recipe2.Name}" };
+            var possibleUris = new[] { $"Recipe/{recipe1.Guid}", $"Recipe/{recipe2.Guid}" };
 
             Assert.Contains(navigatedToUri, possibleUris);
         }

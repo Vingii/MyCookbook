@@ -1,4 +1,4 @@
-﻿@page "/recipe/{Name}"
+﻿@page "/recipe/{RecipeGuid}"
 @using MyCookbook.Components;
 @using MyCookbook.Data
 @using MyCookbook.Data.CookbookDatabase
@@ -143,6 +143,8 @@
     }
 
     [Parameter]
+    public string RecipeGuid { get; set; } = "";
+
     public string Name { get; set; } = "";
 
     [CascadingParameter]
@@ -383,7 +385,9 @@
     private async Task RefreshRecipe()
     {
         _ingredientTable?.SetEditingItem(null);
-        _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
+
+        var guid = new Guid(RecipeGuid);
+        _recipe = await @Service.GetDetailedRecipeAsync(guid, _userIdentityName) ?? new Recipe();
         var stepsByOrder = _recipe.Steps.GroupBy(x => x.Order);
         var ingredientsByOrder = _recipe.Ingredients.GroupBy(x => x.Order);
 
@@ -393,7 +397,7 @@
             || _recipe.Steps.Min(x => x.Order) != 1))
         {
             var result = await @Service.FixStepsOrder(_recipe, _userIdentityName);
-            _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
+            _recipe = await @Service.GetDetailedRecipeAsync(guid, _userIdentityName) ?? new Recipe();
         }
 
         if (_recipe.Ingredients.Any() &&
@@ -402,9 +406,10 @@
             || _recipe.Ingredients.Min(x => x.Order) != 1))
         {
             var result = await @Service.FixIngredientsOrder(_recipe, _userIdentityName);
-            _recipe = await @Service.GetDetailedRecipeAsync(Name, _userIdentityName) ?? new Recipe();
+            _recipe = await @Service.GetDetailedRecipeAsync(guid, _userIdentityName) ?? new Recipe();
         }
 
+        Name = _recipe.Name;
         EditMode = _recipe.Steps.ToDictionary(x => x, x => false);
         StepDone = _recipe.Steps.ToDictionary(x => x.Order, x => false);
         IngredientDone = _recipe.Ingredients.ToDictionary(x => x.Order, x => false);

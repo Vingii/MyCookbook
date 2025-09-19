@@ -34,6 +34,19 @@ namespace MyCookbook.Data
                  .AsSplitQuery().FirstOrDefaultAsync();
         }
 
+        public async Task<Recipe?> GetDetailedRecipeAsync(Guid guid, string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            return await context.Recipes
+                 .Where(x => x.UserName == user && x.Guid == guid)
+                 .Include(x => x.Ingredients)
+                 .Include(x => x.Steps)
+                 .Include(x => x.FavoriteRecipes)
+                 .Include(x => x.Tags)
+                 .AsSplitQuery().FirstOrDefaultAsync();
+        }
+
         public async Task<Recipe?> GetDetailedRecipeByIdAsync(string id)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());

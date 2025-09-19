@@ -44,7 +44,7 @@ namespace MyCookbook.Test.Pages
             var (recipe, testUser) = await SetupTestRecipe();
 
             var cut = RenderComponent<RecipeViewer>(parameters => parameters
-                .Add(p => p.Name, recipe.Name));
+                .Add(p => p.RecipeGuid, recipe.Guid.ToString()));
 
             Assert.Contains(recipe.Name, cut.Markup);
             Assert.Contains("Pasta", cut.Markup);
@@ -60,11 +60,11 @@ namespace MyCookbook.Test.Pages
             var (recipe, testUser) = await SetupTestRecipe();
             var dbService = GetDbService();
 
-            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.Name, recipe.Name));
+            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.RecipeGuid, recipe.Guid.ToString()));
 
             cut.FindAll("button").First(b => b.TextContent.Contains("Add")).Click();
 
-            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Name, testUser);
+            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Guid, testUser);
             var ingredients = updatedRecipe.Ingredients;
             Assert.Equal(3, ingredients.Count());
         }
@@ -75,12 +75,12 @@ namespace MyCookbook.Test.Pages
             var (recipe, testUser) = await SetupTestRecipe();
             var dbService = GetDbService();
 
-            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.Name, recipe.Name));
+            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.RecipeGuid, recipe.Guid.ToString()));
             Assert.Contains("Sauce", cut.Markup);
 
             cut.FindAll("td .mud-icon-root.cursor-pointer")[1].Click();
 
-            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Name, testUser);
+            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Guid, testUser);
             var ingredients = updatedRecipe.Ingredients;
             Assert.Single(ingredients);
             Assert.Equal("Pasta", ingredients.First().Name);
@@ -93,11 +93,11 @@ namespace MyCookbook.Test.Pages
             var (recipe, testUser) = await SetupTestRecipe();
             var dbService = GetDbService();
 
-            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.Name, recipe.Name));
+            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.RecipeGuid, recipe.Guid.ToString()));
 
             cut.FindAll("button").First(b => b.TextContent.Contains("Add Step")).Click();
 
-            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Name, testUser);
+            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Guid, testUser);
             var steps = updatedRecipe.Steps;
             Assert.Equal(3, steps.Count());
             Assert.NotNull(cut.Find("textarea"));
@@ -109,12 +109,12 @@ namespace MyCookbook.Test.Pages
             var (recipe, testUser) = await SetupTestRecipe();
             var dbService = GetDbService();
 
-            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.Name, recipe.Name));
+            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.RecipeGuid, recipe.Guid.ToString()));
             Assert.Contains("Layer everything", cut.Markup);
 
             cut.FindAll(".mud-paper-outlined .mud-icon-button")[0].Click();
 
-            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Name, testUser);
+            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Guid, testUser);
             var steps = updatedRecipe.Steps;
             Assert.Single(steps);
             Assert.Equal("Layer everything.", steps.First().Description);
@@ -128,13 +128,13 @@ namespace MyCookbook.Test.Pages
             var dbService = GetDbService();
 
             var navManager = Services.GetRequiredService<FakeNavigationManager>();
-            var initialLastCooked = (await dbService.GetDetailedRecipeAsync(recipe.Name, testUser)).LastCooked;
+            var initialLastCooked = (await dbService.GetDetailedRecipeAsync(recipe.Guid, testUser)).LastCooked;
 
-            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.Name, recipe.Name));
+            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.RecipeGuid, recipe.Guid.ToString()));
 
             cut.FindAll("button").First(b => b.TextContent.Contains("Finish Cooking")).Click();
 
-            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Name, testUser);
+            var updatedRecipe = await dbService.GetDetailedRecipeAsync(recipe.Guid, testUser);
             Assert.NotEqual(initialLastCooked, updatedRecipe.LastCooked);
             Assert.Equal(navManager.BaseUri, navManager.Uri);
         }
@@ -144,7 +144,7 @@ namespace MyCookbook.Test.Pages
         {
             var (recipe, testUser) = await SetupTestRecipe();
 
-            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.Name, recipe.Name));
+            var cut = RenderComponent<RecipeViewer>(parameters => parameters.Add(p => p.RecipeGuid, recipe.Guid.ToString()));
 
             cut.FindAll("button").First(b => b.TextContent.Contains("Share")).Click();
 

@@ -19,7 +19,7 @@
 
 <MudTable @ref="_tableRef" Items="@Recipes" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense="true"
           RowEditCommit="CommitTableEdit" CanCancelEdit="true" EditButtonPosition="@TableEditButtonPosition.End"
-          EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe,bool>(Filter)" AllowUnsorted="false"
+          EditTrigger="@TableEditTrigger.EditButton" Filter="new Func<Recipe, bool>(Filter)" AllowUnsorted="false"
           RowsPerPage="@_rowsPerPage" RowsPerPageChanged="async (rows) => await SetRowsPerPage(rows)"
           GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
     <ToolBarContent>
@@ -39,12 +39,19 @@
         </MudTh>
     </GroupHeaderTemplate>
     <RowTemplate Context="recipe">
-        <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">
-            @if (recipe.UserName == UserIdentityName) { <b>@recipe.Name</b> } else { @recipe.Name }
+        <MudTd DataLabel="@Localizer["Name"]" Class="cursor-pointer" @onmousedown="@(async (e) => await OpenRecipe(e, recipe))">
+            @if (recipe.UserName == UserIdentityName)
+            {
+                <b>@recipe.Name</b>
+            }
+            else
+            {
+                @recipe.Name
+            }
         </MudTd>
-        <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.Category</MudTd>
-        <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onclick="@(async() => await OpenRecipe(recipe))">@recipe.DurationText</MudTd>
-        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onclick="@(async () => await OpenRecipe(recipe))">@(recipe.LastCooked?.ToString("d", UserSettings.Culture) ?? "-")</MudTd>
+        <MudTd DataLabel="@Localizer["Category"]" Class="cursor-pointer" @onmousedown="@(async (e) => await OpenRecipe(e, recipe))">@recipe.Category</MudTd>
+        <MudTd DataLabel="@Localizer["Duration"]" Class="cursor-pointer" @onmousedown="@(async (e) => await OpenRecipe(e, recipe))">@recipe.DurationText</MudTd>
+        <MudTd DataLabel="@Localizer["Cooked"]" Class="cursor-pointer" @onmousedown="@(async (e) => await OpenRecipe(e, recipe))">@(recipe.LastCooked?.ToString("d", UserSettings.Culture) ?? "-")</MudTd>
         <MudTd Style="text-align:right">
             @if (_signedIn)
             {
@@ -52,9 +59,9 @@
                 {
                     <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.Delete" @onclick="@(async () => await DeleteRecipe(recipe))" Size="Size.Small"></MudIcon>
                 }
-                <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async() => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
+                <MudIcon Class="ma-0 cursor-pointer" Icon="@Icons.Material.Outlined.ContentCopy" @onclick="@(async () => await CloneRecipe(recipe))" Size="Size.Small"></MudIcon>
                 <MudIcon Class="ma-0 cursor-pointer" Icon="@(recipe.IsFavorite(UserIdentityName) ? Icons.Material.Outlined.Star : Icons.Material.Outlined.StarBorder)"
-                         @onclick="@(async() => await ToggleFavorite(recipe))" Size="Size.Small"></MudIcon>
+                         @onclick="@(async () => await ToggleFavorite(recipe))" Size="Size.Small"></MudIcon>
             }
         </MudTd>
     </RowTemplate>
@@ -63,7 +70,19 @@
             <MudTextField Immediate="true" @bind-Value="@recipe.Name" OnKeyPress="CommitEdit" />
         </MudTd>
         <MudTd DataLabel="@Localizer["Category"]">
-            <MudTextField Immediate="true" @bind-Value="@recipe.Category" OnKeyPress="CommitEdit" />
+            <MudAutocomplete T="string"
+                             Label="@Localizer["Category"]"
+                             @bind-Value="@recipe.Category"
+                             SearchFunc="@SearchCategories"
+                             Variant="Variant.Text"
+                             Immediate="true"
+                             Clearable="true"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="false"
+                             CoerceValue="true"
+                             OnKeyDown="CommitEdit"
+                             SelectValueOnTab="true"
+                             Dense="true" />
         </MudTd>
         <MudTd DataLabel="@Localizer["Duration"]">
             <MudTextField Immediate="true" @bind-Value="@recipe.DurationText" OnKeyPress="CommitEdit" />
@@ -84,11 +103,11 @@
 </MudTable>
 
 @code {
-    [Parameter] public string UserIdentityName { get; set; }
+    [Parameter] public string UserIdentityName { get; set; } = string.Empty;
     [Parameter] public bool Editable { get; set; }
     [Parameter] public bool Pagination { get; set; } = true;
-    [Parameter] public string TableName { get; set; }
-    [Parameter] public Func<Task<IEnumerable<Recipe>>> RecipeGetter { get; set; }
+    [Parameter] public string TableName { get; set; } = string.Empty;
+    [Parameter] public Func<Task<IEnumerable<Recipe>>> RecipeGetter { get; set; } = default!;
 
     private int _rowsPerPage = 10;
 
@@ -100,7 +119,7 @@
     private string? _recipeSearch;
 
 
-    private MudTable<Recipe> _tableRef;
+    private MudTable<Recipe> _tableRef = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -131,16 +150,33 @@
         await Service.UpdateUserPreference("RowsPerPage", rows.ToString(), UserIdentityName);
     }
 
-    private async Task OpenRecipe(Recipe recipe)
+    private async Task OpenRecipe(MouseEventArgs e, Recipe recipe)
     {
-        if (recipe.UserName != UserIdentityName)
+        if (e.Button == 1)
         {
-            NavigationManager.NavigateTo($"Recipe/Shared/{recipe.Guid}");
-            return;
-        }
+            string url;
+            if (recipe.UserName == UserIdentityName)
+            {
+                url = $"Recipe/{recipe.Guid}";
+            }
+            else
+            {
+                url = $"Recipe/Shared/{recipe.Guid}";
+            }
 
-        if (!_signedIn) return;
-        NavigationManager.NavigateTo($"Recipe/{recipe.Name}");
+            await JSRuntime.InvokeVoidAsync("open", url, "_blank");
+        }
+        else if (e.Button == 0)
+        {
+            if (recipe.UserName != UserIdentityName)
+            {
+                NavigationManager.NavigateTo($"Recipe/Shared/{recipe.Guid}");
+                return;
+            }
+
+            if (!_signedIn) return;
+            NavigationManager.NavigateTo($"Recipe/{recipe.Guid}");
+        }
     }
 
     private void CommitEdit(KeyboardEventArgs e)
@@ -157,6 +193,7 @@
     {
         var recipe = (Recipe)element;
         var result = Task.Run(() => @Service.UpdateRecipeAsync(recipe, UserIdentityName)).Result;
+        StateHasChanged();
     }
 
     private async Task DeleteRecipe(Recipe recipe)
@@ -177,7 +214,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to create recipe.");
+            Logger.LogError(ex, "Failed to delete recipe.");
         }
     }
 
@@ -202,7 +239,7 @@
 
     public async Task RefreshRecipes()
     {
-        if (UserIdentityName != "")
+        if (!string.IsNullOrEmpty(UserIdentityName))
         {
             Recipes = (await RecipeGetter()).ToList();
             _signedIn = true;
@@ -254,6 +291,14 @@
         if (recipe.Category != null && recipe.Category.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
             return true;
         return false;
+    }
+
+    private async Task<IEnumerable<string>> SearchCategories(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Recipes.Select(x => x.Category).Distinct().Order();
+
+        return Recipes.Select(x => x.Category).Distinct().Where(x => x != null && x.Contains(value)).Order();
     }
 
     public async ValueTask DisposeAsync()

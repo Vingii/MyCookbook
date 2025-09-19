@@ -55,9 +55,9 @@ namespace MyCookbook.Test.Components
 
             await cut.Instance.Load();
 
-            cut.FindAll("tbody td").First(x => x.TextContent.Contains(ownedRecipe.Name)).Click();
+            cut.FindAll("tbody td").First(x => x.TextContent.Contains(ownedRecipe.Name)).MouseDown();
 
-            Assert.Equal("Recipe/Owned Pancake", navManager.Uri.Replace(navManager.BaseUri, ""));
+            Assert.Equal($"Recipe/{ownedRecipe.Guid}", navManager.Uri.Replace(navManager.BaseUri, ""));
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace MyCookbook.Test.Components
 
             await cut.Instance.Load();
 
-            cut.FindAll("tbody td").First(x => x.TextContent == sharedRecipe.Name).Click();
+            cut.FindAll("tbody td").First(x => x.TextContent == sharedRecipe.Name).MouseDown();
 
             Assert.Equal($"Recipe/Shared/{sharedRecipe.Guid}", navManager.Uri.Replace(navManager.BaseUri, ""));
         }

@@ -50,6 +50,6 @@
         var random = new Random();
         var randomIndex = random.Next(_recipes.Count);
 
-        return _recipes[randomIndex].Name;
+        return _recipes[randomIndex].Guid.ToString();
     }
 }
