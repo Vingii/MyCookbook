@@ -181,7 +181,7 @@
 
     private async Task OpenRecipeInNewTab(Recipe recipe)
     {
-        var url = $"/recipe/{recipe.Name}";
+        var url = $"/recipe/{recipe.Guid}";
         await JSRuntime.InvokeVoidAsync("open", url, "_blank");
     }
 
