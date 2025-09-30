@@ -76,7 +76,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Steps)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.ClientCascade)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK__Steps__RecipeId__5BE2A6F2");
             });
 
@@ -89,7 +89,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.FavoriteRecipes)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.ClientCascade);
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<PlannedRecipe>(entity =>
@@ -101,7 +101,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.PlannedRecipes)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.ClientCascade);
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.Property(pr => pr.Id).ValueGeneratedOnAdd();
             });
@@ -134,7 +134,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Tags)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.ClientCascade);
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             OnModelCreatingPartial(modelBuilder);
