@@ -24,6 +24,26 @@
           GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
     <ToolBarContent>
         <MudText Typo="Typo.h6">@TableName</MudText>
+        <MudMenu Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="mud-ml-4" MaxHeight="600">
+            @foreach (var ingredient in _filteredIngredients.Where(x => x.Value).Select(x => x.Key).Order())
+            {
+                <MudMenuItem Class="px-2 py-0" style="min-height: 36px;" AutoClose="false" OnClick="() => OnIngredientChecked(ingredient)">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        <MudIcon Icon="@(_filteredIngredients[ingredient] ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBox)" />
+                            @ingredient
+                        </MudText>
+                </MudMenuItem>
+            }
+            @foreach (var ingredient in _filterableIngredients.Order())
+            {
+                <MudMenuItem Class="px-2 py-0" style="min-height: 36px;" AutoClose="false" OnClick="() => OnIngredientChecked(ingredient)">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                        <MudIcon Icon="@(_filteredIngredients[ingredient] ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBox)" />
+                        @ingredient
+                    </MudText>
+                </MudMenuItem>
+            }
+        </MudMenu>
         <MudSpacer />
         <MudTextField @bind-Value="_recipeSearch" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
@@ -118,6 +138,8 @@
     private bool _loading = true;
     private string? _recipeSearch;
 
+    private Dictionary<string, bool> _filteredIngredients = new Dictionary<string, bool>();
+    private List<string> _filterableIngredients = new List<string>();
 
     private MudTable<Recipe> _tableRef = default!;
 
@@ -243,6 +265,15 @@
         {
             Recipes = (await RecipeGetter()).ToList();
             _signedIn = true;
+
+            _filteredIngredients = Recipes
+                .Where(r => r.Ingredients != null)
+                .SelectMany(r => r.Ingredients)
+                .Where(x => x.Name.Trim() != string.Empty)
+                .DistinctBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary<Ingredient, string, bool>(x => x.Name, x => false);
+
+            _filterableIngredients = _filteredIngredients.Keys.ToList();
         }
         else
         {
@@ -254,6 +285,8 @@
                 }
             };
             _signedIn = false;
+            _filteredIngredients = new Dictionary<string, bool>();
+            _filterableIngredients = new List<string>();
         }
         StateHasChanged();
     }
@@ -284,13 +317,33 @@
 
     private bool Filter(Recipe recipe)
     {
-        if (string.IsNullOrWhiteSpace(_recipeSearch))
-            return true;
-        if (recipe.Name != null && recipe.Name.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
-            return true;
-        if (recipe.Category != null && recipe.Category.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase))
-            return true;
-        return false;
+        bool matchesSearch = true;
+        bool matchesIngredients = true;
+
+        if (!string.IsNullOrWhiteSpace(_recipeSearch))
+        {
+            matchesSearch = (recipe.Name != null && recipe.Name.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase)) ||
+                            (recipe.Category != null && recipe.Category.Contains(_recipeSearch, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var selectedIngredients = _filteredIngredients.Where(x => x.Value);
+        if (_filteredIngredients.Where(x => x.Value).Any())
+        {
+            if (recipe.Ingredients == null || !recipe.Ingredients.Any())
+            {
+                matchesIngredients = false;
+            }
+            else
+            {
+                matchesIngredients = _filteredIngredients.Where(x => x.Value).All(selectedIngredientName =>
+                    recipe.Ingredients.Any(recipeIngredient =>
+                        recipeIngredient.Name.Equals(selectedIngredientName.Key, StringComparison.CurrentCultureIgnoreCase)
+                    )
+                );
+            }
+        }
+
+        return matchesSearch && matchesIngredients;
     }
 
     private async Task<IEnumerable<string>> SearchCategories(string value)
@@ -299,6 +352,19 @@
             return Recipes.Select(x => x.Category).Distinct().Order();
 
         return Recipes.Select(x => x.Category).Distinct().Where(x => x != null && x.Contains(value)).Order();
+    }
+
+    private void OnIngredientChecked(string ingredient)
+    {
+        _filteredIngredients[ingredient] = !_filteredIngredients[ingredient];
+        var selectedIngredients = _filteredIngredients.Where(x => x.Value).Select(x => x.Key);
+        _filterableIngredients = selectedIngredients.Any()
+            ? _filteredIngredients
+                .Where(i => Recipes.Any(
+                    r => r.Ingredients.Any(ri => ri.Name == i.Key)
+                    && selectedIngredients.All(s => r.Ingredients.Any(ri => ri.Name == s)))).Select(x => x.Key).Except(selectedIngredients).ToList()
+            : _filteredIngredients.Keys.ToList();
+        StateHasChanged();
     }
 
     public async ValueTask DisposeAsync()

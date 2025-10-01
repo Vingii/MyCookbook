@@ -66,6 +66,7 @@ namespace MyCookbook.Data
             var context = await GetContext();
             return await context.Recipes
                  .Where(x => x.UserName == user)
+                 .Include(x => x.Ingredients)
                  .Include(x => x.FavoriteRecipes)
                  .Include(x => x.Tags)
                  .AsNoTracking().ToListAsync();
