@@ -24,26 +24,29 @@
           GroupHeaderStyle="background-color:var(--mud-palette-background-grey)" GroupFooterClass="mb-4">
     <ToolBarContent>
         <MudText Typo="Typo.h6">@TableName</MudText>
-        <MudMenu Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="mud-ml-4" MaxHeight="600">
-            @foreach (var ingredient in _filteredIngredients.Where(x => x.Value).Select(x => x.Key).Order())
-            {
-                <MudMenuItem Class="px-2 py-0" style="min-height: 36px;" AutoClose="false" OnClick="() => OnIngredientChecked(ingredient)">
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                        <MudIcon Icon="@(_filteredIngredients[ingredient] ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBox)" />
+        @if (IngredientFilter)
+        {
+            <MudMenu Icon="@Icons.Material.Filled.FilterList" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" Class="mud-ml-4" MaxHeight="600">
+                @foreach (var ingredient in _filteredIngredients.Where(x => x.Value).Select(x => x.Key).Order())
+                {
+                    <MudMenuItem Class="px-2 py-0" style="min-height: 36px;" AutoClose="false" OnClick="() => OnIngredientChecked(ingredient)">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            <MudIcon Icon="@(_filteredIngredients[ingredient] ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBox)" />
                             @ingredient
                         </MudText>
-                </MudMenuItem>
-            }
-            @foreach (var ingredient in _filterableIngredients.Order())
-            {
-                <MudMenuItem Class="px-2 py-0" style="min-height: 36px;" AutoClose="false" OnClick="() => OnIngredientChecked(ingredient)">
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                        <MudIcon Icon="@(_filteredIngredients[ingredient] ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBox)" />
-                        @ingredient
-                    </MudText>
-                </MudMenuItem>
-            }
-        </MudMenu>
+                    </MudMenuItem>
+                }
+                @foreach (var ingredient in _filterableIngredients.Order())
+                {
+                    <MudMenuItem Class="px-2 py-0" style="min-height: 36px;" AutoClose="false" OnClick="() => OnIngredientChecked(ingredient)">
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            <MudIcon Icon="@(_filteredIngredients[ingredient] ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBox)" />
+                            @ingredient
+                        </MudText>
+                    </MudMenuItem>
+                }
+            </MudMenu>
+        }
         <MudSpacer />
         <MudTextField @bind-Value="_recipeSearch" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
@@ -126,6 +129,7 @@
     [Parameter] public string UserIdentityName { get; set; } = string.Empty;
     [Parameter] public bool Editable { get; set; }
     [Parameter] public bool Pagination { get; set; } = true;
+    [Parameter] public bool IngredientFilter { get; set; }
     [Parameter] public string TableName { get; set; } = string.Empty;
     [Parameter] public Func<Task<IEnumerable<Recipe>>> RecipeGetter { get; set; } = default!;
 

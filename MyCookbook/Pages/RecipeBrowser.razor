@@ -19,7 +19,7 @@
 
 <PageTitle>Recipe browser</PageTitle>
 <br />
-<RecipeTable @ref="_recipeTable" UserIdentityName="@_userIdentityName"
+<RecipeTable @ref="_recipeTable" UserIdentityName="@_userIdentityName" IngredientFilter="true"
     Editable="true" TableName="@Localizer["Recipes"]" RecipeGetter="@(async() => await @Service.GetRecipesAsync(_userIdentityName))"></RecipeTable>
 <br />
 <MudButton @onclick="AddRecipe" Variant="Variant.Filled" Color="Color.Primary">
