@@ -8,7 +8,7 @@
     <PackageProjectUrl>https://localhost:44390</PackageProjectUrl>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-	<Version>1.4.2</Version>
+	<Version>1.4.3</Version>
   </PropertyGroup>
 
   <ItemGroup>

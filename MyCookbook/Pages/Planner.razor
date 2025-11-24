@@ -361,8 +361,8 @@
             var newPlannedRecipe = new PlannedRecipe
             {
                 UserName = _userIdentityName,
-                Date = plannedRecipeToDuplicate.Date,
-                FromFridge = plannedRecipeToDuplicate.FromFridge,
+                Date = plannedRecipeToDuplicate.Date.AddDays(1),
+                FromFridge = !plannedRecipeToDuplicate.FromFridge,
                 RecipeId = plannedRecipeToDuplicate.RecipeId
             };
 

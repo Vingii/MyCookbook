@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2025-11-24
+### Changed
+- Cloned plan is now added to next day.
+- Cloned plan is now the opposite type from the original.
+
 ## [1.4.2] - 2025-10-31
 ### Changed
 - Removed ingredient filter buttons from main page.
