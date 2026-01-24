@@ -120,6 +120,9 @@
   <data name="Amount" xml:space="preserve">
     <value>Amount</value>
   </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
   <data name="FinishCooking" xml:space="preserve">
     <value>Finish Cooking</value>
   </data>

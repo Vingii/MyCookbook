@@ -120,6 +120,9 @@
   <data name="Amount" xml:space="preserve">
     <value>Množství</value>
   </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Doba přípravy</value>
+  </data>
   <data name="FinishCooking" xml:space="preserve">
     <value>Ukončit</value>
   </data>

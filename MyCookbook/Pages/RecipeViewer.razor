@@ -27,9 +27,18 @@
 
 <AuthorizeView>
     <Authorized>
-        <MudSlider @bind-Value="Servings" Min="1" Max="10" TickMarks="true" Color="Color.Info">
-            @Localizer["Servings"]: @_recipe.Servings
-        </MudSlider>
+        <div class="d-flex align-center gap-6 mb-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" />
+                <MudText Typo="Typo.body1"><b>@Localizer["Duration"]:</b> @_recipe.DurationText</MudText>
+            </MudStack>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Style="flex-grow: 1; max-width: 300px;">
+                <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
+                <MudText Typo="Typo.body1" Style="white-space:nowrap"><b>@Localizer["Servings"]:</b> @Servings</MudText>
+                <MudSlider @bind-Value="Servings" Min="1" Max="10" Color="Color.Info" Class="mt-n1" />
+            </MudStack>
+        </div>
         <br />
         <MudGrid>
             <MudItem sm="12" md="6">
