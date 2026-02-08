@@ -3,9 +3,9 @@
 
 ## Supported environment variables
 - SA_PASSWORD
-- Jira__Domain
-- Jira__ProjectKey
-- Jira__Email
+- YouTrack__BaseUrl
+- YouTrack__Token
+- YouTrack__ProjectKey
 - Jira__Key
 - Grafana__Key
 - Grafana__Login

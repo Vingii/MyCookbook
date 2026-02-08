@@ -21,7 +21,7 @@
 
             if (!dialogResult.Canceled && dialogResult.Data is FeedbackResult feedbackData)
             {
-                if (feedbackData.Text == null)
+                if (feedbackData.Text == null || feedbackData.Text == string.Empty)
                 {
                     Snackbar.Add("There was an error submitting your feedback.", Severity.Error);
                 }

@@ -4,6 +4,6 @@ namespace MyCookbook.Services
 {
     public interface IFeedbackProvider
     {
-        Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files);
+        Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "");
     }
 }

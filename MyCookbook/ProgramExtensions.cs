@@ -18,7 +18,7 @@ namespace MyCookbook
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var client = httpClientFactory.CreateClient();
 
-                return new JiraFeedbackProvider(client, config["Jira:Domain"], config["Jira:Email"], config["Jira:Key"], config["Jira:ProjectKey"]);
+                return new YouTrackFeedbackProvider(client, config["YouTrack:BaseUrl"], config["YouTrack:Token"], config["YouTrack:ProjectId"]);
             });
         }
 

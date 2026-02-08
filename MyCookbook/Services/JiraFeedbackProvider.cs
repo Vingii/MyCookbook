@@ -24,7 +24,7 @@ namespace MyCookbook.Services
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public async Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files)
+        public async Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "")
         {
             string? issueId = await CreateIssue(feedback);
 

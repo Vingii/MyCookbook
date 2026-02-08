@@ -1,6 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.Extensions.Localization
 @using MyCookbook.Services
+@using System.Security.Claims
 @inject IStringLocalizer<FeedbackDialog> Localizer
 @inject LanguageNotifier LanguageNotifier
 @inject IFeedbackProvider FeedbackProvider
@@ -49,7 +50,12 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    private string _userIdentityName = "";
+
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
 
     private string FeedbackText { get; set; } = "";
     IList<IBrowserFile> _filesToUpload = new List<IBrowserFile>();
@@ -64,6 +70,11 @@
 
     private async void Submit()
     {
+        if (_userIdentityName == string.Empty)
+        {
+            MudDialog.Close(DialogResult.Ok(new FeedbackResult()));
+        }
+
         try
         {
             var result = new FeedbackResult
@@ -71,12 +82,24 @@
                     Text = this.FeedbackText,
                     Files = _filesToUpload.AsReadOnly()
                 };
-            await FeedbackProvider.ProvideFeedback(result.Text, result.Files);
+            await FeedbackProvider.ProvideFeedback(result.Text, result.Files, _userIdentityName);
             MudDialog.Close(DialogResult.Ok(result));
         }
         catch
         {
             MudDialog.Close(DialogResult.Ok(new FeedbackResult()));
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (authenticationStateTask != null)
+        {
+            var user = (await authenticationStateTask).User;
+            if (user.Identity != null && user.FindFirst(ClaimTypes.Name)?.Value.StartsWith("guest-", StringComparison.InvariantCultureIgnoreCase) == false)
+            {
+                _userIdentityName = user.FindFirst(ClaimTypes.Name)?.Value ?? "";
+            }
         }
     }
 
