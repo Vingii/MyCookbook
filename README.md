@@ -9,6 +9,7 @@
 - Jira__Key
 - Grafana__Key
 - Grafana__Login
+- Grafana__Url
 - Google__ClientId
 - Google__ClientSecret
 - Mailgun__ApiKey

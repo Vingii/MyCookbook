@@ -19,6 +19,8 @@ namespace MyCookbook
 
             var config = builder.Configuration;
 
+            string lokiUri = builder.Configuration["LOKI_URI"] ?? "http://localhost:3100";
+
             try
             {
                 // Add services to the container.
@@ -144,21 +146,18 @@ namespace MyCookbook
             var grafanaSections = config.GetSection("Serilog").GetSection("WriteTo")
                 .GetChildren().Where(x => x.GetSection("Name").Value == "GrafanaLoki");
 
-            var credentials = CreateGrafanaCredentials(config);
-
-            var grafanaLoginSettings = new Dictionary<string, string>();
+            var grafanaSettings = new Dictionary<string, string>();
             foreach (var section in grafanaSections)
             {
                 var basePath = section.Path;
-                grafanaLoginSettings[$"{basePath}:args:credentials:login"] = credentials.Login;
-                grafanaLoginSettings[$"{basePath}:args:credentials:password"] = credentials.Password;
+                grafanaSettings[$"{basePath}:args:uri"] = config["Grafana:Url"];
             }
 
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
                 .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", true)
-                .AddInMemoryCollection(grafanaLoginSettings)
+                .AddInMemoryCollection(grafanaSettings)
                 .Build();
 
             var logger = new LoggerConfiguration()
@@ -166,11 +165,6 @@ namespace MyCookbook
                 .CreateLogger();
 
             return logger;
-        }
-
-        private static LokiCredentials CreateGrafanaCredentials(IConfiguration config)
-        {
-            return new LokiCredentials { Login = config["Grafana:Login"], Password = config["Grafana:Key"] };
         }
     }
 }
