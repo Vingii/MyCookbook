@@ -11,13 +11,13 @@
                              Variant="Variant.Filled"
                              Min="0"
                              Max="999"
-                             For="@(() => _minutes)" />
+                             For="@(() => _minutes ?? 0)" />
             <MudNumericField Label="Seconds"
                              @bind-Value="_seconds"
                              Variant="Variant.Filled"
                              Min="0"
                              Max="59"
-                             For="@(() => _seconds)" />
+                             For="@(() => _seconds ?? 0)" />
         </MudStack>
     </DialogContent>
     <DialogActions>
