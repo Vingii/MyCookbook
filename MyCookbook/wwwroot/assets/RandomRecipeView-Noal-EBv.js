@@ -1,0 +1,1 @@
+import{d as r,o as a,c,g as t,f as n}from"./index-_IAfREB0.js";import{r as p}from"./recipes-CpNpSUAh.js";const u=r({__name:"RandomRecipeView",setup(s){const e=t();return a(async()=>{try{const o=await p.getRandom();e.replace(`/recipe/${o.guid}`)}catch{e.replace("/")}}),(o,i)=>(n(),c("div",null,"Loading random recipe..."))}});export{u as default};

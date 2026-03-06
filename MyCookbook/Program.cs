@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
-using MudBlazor.Services;
-using MyCookbook.Components;
+using System.Text.Json.Serialization;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Services;
@@ -30,19 +29,19 @@ namespace MyCookbook
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
                 builder.Services.AddRazorPages();
-                builder.Services.AddRazorComponents()
-                    .AddInteractiveServerComponents();
-                builder.Services.AddServerSideBlazor();
-                builder.Services.AddMudServices();
+                builder.Services.AddRazorComponents();
+                builder.Services.AddControllers()
+                    .AddJsonOptions(o =>
+                    {
+                        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    });
                 builder.Services.AddHttpClient();
                 builder.Services.AddHttpContextAccessor();
 
                 builder.Services.AddSingleton<ChangelogService>();
                 builder.Services.AddFeedbackProvider(config);
-                builder.Services.AddSingleton<ILanguageDictionary, MemoryLanguageDictionary>();
-                builder.Services.AddCultureLocalization(config);
                 builder.Services.AddAuth(config, builder.Environment.IsDevelopment());
-                builder.Services.AddScoped<UserSettings>();
+                builder.Services.AddApiKeyAuth();
 
                 Log.Logger = BuildLogger(config);
                 builder.Host.UseSerilog(Log.Logger);
@@ -107,8 +106,6 @@ namespace MyCookbook
                     app.UseHsts();
                 }
 
-                app.UseRequestLocalization();
-
                 app.UseSerilogRequestLogging();
 
                 app.UseRouting();
@@ -120,14 +117,12 @@ namespace MyCookbook
                 app.UseAuthorization();
                 app.UseAntiforgery();
 
-                app.MapRazorComponents<App>()
-                    .AddInteractiveServerRenderMode();
-                app.MapBlazorHub().WithOrder(-1);
-
+                app.MapRazorPages();
+                app.MapRazorComponents<MyCookbook.Components.App>();
                 app.MapControllers();
                 app.MapMethods("/", [HttpMethods.Head], () => Results.StatusCode(200));
-
                 app.MapAdditionalIdentityEndpoints();
+                app.MapFallbackToFile("index.html");
 
                 app.Run();
             }

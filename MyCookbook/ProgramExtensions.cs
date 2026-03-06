@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.Extensions.Localization;
 using MyCookbook.Components.Account;
 using MyCookbook.Data;
 using MyCookbook.Services;
@@ -22,31 +21,11 @@ namespace MyCookbook
             });
         }
 
-        public static void AddCultureLocalization(this IServiceCollection services, ConfigurationManager config)
-        {
-
-            var cultureProvider = new CultureProvider("en", config.GetSection("SupportedCultures").Get<string[]>() ?? new string[] { "en" });
-            services.AddLocalization(options => options.ResourcesPath = "LanguageResources");
-            services.AddScoped<LanguageNotifier>();
-            services.AddSingleton(cultureProvider);
-            services.AddScoped(typeof(IStringLocalizer<>), typeof(CookbookStringLocalizer<>));
-            services.Configure<RequestLocalizationOptions>(options =>
-            {
-                options.AddSupportedCultures(cultureProvider.SupportedCultures);
-                options.AddSupportedUICultures(cultureProvider.SupportedCultures);
-                options.RequestCultureProviders = new List<IRequestCultureProvider>()
-                    {
-                        cultureProvider
-                    };
-            });
-        }
-        
         public static void AddAuth(this IServiceCollection services, IConfiguration config, bool isDev)
         {
             services.AddCascadingAuthenticationState();
             services.AddScoped<IdentityUserAccessor>();
             services.AddScoped<IdentityRedirectManager>();
-
             services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
             Action<IdentityOptions> identityOptions = isDev
@@ -89,6 +68,18 @@ namespace MyCookbook
                 services.AddTransient<IEmailSender, MailgunEmailSender>();
             }
             services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+        }
+
+        public static void AddApiKeyAuth(this IServiceCollection services)
+        {
+            services.AddTransient<ApiTokenService>();
+            services.AddAuthentication()
+                .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", _ => { });
+
+            services.AddAuthorizationBuilder()
+                .AddPolicy("CookieOrApiKey", policy =>
+                    policy.RequireAuthenticatedUser()
+                          .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, "ApiKey"));
         }
     }
 }
