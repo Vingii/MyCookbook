@@ -73,26 +73,30 @@ namespace MyCookbook
                     return next();
                 });
 
-                using (var scope = app.Services.CreateScope())
+                var migrationAttempts = 0;
+                while (true)
                 {
+                    using var scope = app.Services.CreateScope();
                     var services = scope.ServiceProvider;
                     try
                     {
                         var cookbookDbContext = services.GetRequiredService<CookbookDatabaseContext>();
                         if (cookbookDbContext.Database.IsRelational())
-                        {
                             cookbookDbContext.Database.Migrate();
-                        }
                         var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
                         if (applicationDbContext.Database.IsRelational())
-                        {
                             applicationDbContext.Database.Migrate();
-                        }
+                        break;
+                    }
+                    catch (Exception ex) when (migrationAttempts++ < 5)
+                    {
+                        Log.Warning(ex, "Migration attempt {Attempt} failed, retrying in 5s...", migrationAttempts);
+                        Thread.Sleep(5000);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "An error occurred while migrating the database.");
-                        throw; 
+                        throw;
                     }
                 }
 
