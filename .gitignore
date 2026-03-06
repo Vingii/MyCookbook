@@ -400,3 +400,22 @@ FodyWeavers.xsd
 *.sln.iml
 
 .env
+
+# Personal dotfiles / Claude config
+.bash_profile
+.bashrc
+.zshrc
+.zprofile
+.profile
+.gitconfig
+.gitmodules
+.mcp.json
+.ripgreprc
+.vscode
+.claude/
+.idea/
+HEAD
+config
+hooks
+objects
+refs
