@@ -9,6 +9,15 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 
-const vuetify = createVuetify({ components, directives })
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    themes: {
+      light: { colors: { primary: '#594AE2' } },
+      dark:  { colors: { primary: '#7C6FF0' } },
+    },
+  },
+})
 
 createApp(App).use(createPinia()).use(router).use(vuetify).mount('#app')

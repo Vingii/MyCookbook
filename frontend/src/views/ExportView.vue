@@ -1,24 +1,24 @@
 <template>
   <div>
-    <h1 class="text-h4 mb-6">Export / Import</h1>
+    <h1 class="text-h4 mb-6">{{ ui.t.exportImport }}</h1>
 
     <v-card class="mb-6" variant="outlined">
-      <v-card-title>Export</v-card-title>
+      <v-card-title>{{ ui.t.export }}</v-card-title>
       <v-card-text>
-        <p class="mb-3">Download all your recipes as a JSON file.</p>
+        <p class="mb-3">{{ ui.t.exportDesc }}</p>
         <v-btn color="primary" prepend-icon="mdi-download" :href="'/api/export'" download="cookbook-export.json">
-          Download Export
+          {{ ui.t.downloadExport }}
         </v-btn>
       </v-card-text>
     </v-card>
 
     <v-card v-if="!readonly" variant="outlined">
-      <v-card-title>Import</v-card-title>
+      <v-card-title>{{ ui.t.import }}</v-card-title>
       <v-card-text>
-        <p class="mb-3">Import recipes from a JSON file. This will replace all existing recipes.</p>
+        <p class="mb-3">{{ ui.t.importDesc }}</p>
         <v-file-input
           accept=".json"
-          label="Select JSON file"
+          label="JSON"
           density="compact"
           variant="outlined"
           hide-details
@@ -31,7 +31,7 @@
           :disabled="!selectedFile || importing"
           @click="importFile"
         >
-          {{ importing ? 'Importing...' : 'Import' }}
+          {{ importing ? ui.t.importing : ui.t.import }}
         </v-btn>
         <v-alert
           v-if="importResult"
@@ -50,8 +50,10 @@
 import { ref } from 'vue'
 import client from '../api/client'
 import { useReadonly } from '../composables/useReadonly'
+import { useUiStore } from '../stores/ui'
 
 const { readonly } = useReadonly()
+const ui = useUiStore()
 const selectedFile = ref<File | null>(null)
 const importing = ref(false)
 const importResult = ref<{ success: boolean; message: string } | null>(null)
@@ -62,7 +64,7 @@ function onFileSelected(e: Event) {
 
 async function importFile() {
   if (!selectedFile.value) return
-  if (!confirm('This will replace all your recipes. Continue?')) return
+  if (!confirm(ui.t.importDesc)) return
   importing.value = true
   importResult.value = null
   try {

@@ -6,6 +6,7 @@
         density="compact"
         hide-details
         variant="outlined"
+        :placeholder="ui.t.amountPlaceholder"
         style="max-width: 90px;"
         :readonly="readonly"
         @change="(v: string) => saveIngredient(ing, { amount: v, name: ing.name })"
@@ -26,11 +27,10 @@
       </template>
     </div>
 
-
     <div v-if="!readonly" class="d-flex align-center ga-2 mt-3">
       <v-text-field
         v-model="newAmount"
-        placeholder="Amount"
+        :placeholder="ui.t.amountPlaceholder"
         density="compact"
         hide-details
         variant="outlined"
@@ -38,14 +38,14 @@
       />
       <v-text-field
         v-model="newName"
-        placeholder="Ingredient name"
+        :placeholder="ui.t.ingredientNamePlaceholder"
         density="compact"
         hide-details
         variant="outlined"
         class="flex-grow-1"
         @keyup.enter="addIngredient"
       />
-      <v-btn color="primary" size="small" @click="addIngredient">Add</v-btn>
+      <v-btn color="primary" size="small" @click="addIngredient">{{ ui.t.addIngredient }}</v-btn>
     </div>
   </div>
 </template>
@@ -53,11 +53,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { recipesApi } from '../api/recipes'
+import { useUiStore } from '../stores/ui'
 import type { IngredientDto } from '../api/types'
 
 const props = defineProps<{ guid: string; ingredients: IngredientDto[]; readonly?: boolean }>()
 const emit = defineEmits<{ refresh: [] }>()
 
+const ui = useUiStore()
 const sorted = computed(() => [...props.ingredients].sort((a, b) => a.order - b.order))
 const newName = ref('')
 const newAmount = ref('')

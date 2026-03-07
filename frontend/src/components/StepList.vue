@@ -31,7 +31,7 @@
               density="compact"
               hide-details
               variant="outlined"
-              placeholder="Seconds"
+              :placeholder="ui.t.secondsPlaceholder"
               style="max-width: 120px;"
               :readonly="readonly"
               @change="(v: string) => saveStep(step, { description: step.description, stepType: step.stepType, durationSeconds: v ? Number(v) : undefined })"
@@ -52,7 +52,7 @@
     <div v-if="!readonly" class="mt-3">
       <v-textarea
         v-model="newDesc"
-        placeholder="Step description..."
+        :placeholder="ui.t.stepDescPlaceholder"
         density="compact"
         hide-details
         variant="outlined"
@@ -72,13 +72,13 @@
         <v-text-field
           v-model.number="newDuration"
           type="number"
-          placeholder="Seconds"
+          :placeholder="ui.t.secondsPlaceholder"
           density="compact"
           hide-details
           variant="outlined"
           style="max-width: 120px;"
         />
-        <v-btn color="primary" size="small" @click="addStep">Add Step</v-btn>
+        <v-btn color="primary" size="small" @click="addStep">{{ ui.t.addStep }}</v-btn>
       </div>
     </div>
   </div>
@@ -87,11 +87,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { recipesApi } from '../api/recipes'
+import { useUiStore } from '../stores/ui'
 import type { StepDto } from '../api/types'
 
 const props = defineProps<{ guid: string; steps: StepDto[]; readonly?: boolean }>()
 const emit = defineEmits<{ refresh: [] }>()
 
+const ui = useUiStore()
 const stepTypes = ['Active', 'SemiPassive', 'Passive']
 const sorted = computed(() => [...props.steps].sort((a, b) => a.order - b.order))
 const newDesc = ref('')

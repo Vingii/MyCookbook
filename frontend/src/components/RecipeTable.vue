@@ -2,10 +2,10 @@
   <v-table hover>
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Duration</th>
-        <th>Last Cooked</th>
+        <th>{{ ui.t.colName }}</th>
+        <th>{{ ui.t.colCategory }}</th>
+        <th>{{ ui.t.colDuration }}</th>
+        <th>{{ ui.t.colLastCooked }}</th>
       </tr>
     </thead>
     <tbody>
@@ -21,16 +21,19 @@
         <td>{{ formatDate(recipe.lastCooked) }}</td>
       </tr>
       <tr v-if="!recipes.length">
-        <td colspan="4" class="text-medium-emphasis pa-4">No recipes found.</td>
+        <td colspan="4" class="text-medium-emphasis pa-4">{{ ui.t.noRecipesFound }}</td>
       </tr>
     </tbody>
   </v-table>
 </template>
 
 <script setup lang="ts">
+import { useUiStore } from '../stores/ui'
 import type { RecipeDto } from '../api/types'
 
 defineProps<{ recipes: RecipeDto[] }>()
+
+const ui = useUiStore()
 
 function formatDate(d?: string) {
   if (!d) return '—'

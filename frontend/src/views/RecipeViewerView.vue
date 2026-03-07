@@ -15,9 +15,9 @@
         <h1 v-else class="text-h4">{{ recipe.name }}</h1>
       </v-col>
       <v-col v-if="!readonly" cols="auto" class="d-flex ga-2">
-        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">Clone</v-btn>
-        <v-btn variant="outlined" prepend-icon="mdi-check" @click="markCooked">Mark Cooked</v-btn>
-        <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">Delete</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.clone }}</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-check" @click="markCooked">{{ ui.t.markCooked }}</v-btn>
+        <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">{{ ui.t.delete }}</v-btn>
       </v-col>
     </v-row>
 
@@ -25,7 +25,7 @@
       <v-col cols="12" sm="4">
         <v-text-field
           v-model="recipe.category"
-          label="Category"
+          :label="ui.t.category"
           density="compact"
           variant="outlined"
           hide-details
@@ -36,7 +36,7 @@
       <v-col cols="6" sm="4">
         <v-text-field
           v-model.number="recipe.duration"
-          label="Duration (min)"
+          :label="ui.t.durationMin"
           type="number"
           density="compact"
           variant="outlined"
@@ -48,7 +48,7 @@
       <v-col cols="6" sm="4">
         <v-text-field
           v-model.number="recipe.servings"
-          label="Servings"
+          :label="ui.t.servings"
           type="number"
           density="compact"
           variant="outlined"
@@ -70,7 +70,7 @@
         <v-text-field
           v-if="!readonly"
           v-model="newTag"
-          placeholder="Add tag..."
+          :placeholder="ui.t.addTagPlaceholder"
           density="compact"
           hide-details
           variant="outlined"
@@ -82,11 +82,11 @@
 
     <v-row>
       <v-col cols="12" md="5">
-        <h2 class="text-h6 mb-2">Ingredients</h2>
+        <h2 class="text-h6 mb-2">{{ ui.t.ingredients }}</h2>
         <IngredientList :guid="guid" :ingredients="recipe.ingredients" :readonly="readonly" @refresh="loadRecipe" />
       </v-col>
       <v-col cols="12" md="7">
-        <h2 class="text-h6 mb-2">Steps</h2>
+        <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
         <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" @refresh="loadRecipe" />
       </v-col>
     </v-row>
@@ -101,6 +101,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { useReadonly } from '../composables/useReadonly'
+import { useUiStore } from '../stores/ui'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
@@ -109,6 +110,7 @@ const route = useRoute()
 const router = useRouter()
 const guid = route.params.guid as string
 const { viewingUser, shareToken, readonly } = useReadonly()
+const ui = useUiStore()
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const newTag = ref('')
@@ -145,7 +147,7 @@ async function markCooked() {
 }
 
 async function deleteRecipe() {
-  if (!confirm(`Delete "${recipe.value?.name}"?`)) return
+  if (!confirm(`${ui.t.delete} "${recipe.value?.name}"?`)) return
   await recipesApi.delete(guid)
   router.push('/browser')
 }
