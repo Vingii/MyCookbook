@@ -1,11 +1,11 @@
 <template>
-  <table style="width: 100%; border-collapse: collapse;">
+  <v-table hover>
     <thead>
       <tr>
-        <th style="text-align: left; padding: 4px 8px;">Name</th>
-        <th style="text-align: left; padding: 4px 8px;">Category</th>
-        <th style="text-align: left; padding: 4px 8px;">Duration</th>
-        <th style="text-align: left; padding: 4px 8px;">Last Cooked</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Duration</th>
+        <th>Last Cooked</th>
       </tr>
     </thead>
     <tbody>
@@ -14,18 +14,17 @@
         :key="recipe.guid"
         @click="$router.push(`/recipe/${recipe.guid}`)"
         style="cursor: pointer;"
-        :style="{ background: recipe.isFavorite ? '#fffbe6' : undefined }"
       >
-        <td style="padding: 4px 8px;">{{ recipe.name }}</td>
-        <td style="padding: 4px 8px;">{{ recipe.category }}</td>
-        <td style="padding: 4px 8px;">{{ recipe.durationText }}</td>
-        <td style="padding: 4px 8px;">{{ formatDate(recipe.lastCooked) }}</td>
+        <td>{{ recipe.name }}</td>
+        <td>{{ recipe.category }}</td>
+        <td>{{ recipe.durationText }}</td>
+        <td>{{ formatDate(recipe.lastCooked) }}</td>
       </tr>
       <tr v-if="!recipes.length">
-        <td colspan="4" style="padding: 8px; color: #999;">No recipes found.</td>
+        <td colspan="4" class="text-medium-emphasis pa-4">No recipes found.</td>
       </tr>
     </tbody>
-  </table>
+  </v-table>
 </template>
 
 <script setup lang="ts">

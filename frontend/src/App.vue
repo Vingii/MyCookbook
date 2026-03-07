@@ -1,15 +1,18 @@
 <template>
-  <nav style="padding: 0.5rem 1rem; background: #1a1a2e; color: white; display: flex; gap: 1rem; align-items: center;">
-    <router-link to="/" style="color: white; text-decoration: none;"><strong>MyCookbook</strong></router-link>
-    <router-link to="/planner" style="color: white;">Planner</router-link>
-    <div style="margin-left: auto; display: flex; gap: 1rem; align-items: center;">
-      <router-link to="/settings" style="color: white;">Settings</router-link>
-      <a href="/api/auth/logout" style="color: white;">Logout</a>
-    </div>
-  </nav>
-  <main style="padding: 1rem 2rem;">
-    <router-view />
-  </main>
+  <v-app>
+    <v-app-bar color="primary" flat>
+      <v-btn variant="text" :to="'/'" class="text-h6 font-weight-bold">MyCookbook</v-btn>
+      <v-btn variant="text" :to="'/planner'">Planner</v-btn>
+      <v-spacer />
+      <v-btn variant="text" :to="'/settings'">Settings</v-btn>
+      <v-btn variant="text" href="/api/auth/logout">Logout</v-btn>
+    </v-app-bar>
+    <v-main>
+      <v-container>
+        <router-view />
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script setup lang="ts">

@@ -1,27 +1,51 @@
 <template>
   <div>
-    <div v-for="ing in sorted" :key="ing.id" style="display: flex; gap: 0.5rem; margin-bottom: 4px; align-items: center;">
-      <span style="min-width: 80px; color: #555;">{{ ing.amount }}</span>
-      <span v-if="readonly || !editing[ing.id]" @dblclick="!readonly && startEdit(ing.id)">{{ ing.name }}</span>
-      <input
-        v-else
-        v-model="editValues[ing.id]"
-        @blur="saveEdit(ing)"
-        @keyup.enter="saveEdit(ing)"
-        autofocus
-        style="flex: 1;"
+    <div v-for="ing in sorted" :key="ing.id" class="d-flex align-center ga-2 mb-1">
+      <v-text-field
+        :model-value="ing.amount"
+        density="compact"
+        hide-details
+        variant="outlined"
+        style="max-width: 90px;"
+        :readonly="readonly"
+        @change="(v: string) => saveIngredient(ing, { amount: v, name: ing.name })"
+      />
+      <v-text-field
+        :model-value="ing.name"
+        density="compact"
+        hide-details
+        variant="outlined"
+        class="flex-grow-1"
+        :readonly="readonly"
+        @change="(v: string) => saveIngredient(ing, { amount: ing.amount ?? '', name: v })"
       />
       <template v-if="!readonly">
-        <button @click="moveUp(ing)" title="Move up">↑</button>
-        <button @click="moveDown(ing)" title="Move down">↓</button>
-        <button @click="remove(ing)" title="Delete">×</button>
+        <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveUp(ing)" />
+        <v-btn icon="mdi-arrow-down" size="small" variant="text" @click="moveDown(ing)" />
+        <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="remove(ing)" />
       </template>
     </div>
 
-    <div v-if="!readonly" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-      <input v-model="newAmount" placeholder="Amount" style="width: 80px;" />
-      <input v-model="newName" placeholder="Ingredient name" @keyup.enter="addIngredient" />
-      <button @click="addIngredient">Add</button>
+
+    <div v-if="!readonly" class="d-flex align-center ga-2 mt-3">
+      <v-text-field
+        v-model="newAmount"
+        placeholder="Amount"
+        density="compact"
+        hide-details
+        variant="outlined"
+        style="max-width: 90px;"
+      />
+      <v-text-field
+        v-model="newName"
+        placeholder="Ingredient name"
+        density="compact"
+        hide-details
+        variant="outlined"
+        class="flex-grow-1"
+        @keyup.enter="addIngredient"
+      />
+      <v-btn color="primary" size="small" @click="addIngredient">Add</v-btn>
     </div>
   </div>
 </template>
@@ -35,26 +59,13 @@ const props = defineProps<{ guid: string; ingredients: IngredientDto[]; readonly
 const emit = defineEmits<{ refresh: [] }>()
 
 const sorted = computed(() => [...props.ingredients].sort((a, b) => a.order - b.order))
-const editing = ref<Record<number, boolean>>({})
-const editValues = ref<Record<number, string>>({})
 const newName = ref('')
 const newAmount = ref('')
 
-function startEdit(id: number) {
-  const ing = props.ingredients.find((i) => i.id === id)
-  editValues.value[id] = ing?.name ?? ''
-  editing.value[id] = true
-}
-
-async function saveEdit(ing: IngredientDto) {
-  editing.value[ing.id] = false
-  if (editValues.value[ing.id] !== ing.name) {
-    await recipesApi.updateIngredient(props.guid, ing.id, {
-      name: editValues.value[ing.id] ?? '',
-      amount: ing.amount,
-    })
-    emit('refresh')
-  }
+async function saveIngredient(ing: IngredientDto, update: { name: string; amount: string }) {
+  if (update.name === ing.name && update.amount === ing.amount) return
+  await recipesApi.updateIngredient(props.guid, ing.id, { name: update.name, amount: update.amount })
+  emit('refresh')
 }
 
 async function moveUp(ing: IngredientDto) {

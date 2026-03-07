@@ -1,24 +1,40 @@
 <template>
   <div>
-    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-      <h1 style="margin: 0;">Meal Planner</h1>
-      <button @click="prevWeek">← Prev</button>
-      <button @click="nextWeek">Next →</button>
+    <div class="d-flex align-center ga-3 mb-4">
+      <h1 class="text-h4">Meal Planner</h1>
+      <v-btn icon="mdi-chevron-left" variant="text" @click="prevWeek" />
+      <v-btn icon="mdi-chevron-right" variant="text" @click="nextWeek" />
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
-      <div v-for="day in days" :key="day.date" style="border: 1px solid #ccc; padding: 0.5rem; min-height: 100px;">
-        <div style="font-weight: bold; margin-bottom: 0.5rem;">{{ day.label }}</div>
-        <div v-for="plan in getPlansForDate(day.date)" :key="plan.id" style="font-size: 0.9em; margin-bottom: 4px;">
-          <a :href="`/recipe/${plan.recipeGuid}`" @click.prevent="$router.push(`/recipe/${plan.recipeGuid}`)">
-            {{ plan.recipeName }}
-          </a>
-          <span v-if="plan.fromFridge"> 🧊</span>
-          <button v-if="!readonly" @click="deletePlan(plan.id)" style="margin-left: 4px; font-size: 0.8em;">×</button>
-        </div>
-        <button v-if="!readonly" @click="addPlan(day.date)" style="font-size: 0.8em;">+ Add</button>
-      </div>
-    </div>
+    <v-row>
+      <v-col v-for="day in days" :key="day.date" cols="12" sm="6" md="auto" style="min-width: 140px; flex: 1;">
+        <v-card variant="outlined" min-height="120">
+          <v-card-title class="text-body-2 font-weight-bold pb-1">{{ day.label }}</v-card-title>
+          <v-card-text class="pt-0">
+            <div v-for="plan in getPlansForDate(day.date)" :key="plan.id" class="d-flex align-center mb-1">
+              <router-link :to="`/recipe/${plan.recipeGuid}`" class="text-body-2 flex-grow-1 text-decoration-none">
+                {{ plan.recipeName }}
+              </router-link>
+              <span v-if="plan.fromFridge" class="ml-1">🧊</span>
+              <v-btn
+                v-if="!readonly"
+                icon="mdi-close"
+                size="x-small"
+                variant="text"
+                @click="deletePlan(plan.id)"
+              />
+            </div>
+            <v-btn
+              v-if="!readonly"
+              size="small"
+              variant="text"
+              prepend-icon="mdi-plus"
+              @click="addPlan(day.date)"
+            >Add</v-btn>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </div>
 </template>
 

@@ -1,15 +1,49 @@
 <template>
   <div>
-    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-      <h1 style="margin: 0;">Recipes</h1>
-      <button v-if="!readonly" @click="createRecipe">+ New Recipe</button>
-    </div>
+    <v-row align="center" class="mb-4">
+      <v-col>
+        <h1 class="text-h4">Recipes</h1>
+      </v-col>
+      <v-col cols="auto">
+        <v-btn v-if="!readonly" color="primary" prepend-icon="mdi-plus" @click="createRecipe">New Recipe</v-btn>
+      </v-col>
+    </v-row>
 
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
-      <input v-model="search" placeholder="Search..." @input="applyFilters" />
-      <input v-model="category" placeholder="Category..." @input="applyFilters" />
-      <input v-model="tag" placeholder="Tag..." @input="applyFilters" />
-    </div>
+    <v-row class="mb-4">
+      <v-col cols="12" sm="4">
+        <v-text-field
+          v-model="search"
+          placeholder="Search..."
+          prepend-inner-icon="mdi-magnify"
+          density="compact"
+          hide-details
+          variant="outlined"
+          @input="applyFilters"
+        />
+      </v-col>
+      <v-col cols="12" sm="4">
+        <v-text-field
+          v-model="category"
+          placeholder="Category..."
+          prepend-inner-icon="mdi-tag-outline"
+          density="compact"
+          hide-details
+          variant="outlined"
+          @input="applyFilters"
+        />
+      </v-col>
+      <v-col cols="12" sm="4">
+        <v-text-field
+          v-model="tag"
+          placeholder="Tag..."
+          prepend-inner-icon="mdi-label-outline"
+          density="compact"
+          hide-details
+          variant="outlined"
+          @input="applyFilters"
+        />
+      </v-col>
+    </v-row>
 
     <RecipeTable :recipes="store.recipes" />
   </div>

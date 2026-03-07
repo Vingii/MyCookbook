@@ -1,43 +1,84 @@
 <template>
   <div>
-    <div v-for="step in sorted" :key="step.id" style="margin-bottom: 0.5rem;">
-      <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-        <span style="min-width: 24px; color: #888;">{{ step.order }}.</span>
-        <div style="flex: 1;">
-          <div v-if="readonly || !editing[step.id]" @dblclick="!readonly && startEdit(step.id)" style="white-space: pre-wrap;">
-            {{ step.description }}
-          </div>
-          <textarea
-            v-else
-            v-model="editDesc[step.id]"
-            @blur="saveEdit(step)"
-            rows="3"
-            style="width: 100%;"
-            autofocus
+    <div v-for="step in sorted" :key="step.id" class="mb-3">
+      <div class="d-flex align-start ga-2">
+        <span class="text-medium-emphasis mt-2" style="min-width: 24px;">{{ step.order }}.</span>
+        <div class="flex-grow-1">
+          <v-textarea
+            :model-value="step.description"
+            density="compact"
+            hide-details
+            variant="outlined"
+            auto-grow
+            rows="2"
+            :readonly="readonly"
+            @change="(v: string) => saveStep(step, { description: v, stepType: step.stepType, durationSeconds: step.durationSeconds ?? undefined })"
           />
-          <div style="font-size: 0.8em; color: #666;">
-            {{ step.stepType }}
-            <span v-if="step.durationSeconds"> · {{ formatDuration(step.durationSeconds) }}</span>
+          <div class="d-flex ga-2 mt-1">
+            <v-select
+              :model-value="step.stepType"
+              :items="stepTypes"
+              density="compact"
+              hide-details
+              variant="outlined"
+              style="max-width: 160px;"
+              :readonly="readonly"
+              @update:model-value="(v: string) => saveStep(step, { description: step.description, stepType: v, durationSeconds: step.durationSeconds ?? undefined })"
+            />
+            <v-text-field
+              :model-value="step.durationSeconds ?? null"
+              type="number"
+              density="compact"
+              hide-details
+              variant="outlined"
+              placeholder="Seconds"
+              style="max-width: 120px;"
+              :readonly="readonly"
+              @change="(v: string) => saveStep(step, { description: step.description, stepType: step.stepType, durationSeconds: v ? Number(v) : undefined })"
+            />
+            <span v-if="step.durationSeconds" class="text-medium-emphasis text-caption mt-2">
+              {{ formatDuration(step.durationSeconds) }}
+            </span>
           </div>
         </div>
         <template v-if="!readonly">
-          <button @click="moveUp(step)" title="Move up">↑</button>
-          <button @click="moveDown(step)" title="Move down">↓</button>
-          <button @click="remove(step)" title="Delete">×</button>
+          <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveUp(step)" />
+          <v-btn icon="mdi-arrow-down" size="small" variant="text" @click="moveDown(step)" />
+          <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="remove(step)" />
         </template>
       </div>
     </div>
 
-    <div v-if="!readonly" style="margin-top: 0.5rem;">
-      <textarea v-model="newDesc" placeholder="Step description..." rows="2" style="width: 100%;" />
-      <div style="display: flex; gap: 0.5rem; margin-top: 4px;">
-        <select v-model="newType">
-          <option>Active</option>
-          <option>SemiPassive</option>
-          <option>Passive</option>
-        </select>
-        <input v-model.number="newDuration" type="number" placeholder="Seconds" style="width: 80px;" />
-        <button @click="addStep">Add Step</button>
+    <div v-if="!readonly" class="mt-3">
+      <v-textarea
+        v-model="newDesc"
+        placeholder="Step description..."
+        density="compact"
+        hide-details
+        variant="outlined"
+        auto-grow
+        rows="2"
+        class="mb-2"
+      />
+      <div class="d-flex ga-2 align-center">
+        <v-select
+          v-model="newType"
+          :items="stepTypes"
+          density="compact"
+          hide-details
+          variant="outlined"
+          style="max-width: 160px;"
+        />
+        <v-text-field
+          v-model.number="newDuration"
+          type="number"
+          placeholder="Seconds"
+          density="compact"
+          hide-details
+          variant="outlined"
+          style="max-width: 120px;"
+        />
+        <v-btn color="primary" size="small" @click="addStep">Add Step</v-btn>
       </div>
     </div>
   </div>
@@ -51,9 +92,8 @@ import type { StepDto } from '../api/types'
 const props = defineProps<{ guid: string; steps: StepDto[]; readonly?: boolean }>()
 const emit = defineEmits<{ refresh: [] }>()
 
+const stepTypes = ['Active', 'SemiPassive', 'Passive']
 const sorted = computed(() => [...props.steps].sort((a, b) => a.order - b.order))
-const editing = ref<Record<number, boolean>>({})
-const editDesc = ref<Record<number, string>>({})
 const newDesc = ref('')
 const newType = ref('Active')
 const newDuration = ref<number | null>(null)
@@ -64,19 +104,8 @@ function formatDuration(sec: number) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
-function startEdit(id: number) {
-  const step = props.steps.find((s) => s.id === id)
-  editDesc.value[id] = step?.description ?? ''
-  editing.value[id] = true
-}
-
-async function saveEdit(step: StepDto) {
-  editing.value[step.id] = false
-  await recipesApi.updateStep(props.guid, step.id, {
-    description: editDesc.value[step.id] ?? '',
-    durationSeconds: step.durationSeconds ?? undefined,
-    stepType: step.stepType,
-  })
+async function saveStep(step: StepDto, update: { description: string; stepType: string; durationSeconds?: number }) {
+  await recipesApi.updateStep(props.guid, step.id, update)
   emit('refresh')
 }
 

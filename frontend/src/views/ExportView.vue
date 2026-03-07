@@ -1,26 +1,48 @@
 <template>
   <div>
-    <h1>Export / Import</h1>
+    <h1 class="text-h4 mb-6">Export / Import</h1>
 
-    <section style="margin-bottom: 2rem;">
-      <h2>Export</h2>
-      <p>Download all your recipes as a JSON file.</p>
-      <a href="/api/export" download="cookbook-export.json">
-        <button>Download Export</button>
-      </a>
-    </section>
+    <v-card class="mb-6" variant="outlined">
+      <v-card-title>Export</v-card-title>
+      <v-card-text>
+        <p class="mb-3">Download all your recipes as a JSON file.</p>
+        <v-btn color="primary" prepend-icon="mdi-download" :href="'/api/export'" download="cookbook-export.json">
+          Download Export
+        </v-btn>
+      </v-card-text>
+    </v-card>
 
-    <section v-if="!readonly">
-      <h2>Import</h2>
-      <p>Import recipes from a JSON file. This will replace all existing recipes.</p>
-      <input type="file" accept=".json" @change="onFileSelected" />
-      <button @click="importFile" :disabled="!selectedFile || importing">
-        {{ importing ? 'Importing...' : 'Import' }}
-      </button>
-      <p v-if="importResult" :style="{ color: importResult.success ? 'green' : 'red' }">
-        {{ importResult.message }}
-      </p>
-    </section>
+    <v-card v-if="!readonly" variant="outlined">
+      <v-card-title>Import</v-card-title>
+      <v-card-text>
+        <p class="mb-3">Import recipes from a JSON file. This will replace all existing recipes.</p>
+        <v-file-input
+          accept=".json"
+          label="Select JSON file"
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="mb-3"
+          @change="onFileSelected"
+        />
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-upload"
+          :disabled="!selectedFile || importing"
+          @click="importFile"
+        >
+          {{ importing ? 'Importing...' : 'Import' }}
+        </v-btn>
+        <v-alert
+          v-if="importResult"
+          :type="importResult.success ? 'success' : 'error'"
+          class="mt-3"
+          density="compact"
+        >
+          {{ importResult.message }}
+        </v-alert>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 

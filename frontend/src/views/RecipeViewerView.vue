@@ -1,50 +1,99 @@
 <template>
   <div v-if="recipe">
-    <div style="display: flex; gap: 1rem; align-items: baseline; margin-bottom: 1rem;">
-      <h1 style="margin: 0;">
-        <span v-if="readonly || !editingName" @dblclick="!readonly && (editingName = true)">{{ recipe.name }}</span>
-        <input v-else v-model="recipe.name" @blur="saveRecipe" @keyup.enter="saveRecipe" autofocus />
-      </h1>
-      <template v-if="!readonly">
-        <button @click="cloneRecipe">Clone</button>
-        <button @click="markCooked">Mark cooked</button>
-        <button @click="deleteRecipe" style="color: red;">Delete</button>
-      </template>
+    <v-row align="center" class="mb-4">
+      <v-col>
+        <v-text-field
+          v-if="!readonly"
+          v-model="recipe.name"
+          variant="plain"
+          density="compact"
+          hide-details
+          class="text-h4"
+          @blur="saveRecipe"
+          @keyup.enter="saveRecipe"
+        />
+        <h1 v-else class="text-h4">{{ recipe.name }}</h1>
+      </v-col>
+      <v-col v-if="!readonly" cols="auto" class="d-flex ga-2">
+        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">Clone</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-check" @click="markCooked">Mark Cooked</v-btn>
+        <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">Delete</v-btn>
+      </v-col>
+    </v-row>
+
+    <v-row class="mb-4">
+      <v-col cols="12" sm="4">
+        <v-text-field
+          v-model="recipe.category"
+          label="Category"
+          density="compact"
+          variant="outlined"
+          hide-details
+          :readonly="readonly"
+          @blur="!readonly && saveRecipe()"
+        />
+      </v-col>
+      <v-col cols="6" sm="4">
+        <v-text-field
+          v-model.number="recipe.duration"
+          label="Duration (min)"
+          type="number"
+          density="compact"
+          variant="outlined"
+          hide-details
+          :readonly="readonly"
+          @blur="!readonly && saveRecipe()"
+        />
+      </v-col>
+      <v-col cols="6" sm="4">
+        <v-text-field
+          v-model.number="recipe.servings"
+          label="Servings"
+          type="number"
+          density="compact"
+          variant="outlined"
+          hide-details
+          :readonly="readonly"
+          @blur="!readonly && saveRecipe()"
+        />
+      </v-col>
+    </v-row>
+
+    <div class="mb-4">
+      <div class="d-flex align-center flex-wrap ga-2">
+        <v-chip
+          v-for="tag in recipe.tags"
+          :key="tag"
+          :closable="!readonly"
+          @click:close="removeTag(tag)"
+        >{{ tag }}</v-chip>
+        <v-text-field
+          v-if="!readonly"
+          v-model="newTag"
+          placeholder="Add tag..."
+          density="compact"
+          hide-details
+          variant="outlined"
+          style="max-width: 150px;"
+          @keyup.enter="addTag"
+        />
+      </div>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-      <label>Category:
-        <input v-model="recipe.category" @blur="!readonly && saveRecipe()" :disabled="readonly" />
-      </label>
-      <label>Duration (min):
-        <input type="number" v-model.number="recipe.duration" @blur="!readonly && saveRecipe()" :disabled="readonly" />
-      </label>
-      <label>Servings:
-        <input type="number" v-model.number="recipe.servings" @blur="!readonly && saveRecipe()" :disabled="readonly" />
-      </label>
-    </div>
-
-    <div style="margin-bottom: 1rem;">
-      <strong>Tags:</strong>
-      <span v-for="tag in recipe.tags" :key="tag" style="margin: 0 4px;">
-        {{ tag }}
-        <button v-if="!readonly" @click="removeTag(tag)">×</button>
-      </span>
-      <input v-if="!readonly" v-model="newTag" placeholder="Add tag..." @keyup.enter="addTag" style="width: 120px;" />
-    </div>
-
-    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-      <div>
-        <h2>Ingredients</h2>
+    <v-row>
+      <v-col cols="12" md="5">
+        <h2 class="text-h6 mb-2">Ingredients</h2>
         <IngredientList :guid="guid" :ingredients="recipe.ingredients" :readonly="readonly" @refresh="loadRecipe" />
-      </div>
-      <div style="flex: 1;">
-        <h2>Steps</h2>
+      </v-col>
+      <v-col cols="12" md="7">
+        <h2 class="text-h6 mb-2">Steps</h2>
         <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" @refresh="loadRecipe" />
-      </div>
-    </div>
+      </v-col>
+    </v-row>
   </div>
-  <div v-else-if="loading">Loading...</div>
+  <div v-else-if="loading" class="text-center pa-8">
+    <v-progress-circular indeterminate color="primary" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -62,7 +111,6 @@ const guid = route.params.guid as string
 const { viewingUser, shareToken, readonly } = useReadonly()
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
-const editingName = ref(false)
 const newTag = ref('')
 
 onMounted(loadRecipe)
@@ -77,7 +125,6 @@ async function loadRecipe() {
 }
 
 async function saveRecipe() {
-  editingName.value = false
   if (!recipe.value) return
   await recipesApi.update(guid, {
     name: recipe.value.name,
