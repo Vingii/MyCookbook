@@ -121,7 +121,7 @@ Tests use:
 
 ### Logging
 
-Serilog with Console and Grafana Loki sinks. Loki endpoint configured via `LOKI_URI`.
+Serilog with Console and Grafana Loki sinks.
 
 ## Environment Variables
 
@@ -134,7 +134,6 @@ Serilog with Console and Grafana Loki sinks. Loki endpoint configured via `LOKI_
 | `WEB_PORT` | Host port exposed by docker-compose (default: `8080`) |
 | `COOKBOOK_URL` | Public URL of the app |
 | `COOKBOOK_AUTHENTIK_URL` | Authentik SSO URL for header-based auth |
-| `LOKI_URI` | Grafana Loki endpoint for log shipping |
 | `Grafana__Key` / `Grafana__Login` / `Grafana__Url` | Grafana integration |
 | `YouTrack__BaseUrl` / `YouTrack__Token` / `YouTrack__ProjectKey` | YouTrack feedback integration |
 | `Mailgun__ApiKey` / `Mailgun__FromEmail` / `Mailgun__MailDomain` | Email sending (dev only) |

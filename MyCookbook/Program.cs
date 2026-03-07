@@ -18,8 +18,6 @@ namespace MyCookbook
 
             var config = builder.Configuration;
 
-            string lokiUri = builder.Configuration["LOKI_URI"] ?? "http://localhost:3100";
-
             try
             {
                 // Add services to the container.
