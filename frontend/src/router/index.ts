@@ -10,15 +10,16 @@ const router = createRouter({
     { path: '/planner', component: () => import('../views/PlannerView.vue') },
     { path: '/export', component: () => import('../views/ExportView.vue') },
     { path: '/random', component: () => import('../views/RandomRecipeView.vue') },
+    { path: '/unauthorized', component: () => import('../views/UnauthorizedView.vue'), meta: { public: true } },
   ],
 })
 
 router.beforeEach(async (to) => {
+  if (to.meta.public) return
   const auth = useAuthStore()
   await auth.load()
   if (!auth.isAuthenticated) {
-    window.location.reload()
-    return false
+    return '/unauthorized'
   }
 })
 

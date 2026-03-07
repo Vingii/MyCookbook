@@ -104,7 +104,6 @@ namespace MyCookbook
                 app.UseStaticFiles();
 
                 app.UseAuthentication();
-                app.UseMiddleware<HeaderAuthenticationMiddleware>();
                 app.UseAuthorization();
 
                 app.MapControllers();

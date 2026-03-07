@@ -19,13 +19,14 @@ namespace MyCookbook
         public static void AddApiKeyAuth(this IServiceCollection services)
         {
             services.AddTransient<ApiTokenService>();
-            services.AddAuthentication()
+            services.AddAuthentication("HeaderAuth")
+                .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("HeaderAuth", _ => { })
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", _ => { });
 
             services.AddAuthorizationBuilder()
                 .AddPolicy("CookieOrApiKey", policy =>
                     policy.RequireAuthenticatedUser()
-                          .AddAuthenticationSchemes("ApiKey"));
+                          .AddAuthenticationSchemes("HeaderAuth", "ApiKey"));
         }
     }
 }
