@@ -42,8 +42,8 @@
           </div>
         </div>
         <template v-if="!readonly">
-          <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveUp(step)" />
-          <v-btn icon="mdi-arrow-down" size="small" variant="text" @click="moveDown(step)" />
+          <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveDown(step)" />
+          <v-btn icon="mdi-arrow-down" size="small" variant="text" @click="moveUp(step)" />
           <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="remove(step)" />
         </template>
       </div>
