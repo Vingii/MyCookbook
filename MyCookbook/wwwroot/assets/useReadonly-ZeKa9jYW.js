@@ -1,1 +1,0 @@
-import{x as t,e as s,m as a}from"./index-B_U4lHmr.js";function m(){const e=t(),u=a(),o=s(()=>u.query.user??e.username??""),n=s(()=>u.query.shareToken??void 0),r=s(()=>e.isGuest||e.username!==null&&o.value!==e.username);return{viewingUser:o,shareToken:n,readonly:r}}export{m as u};

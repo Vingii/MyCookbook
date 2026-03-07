@@ -72,10 +72,4 @@ export const recipesApi = {
 
   deleteTag: (guid: string, name: string) =>
     client.delete(`/recipes/${guid}/tags/${encodeURIComponent(name)}`),
-
-  addFavorite: (guid: string) =>
-    client.post(`/recipes/${guid}/favorite`),
-
-  removeFavorite: (guid: string) =>
-    client.delete(`/recipes/${guid}/favorite`),
 }

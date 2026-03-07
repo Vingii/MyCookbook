@@ -1,0 +1,1 @@
+import{x as t,j as s,m as a}from"./index-CvOH3ssG.js";function m(){const e=t(),u=a(),o=s(()=>u.query.user??e.username??""),n=s(()=>u.query.shareToken??void 0),r=s(()=>e.isGuest||e.username!==null&&o.value!==e.username);return{viewingUser:o,shareToken:n,readonly:r}}export{m as u};

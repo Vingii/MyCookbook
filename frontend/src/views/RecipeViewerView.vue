@@ -8,11 +8,7 @@
       <template v-if="!readonly">
         <button @click="cloneRecipe">Clone</button>
         <button @click="markCooked">Mark cooked</button>
-        <button @click="toggleFavorite">{{ recipe.isFavorite ? '★' : '☆' }}</button>
         <button @click="deleteRecipe" style="color: red;">Delete</button>
-      </template>
-      <template v-else>
-        <span>{{ recipe.isFavorite ? '★' : '☆' }}</span>
       </template>
     </div>
 
@@ -98,16 +94,6 @@ async function cloneRecipe() {
 
 async function markCooked() {
   await recipesApi.markCooked(guid)
-  await loadRecipe()
-}
-
-async function toggleFavorite() {
-  if (!recipe.value) return
-  if (recipe.value.isFavorite) {
-    await recipesApi.removeFavorite(guid)
-  } else {
-    await recipesApi.addFavorite(guid)
-  }
   await loadRecipe()
 }
 

@@ -1,1 +1,0 @@
-import{q as i,r as s}from"./index-B_U4lHmr.js";import{r as l}from"./recipes-C-4eNuCc.js";const n=i("recipes",()=>{const r=s([]),e=s(!1);async function t(a){e.value=!0;try{r.value=await l.getAll(a)}finally{e.value=!1}}return{recipes:r,loading:e,fetchAll:t}});export{n as u};
