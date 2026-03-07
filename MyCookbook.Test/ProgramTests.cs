@@ -30,9 +30,6 @@ namespace MyCookbook.Test
             var cookbookService = scope.ServiceProvider.GetService<CookbookDatabaseService>();
             Assert.NotNull(cookbookService);
 
-            var applicationDbContext = scope.ServiceProvider.GetService<ApplicationDbContext>();
-            Assert.NotNull(applicationDbContext);
-
             var cookbookDbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<CookbookDatabaseContext>>();
             Assert.NotNull(cookbookDbContextFactory);
         }

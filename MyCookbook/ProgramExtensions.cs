@@ -1,9 +1,4 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using MyCookbook.Components.Account;
-using MyCookbook.Data;
 using MyCookbook.Services;
 
 namespace MyCookbook
@@ -21,55 +16,6 @@ namespace MyCookbook
             });
         }
 
-        public static void AddAuth(this IServiceCollection services, IConfiguration config, bool isDev)
-        {
-            services.AddCascadingAuthenticationState();
-            services.AddScoped<IdentityUserAccessor>();
-            services.AddScoped<IdentityRedirectManager>();
-            services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-            Action<IdentityOptions> identityOptions = isDev
-                ? options =>
-                    {
-                        options.Password.RequireDigit = false;
-                        options.Password.RequireLowercase = false;
-                        options.Password.RequireNonAlphanumeric = false;
-                        options.Password.RequireUppercase = false;
-                        options.Password.RequiredLength = 1;
-                        options.Password.RequiredUniqueChars = 1;
-                        options.SignIn.RequireConfirmedEmail = false;
-                        options.SignIn.RequireConfirmedAccount = false;
-                    }
-            : options =>
-                {
-                    options.Password.RequireDigit = false;
-                    options.Password.RequireLowercase = false;
-                    options.Password.RequireNonAlphanumeric = false;
-                    options.Password.RequireUppercase = false;
-                    options.Password.RequiredLength = 8;
-                    options.Password.RequiredUniqueChars = 1;
-                    options.SignIn.RequireConfirmedAccount = true;
-                };
-
-            services.AddIdentity<ApplicationUser, IdentityRole>(identityOptions)
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddSignInManager()
-                .AddDefaultTokenProviders();
-
-            services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-                })
-               .AddCookie("Cookies");
-
-            if (isDev)
-            {
-                services.AddTransient<IEmailSender, MailgunEmailSender>();
-            }
-            services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-        }
-
         public static void AddApiKeyAuth(this IServiceCollection services)
         {
             services.AddTransient<ApiTokenService>();
@@ -79,7 +25,7 @@ namespace MyCookbook
             services.AddAuthorizationBuilder()
                 .AddPolicy("CookieOrApiKey", policy =>
                     policy.RequireAuthenticatedUser()
-                          .AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, "ApiKey"));
+                          .AddAuthenticationSchemes("ApiKey"));
         }
     }
 }

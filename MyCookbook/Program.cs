@@ -24,12 +24,7 @@ namespace MyCookbook
             {
                 // Add services to the container.
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-                builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
-                builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-                builder.Services.AddRazorPages();
-                builder.Services.AddRazorComponents();
                 builder.Services.AddControllers()
                     .AddJsonOptions(o =>
                     {
@@ -40,7 +35,6 @@ namespace MyCookbook
 
                 builder.Services.AddSingleton<ChangelogService>();
                 builder.Services.AddFeedbackProvider(config);
-                builder.Services.AddAuth(config, builder.Environment.IsDevelopment());
                 builder.Services.AddApiKeyAuth();
 
                 Log.Logger = BuildLogger(config);
@@ -83,9 +77,6 @@ namespace MyCookbook
                         var cookbookDbContext = services.GetRequiredService<CookbookDatabaseContext>();
                         if (cookbookDbContext.Database.IsRelational())
                             cookbookDbContext.Database.Migrate();
-                        var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
-                        if (applicationDbContext.Database.IsRelational())
-                            applicationDbContext.Database.Migrate();
                         break;
                     }
                     catch (Exception ex) when (migrationAttempts++ < 5)
@@ -100,13 +91,9 @@ namespace MyCookbook
                     }
                 }
 
-                if (app.Environment.IsDevelopment())
+                if (!app.Environment.IsDevelopment())
                 {
-                    app.UseMigrationsEndPoint();
-                }
-                else
-                {
-                    app.UseExceptionHandler("/Error");
+                    app.UseExceptionHandler();
                     app.UseHsts();
                 }
 
@@ -119,13 +106,9 @@ namespace MyCookbook
                 app.UseAuthentication();
                 app.UseMiddleware<HeaderAuthenticationMiddleware>();
                 app.UseAuthorization();
-                app.UseAntiforgery();
 
-                app.MapRazorPages();
-                app.MapRazorComponents<MyCookbook.Components.App>();
                 app.MapControllers();
                 app.MapMethods("/", [HttpMethods.Head], () => Results.StatusCode(200));
-                app.MapAdditionalIdentityEndpoints();
                 app.MapFallbackToFile("index.html");
 
                 app.Run();

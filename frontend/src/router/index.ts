@@ -17,7 +17,7 @@ router.beforeEach(async (to) => {
   const auth = useAuthStore()
   await auth.load()
   if (!auth.isAuthenticated) {
-    window.location.href = `/Account/Login?returnUrl=${encodeURIComponent(to.fullPath)}`
+    window.location.reload()
     return false
   }
 })
