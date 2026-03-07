@@ -20,8 +20,8 @@ dotnet test MyCookbook.Test --filter "FullyQualifiedName~RecipeTableTests"
 # Run a single test method
 dotnet test MyCookbook.Test --filter "FullyQualifiedName~RecipeTableTests.SomeTestMethod"
 
-# Build and run with Docker Compose (includes SQL Server)
-docker compose up --build
+# Build and run with Podman Compose (includes SQL Server)
+podman compose up --build
 
 # Frontend dev mode (proxies /api to localhost:5000)
 cd frontend && npm run dev   # http://localhost:5173
@@ -41,20 +41,22 @@ MyCookbook/               # ASP.NET Core 8 — REST API + serves Vue static file
   Api/                    # MVC controllers + DTOs
   Services/               # ApiTokenService, ApiKeyAuthenticationHandler, etc.
 MyCookbook.Test/          # xUnit + bunit tests
-frontend/                 # Vue 3 + Vite + TypeScript SPA
+frontend/                 # Vue 3 + Vite + Vuetify 3 + TypeScript SPA
   src/api/                # Axios client + typed API wrappers
-  src/stores/             # Pinia stores (auth, recipes, planner)
+  src/composables/        # useIngredientHighlighter (Czech inflection highlighting)
+  src/i18n/               # EN/CS translations (translations.ts)
+  src/stores/             # Pinia stores (auth, recipes, planner, ui)
   src/views/              # Page components
-  src/components/         # Shared components
-LanguageDictionaryCleaner/ # Standalone utility for language dictionary processing
+  src/components/         # Shared components (RecipeTable, IngredientList, StepList)
+  public/dictionaries/    # Czech inflection dictionaries (cs-nouns.jsonl, cs-adj.jsonl)
+LanguageDictionaryCleaner/ # Standalone CLI: processes kaikki.org JSONL → inflection dicts
 ```
 
 ### Key Layers (Backend)
 
 - **Api/** — REST controllers: `RecipesController`, `IngredientsController`, `StepsController`, `PlannerController`, `TagsController`, `FavoritesController`, `ExportController`, `AuthController`
 - **Api/Dto/** — DTO classes and request models; `DtoMapper.cs` maps entities → DTOs
-- **Components/Account/** — Blazor SSR identity pages (`/Account/Login`, `/Account/Register`, etc.) — the only remaining Blazor code
-- **Data/** — EF Core DbContexts and `CookbookDatabaseService` (the main data access class with 70+ async methods)
+- **Data/** — EF Core DbContext (`CookbookDatabaseContext`) and `CookbookDatabaseService` (the main data access class with 70+ async methods)
 - **Services/** — `ApiTokenService` (bearer tokens), `ApiKeyAuthenticationHandler`, `YouTrackFeedbackProvider`, `HeaderAuthenticationMiddleware`, email
 - **Logging/TimeLogger.cs** — Performance logger; warns >200ms, errors >500ms
 
@@ -62,15 +64,16 @@ LanguageDictionaryCleaner/ # Standalone utility for language dictionary processi
 
 - `frontend/src/api/client.ts` — Axios instance (`baseURL: /api`, 401 → redirect to login)
 - `frontend/src/api/` — `recipes.ts`, `planner.ts`, `auth.ts`, `tags.ts`
+- `frontend/src/stores/ui.ts` — `useUiStore`: theme (light/dark), locale (en/cs), persisted to localStorage
 - `frontend/src/stores/` — `useRecipesStore`, `usePlannerStore`, `useAuthStore` (Pinia)
+- `frontend/src/i18n/translations.ts` — EN/CS translation strings, used via `ui.t.*`
+- `frontend/src/composables/useIngredientHighlighter.ts` — loads Czech inflection dicts, expands ingredient names to all their forms, highlights matches in step descriptions
 - `frontend/src/router/index.ts` — Vue Router with auth guard
-- `frontend/src/views/` — `DashboardView`, `RecipeBrowserView`, `RecipeViewerView`, `PlannerView`, `ExportView`, `RandomRecipeView`
+- `frontend/src/views/` — `RecipeBrowserView`, `RecipeViewerView`, `PlannerView`, `ExportView`, `SettingsView`, `UnauthorizedView`
 
 ### Data Model
 
-Two DbContexts:
-- `ApplicationDbContext` — ASP.NET Core Identity (users/auth)
-- `CookbookDatabaseContext` — All recipe data
+One DbContext: `CookbookDatabaseContext` — all recipe data. (ASP.NET Core Identity and `ApplicationDbContext` have been removed.)
 
 Core entities: `Recipe`, `Ingredient`, `Step`, `PlannedRecipe`, `FavoriteRecipe`, `Tag`, `UserPreference`. All tables are isolated per-user via a `UserName` field — every query filters by user.
 
@@ -103,12 +106,12 @@ GET/DELETE /api/auth/token                    generate/revoke bearer token
 
 ### Authentication
 
-- **Cookie auth** — ASP.NET Core Identity (`IdentityConstants.ApplicationScheme`)
-- **API key auth** — `Authorization: Bearer <token>` via `ApiKeyAuthenticationHandler`; raw token is SHA-256 hashed and stored in `UserPreferences["ApiToken"]`
-- **Authentik SSO** — `HeaderAuthenticationMiddleware` reads `X-Authentik-*` forwarded headers
-- **Google OAuth** — via `Google__ClientId`/`Google__ClientSecret`
+There is no local login/register. All auth is external:
 
-Policy `"CookieOrApiKey"` accepts either cookie or bearer token.
+- **Authentik SSO** — `HeaderAuthenticationMiddleware` reads `X-Authentik-*` forwarded headers; sets `context.User` with `"HeaderAuth"` auth type
+- **API key auth** — `Authorization: Bearer <token>` via `ApiKeyAuthenticationHandler`; raw token is SHA-256 hashed and stored in `UserPreferences["ApiToken"]`
+
+Policy `"CookieOrApiKey"` accepts either HeaderAuth or API key. Login/logout redirect to `/api/auth/logout` and trigger a page reload.
 
 ### Testing
 
@@ -132,7 +135,6 @@ Serilog with Console and Grafana Loki sinks. Loki endpoint configured via `LOKI_
 | `COOKBOOK_URL` | Public URL of the app |
 | `COOKBOOK_AUTHENTIK_URL` | Authentik SSO URL for header-based auth |
 | `LOKI_URI` | Grafana Loki endpoint for log shipping |
-| `Google__ClientId` / `Google__ClientSecret` | Google OAuth credentials |
 | `Grafana__Key` / `Grafana__Login` / `Grafana__Url` | Grafana integration |
 | `YouTrack__BaseUrl` / `YouTrack__Token` / `YouTrack__ProjectKey` | YouTrack feedback integration |
 | `Mailgun__ApiKey` / `Mailgun__FromEmail` / `Mailgun__MailDomain` | Email sending (dev only) |
