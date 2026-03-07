@@ -87,7 +87,7 @@
       </v-col>
       <v-col cols="12" md="7">
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
-        <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" @refresh="loadRecipe" />
+        <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" :highlight-words="highlightWords" @refresh="loadRecipe" />
       </v-col>
     </v-row>
   </div>
@@ -102,6 +102,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { useReadonly } from '../composables/useReadonly'
 import { useUiStore } from '../stores/ui'
+import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
@@ -114,6 +115,7 @@ const ui = useUiStore()
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const newTag = ref('')
+const highlightWords = ref(new Set<string>())
 
 onMounted(loadRecipe)
 
@@ -121,6 +123,7 @@ async function loadRecipe() {
   loading.value = true
   try {
     recipe.value = await recipesApi.getById(guid, { user: viewingUser.value || undefined, shareToken: shareToken.value })
+    highlightWords.value = await getHighlightWords(recipe.value.ingredients.map((i) => i.name))
   } finally {
     loading.value = false
   }
@@ -164,3 +167,11 @@ async function removeTag(name: string) {
   await loadRecipe()
 }
 </script>
+
+<style scoped>
+:deep(mark) {
+  background-color: transparent;
+  font-weight: bold;
+  color: rgb(var(--v-theme-primary));
+}
+</style>

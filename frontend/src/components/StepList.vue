@@ -4,14 +4,20 @@
       <div class="d-flex align-start ga-2">
         <span class="text-medium-emphasis mt-2" style="min-width: 24px;">{{ step.order }}.</span>
         <div class="flex-grow-1">
+          <div
+            v-if="readonly"
+            class="text-body-2 py-2"
+            style="white-space: pre-wrap; line-height: 1.6;"
+            v-html="renderDescription(step.description)"
+          />
           <v-textarea
+            v-else
             :model-value="step.description"
             density="compact"
             hide-details
             variant="outlined"
             auto-grow
             rows="2"
-            :readonly="readonly"
             @change="(v: string) => saveStep(step, { description: v, stepType: step.stepType, durationSeconds: step.durationSeconds ?? undefined })"
           />
           <div class="d-flex ga-2 mt-1">
@@ -88,9 +94,10 @@
 import { ref, computed } from 'vue'
 import { recipesApi } from '../api/recipes'
 import { useUiStore } from '../stores/ui'
+import { highlightText } from '../composables/useIngredientHighlighter'
 import type { StepDto } from '../api/types'
 
-const props = defineProps<{ guid: string; steps: StepDto[]; readonly?: boolean }>()
+const props = defineProps<{ guid: string; steps: StepDto[]; readonly?: boolean; highlightWords?: Set<string> }>()
 const emit = defineEmits<{ refresh: [] }>()
 
 const ui = useUiStore()
@@ -99,6 +106,10 @@ const sorted = computed(() => [...props.steps].sort((a, b) => a.order - b.order)
 const newDesc = ref('')
 const newType = ref('Active')
 const newDuration = ref<number | null>(null)
+
+function renderDescription(text: string): string {
+  return highlightText(text, props.highlightWords ?? new Set())
+}
 
 function formatDuration(sec: number) {
   const m = Math.floor(sec / 60)
