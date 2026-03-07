@@ -2,7 +2,6 @@
   <v-app :theme="ui.theme">
     <v-app-bar color="primary" flat>
       <v-btn variant="text" :to="'/'" class="text-h6 font-weight-bold">MyCookbook</v-btn>
-      <v-btn variant="text" :to="'/browser'">{{ ui.t.navRecipes }}</v-btn>
       <v-btn variant="text" :to="'/planner'">{{ ui.t.navPlanner }}</v-btn>
       <v-spacer />
       <v-btn :icon="ui.theme === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night'" variant="text" @click="ui.toggleTheme" />

@@ -2,61 +2,84 @@
   <div v-if="recipe">
     <v-row align="center" class="mb-4">
       <v-col>
-        <v-text-field
-          v-if="!readonly"
-          v-model="recipe.name"
-          variant="plain"
-          density="compact"
-          hide-details
-          class="text-h4"
-          @blur="saveRecipe"
-          @keyup.enter="saveRecipe"
-        />
-        <h1 v-else class="text-h4">{{ recipe.name }}</h1>
+        <div class="d-flex align-center ga-2">
+          <v-text-field
+            v-if="!readonly && editingMeta"
+            v-model="recipe.name"
+            variant="plain"
+            density="compact"
+            hide-details
+            class="text-h4"
+            @blur="saveRecipe"
+            @keyup.enter="saveRecipe"
+          />
+          <h1 v-else class="text-h4">{{ recipe.name }}</h1>
+          <v-btn
+            v-if="!readonly && !editingMeta"
+            icon="mdi-pencil"
+            size="small"
+            variant="text"
+            @click="editingMeta = true"
+          />
+        </div>
       </v-col>
       <v-col v-if="!readonly" cols="auto" class="d-flex ga-2">
+        <v-btn v-if="editingMeta" icon="mdi-check" size="small" variant="text" color="primary" @click="editingMeta = false" />
         <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.clone }}</v-btn>
         <v-btn variant="outlined" prepend-icon="mdi-check" @click="markCooked">{{ ui.t.markCooked }}</v-btn>
         <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">{{ ui.t.delete }}</v-btn>
       </v-col>
     </v-row>
 
-    <v-row class="mb-4">
-      <v-col cols="12" sm="4">
-        <v-text-field
-          v-model="recipe.category"
-          :label="ui.t.category"
-          density="compact"
-          variant="outlined"
-          hide-details
-          :readonly="readonly"
-          @blur="!readonly && saveRecipe()"
-        />
-      </v-col>
-      <v-col cols="6" sm="4">
-        <v-text-field
-          v-model.number="recipe.duration"
-          :label="ui.t.durationMin"
-          type="number"
-          density="compact"
-          variant="outlined"
-          hide-details
-          :readonly="readonly"
-          @blur="!readonly && saveRecipe()"
-        />
-      </v-col>
-      <v-col cols="6" sm="4">
-        <v-text-field
-          v-model.number="recipe.servings"
-          :label="ui.t.servings"
-          type="number"
-          density="compact"
-          variant="outlined"
-          hide-details
-          :readonly="readonly"
-          @blur="!readonly && saveRecipe()"
-        />
-      </v-col>
+    <v-row class="mb-4" align="center">
+      <template v-if="!readonly && editingMeta">
+        <v-col cols="12" sm="4">
+          <v-text-field
+            v-model="recipe.category"
+            :label="ui.t.category"
+            density="compact"
+            variant="outlined"
+            hide-details
+            @blur="saveRecipe"
+          />
+        </v-col>
+        <v-col cols="6" sm="4">
+          <v-text-field
+            v-model.number="recipe.duration"
+            :label="ui.t.durationMin"
+            type="number"
+            density="compact"
+            variant="outlined"
+            hide-details
+            @blur="saveRecipe"
+          />
+        </v-col>
+        <v-col cols="6" sm="4">
+          <v-text-field
+            v-model.number="recipe.servings"
+            :label="ui.t.servings"
+            type="number"
+            density="compact"
+            variant="outlined"
+            hide-details
+            @blur="saveRecipe"
+          />
+        </v-col>
+      </template>
+      <template v-else>
+        <v-col cols="12" sm="4">
+          <span class="text-medium-emphasis text-caption">{{ ui.t.category }}</span>
+          <div>{{ recipe.category || '—' }}</div>
+        </v-col>
+        <v-col cols="6" sm="4">
+          <span class="text-medium-emphasis text-caption">{{ ui.t.durationMin }}</span>
+          <div>{{ recipe.duration ?? '—' }}</div>
+        </v-col>
+        <v-col cols="6" sm="4">
+          <span class="text-medium-emphasis text-caption">{{ ui.t.servings }}</span>
+          <div>{{ recipe.servings ?? '—' }}</div>
+        </v-col>
+      </template>
     </v-row>
 
     <div class="mb-4">
@@ -116,6 +139,7 @@ const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const newTag = ref('')
 const highlightWords = ref(new Set<string>())
+const editingMeta = ref(false)
 
 onMounted(loadRecipe)
 

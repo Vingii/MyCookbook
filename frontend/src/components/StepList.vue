@@ -4,50 +4,61 @@
       <div class="d-flex align-start ga-2">
         <span class="text-medium-emphasis mt-2" style="min-width: 24px;">{{ step.order }}.</span>
         <div class="flex-grow-1">
-          <div
-            v-if="readonly"
-            class="text-body-2 py-2"
-            style="white-space: pre-wrap; line-height: 1.6;"
-            v-html="renderDescription(step.description)"
-          />
-          <v-textarea
-            v-else
-            :model-value="step.description"
-            density="compact"
-            hide-details
-            variant="outlined"
-            auto-grow
-            rows="2"
-            @change="(v: string) => saveStep(step, { description: v, stepType: step.stepType, durationSeconds: step.durationSeconds ?? undefined })"
-          />
-          <div class="d-flex ga-2 mt-1">
-            <v-select
-              :model-value="step.stepType"
-              :items="stepTypes"
+          <template v-if="editingSteps.has(step.id)">
+            <v-textarea
+              :model-value="step.description"
               density="compact"
               hide-details
               variant="outlined"
-              style="max-width: 160px;"
-              :readonly="readonly"
-              @update:model-value="(v: string) => saveStep(step, { description: step.description, stepType: v, durationSeconds: step.durationSeconds ?? undefined })"
+              auto-grow
+              rows="2"
+              @change="(v: string) => saveStep(step, { description: v, stepType: step.stepType, durationSeconds: step.durationSeconds ?? undefined })"
             />
-            <v-text-field
-              :model-value="step.durationSeconds ?? null"
-              type="number"
-              density="compact"
-              hide-details
-              variant="outlined"
-              :placeholder="ui.t.secondsPlaceholder"
-              style="max-width: 120px;"
-              :readonly="readonly"
-              @change="(v: string) => saveStep(step, { description: step.description, stepType: step.stepType, durationSeconds: v ? Number(v) : undefined })"
+            <div class="d-flex ga-2 mt-1">
+              <v-select
+                :model-value="step.stepType"
+                :items="stepTypes"
+                density="compact"
+                hide-details
+                variant="outlined"
+                style="max-width: 160px;"
+                @update:model-value="(v: string) => saveStep(step, { description: step.description, stepType: v, durationSeconds: step.durationSeconds ?? undefined })"
+              />
+              <v-text-field
+                :model-value="step.durationSeconds ?? null"
+                type="number"
+                density="compact"
+                hide-details
+                variant="outlined"
+                :placeholder="ui.t.secondsPlaceholder"
+                style="max-width: 120px;"
+                @change="(v: string) => saveStep(step, { description: step.description, stepType: step.stepType, durationSeconds: v ? Number(v) : undefined })"
+              />
+              <span v-if="step.durationSeconds" class="text-medium-emphasis text-caption mt-2">
+                {{ formatDuration(step.durationSeconds) }}
+              </span>
+            </div>
+          </template>
+          <template v-else>
+            <div
+              class="text-body-2 py-2"
+              style="white-space: pre-wrap; line-height: 1.6;"
+              v-html="renderDescription(step.description)"
             />
-            <span v-if="step.durationSeconds" class="text-medium-emphasis text-caption mt-2">
-              {{ formatDuration(step.durationSeconds) }}
-            </span>
-          </div>
+            <div v-if="step.durationSeconds || step.stepType" class="d-flex ga-2 mt-1">
+              <v-chip size="small" variant="tonal">{{ step.stepType }}</v-chip>
+              <v-chip v-if="step.durationSeconds" size="small" variant="tonal">{{ formatDuration(step.durationSeconds) }}</v-chip>
+            </div>
+          </template>
         </div>
         <template v-if="!readonly">
+          <v-btn
+            :icon="editingSteps.has(step.id) ? 'mdi-check' : 'mdi-pencil'"
+            size="small"
+            variant="text"
+            :color="editingSteps.has(step.id) ? 'primary' : undefined"
+            @click="toggleEdit(step.id)"
+          />
           <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveDown(step)" />
           <v-btn icon="mdi-arrow-down" size="small" variant="text" @click="moveUp(step)" />
           <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="remove(step)" />
@@ -106,6 +117,14 @@ const sorted = computed(() => [...props.steps].sort((a, b) => a.order - b.order)
 const newDesc = ref('')
 const newType = ref('Active')
 const newDuration = ref<number | null>(null)
+const editingSteps = ref(new Set<number>())
+
+function toggleEdit(id: number) {
+  const s = new Set(editingSteps.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  editingSteps.value = s
+}
 
 function renderDescription(text: string): string {
   return highlightText(text, props.highlightWords ?? new Set())
