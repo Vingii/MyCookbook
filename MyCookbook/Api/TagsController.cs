@@ -14,13 +14,14 @@ public class TagsController(CookbookDatabaseService db) : ControllerBase
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
     [HttpGet("api/tags")]
-    public async Task<ActionResult<List<string>>> GetAll()
+    public async Task<ActionResult<List<string>>> GetAll([FromQuery] string? user)
     {
-        var tags = await db.GetAllTags(CurrentUser);
+        var tags = await db.GetAllTags(user ?? CurrentUser);
         return tags.Select(t => t.Name).Distinct().OrderBy(n => n).ToList();
     }
 
     [HttpPost("api/recipes/{guid:guid}/tags")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> AddTag(Guid guid, [FromBody] AddTagRequest req)
     {
         var context = await db.GetContext();
@@ -39,6 +40,7 @@ public class TagsController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpDelete("api/recipes/{guid:guid}/tags/{name}")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> DeleteTag(Guid guid, string name)
     {
         var context = await db.GetContext();

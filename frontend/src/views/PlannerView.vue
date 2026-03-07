@@ -14,9 +14,9 @@
             {{ plan.recipeName }}
           </a>
           <span v-if="plan.fromFridge"> 🧊</span>
-          <button @click="deletePlan(plan.id)" style="margin-left: 4px; font-size: 0.8em;">×</button>
+          <button v-if="!readonly" @click="deletePlan(plan.id)" style="margin-left: 4px; font-size: 0.8em;">×</button>
         </div>
-        <button @click="addPlan(day.date)" style="font-size: 0.8em;">+ Add</button>
+        <button v-if="!readonly" @click="addPlan(day.date)" style="font-size: 0.8em;">+ Add</button>
       </div>
     </div>
   </div>
@@ -26,10 +26,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePlannerStore } from '../stores/planner'
 import { useRecipesStore } from '../stores/recipes'
+import { useReadonly } from '../composables/useReadonly'
 import { plannerApi } from '../api/planner'
 
 const plannerStore = usePlannerStore()
 const recipesStore = useRecipesStore()
+const { viewingUser, shareToken, readonly } = useReadonly()
 const weekOffset = ref(0)
 
 const days = computed(() => {
@@ -53,12 +55,12 @@ const days = computed(() => {
 function fetchPlans() {
   const from = days.value[0]!.date
   const to = days.value[6]!.date
-  plannerStore.fetchRange(from, to)
+  plannerStore.fetchRange(from, to, viewingUser.value || undefined, shareToken.value)
 }
 
 onMounted(() => {
   fetchPlans()
-  recipesStore.fetchAll()
+  recipesStore.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value })
 })
 
 function getPlansForDate(date: string) {

@@ -8,7 +8,7 @@ namespace MyCookbook.Api;
 
 [ApiController]
 [Route("api/recipes/{guid:guid}/ingredients")]
-[Authorize(Policy = "CookieOrApiKey")]
+[Authorize(Policy = "NotGuest")]
 public class IngredientsController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;

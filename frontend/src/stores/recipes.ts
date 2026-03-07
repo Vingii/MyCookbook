@@ -7,7 +7,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   const recipes = ref<RecipeDto[]>([])
   const loading = ref(false)
 
-  async function fetchAll(params?: { search?: string; category?: string; tag?: string }) {
+  async function fetchAll(params?: { search?: string; category?: string; tag?: string; user?: string; shareToken?: string }) {
     loading.value = true
     try {
       recipes.value = await recipesApi.getAll(params)

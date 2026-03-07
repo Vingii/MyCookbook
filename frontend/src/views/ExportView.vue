@@ -10,7 +10,7 @@
       </a>
     </section>
 
-    <section>
+    <section v-if="!readonly">
       <h2>Import</h2>
       <p>Import recipes from a JSON file. This will replace all existing recipes.</p>
       <input type="file" accept=".json" @change="onFileSelected" />
@@ -27,7 +27,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import client from '../api/client'
+import { useReadonly } from '../composables/useReadonly'
 
+const { readonly } = useReadonly()
 const selectedFile = ref<File | null>(null)
 const importing = ref(false)
 const importResult = ref<{ success: boolean; message: string } | null>(null)

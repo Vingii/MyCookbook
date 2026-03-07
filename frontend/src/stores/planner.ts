@@ -7,10 +7,10 @@ export const usePlannerStore = defineStore('planner', () => {
   const planned = ref<PlannedRecipeDto[]>([])
   const loading = ref(false)
 
-  async function fetchRange(from: string, to: string) {
+  async function fetchRange(from: string, to: string, user?: string, shareToken?: string) {
     loading.value = true
     try {
-      planned.value = await plannerApi.getAll(from, to)
+      planned.value = await plannerApi.getAll(from, to, user, shareToken)
     } finally {
       loading.value = false
     }

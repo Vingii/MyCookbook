@@ -10,14 +10,14 @@ import type {
 } from './types'
 
 export const recipesApi = {
-  getAll: (params?: { search?: string; category?: string; tag?: string }) =>
+  getAll: (params?: { search?: string; category?: string; tag?: string; user?: string; shareToken?: string }) =>
     client.get<RecipeDto[]>('/recipes', { params }).then((r) => r.data),
 
-  getById: (guid: string) =>
-    client.get<RecipeDto>(`/recipes/${guid}`).then((r) => r.data),
+  getById: (guid: string, params?: { user?: string; shareToken?: string }) =>
+    client.get<RecipeDto>(`/recipes/${guid}`, { params }).then((r) => r.data),
 
-  getRandom: () =>
-    client.get<RecipeDto>('/recipes/random').then((r) => r.data),
+  getRandom: (params?: { user?: string; shareToken?: string }) =>
+    client.get<RecipeDto>('/recipes/random', { params }).then((r) => r.data),
 
   getShared: (guid: string) =>
     client.get<RecipeDto>(`/recipes/shared/${guid}`).then((r) => r.data),

@@ -6,7 +6,7 @@ namespace MyCookbook.Api;
 
 [ApiController]
 [Route("api/recipes/{guid:guid}/favorite")]
-[Authorize(Policy = "CookieOrApiKey")]
+[Authorize(Policy = "NotGuest")]
 public class FavoritesController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;

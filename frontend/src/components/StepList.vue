@@ -4,7 +4,7 @@
       <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
         <span style="min-width: 24px; color: #888;">{{ step.order }}.</span>
         <div style="flex: 1;">
-          <div v-if="!editing[step.id]" @dblclick="startEdit(step.id)" style="white-space: pre-wrap;">
+          <div v-if="readonly || !editing[step.id]" @dblclick="!readonly && startEdit(step.id)" style="white-space: pre-wrap;">
             {{ step.description }}
           </div>
           <textarea
@@ -20,13 +20,15 @@
             <span v-if="step.durationSeconds"> · {{ formatDuration(step.durationSeconds) }}</span>
           </div>
         </div>
-        <button @click="moveUp(step)" title="Move up">↑</button>
-        <button @click="moveDown(step)" title="Move down">↓</button>
-        <button @click="remove(step)" title="Delete">×</button>
+        <template v-if="!readonly">
+          <button @click="moveUp(step)" title="Move up">↑</button>
+          <button @click="moveDown(step)" title="Move down">↓</button>
+          <button @click="remove(step)" title="Delete">×</button>
+        </template>
       </div>
     </div>
 
-    <div style="margin-top: 0.5rem;">
+    <div v-if="!readonly" style="margin-top: 0.5rem;">
       <textarea v-model="newDesc" placeholder="Step description..." rows="2" style="width: 100%;" />
       <div style="display: flex; gap: 0.5rem; margin-top: 4px;">
         <select v-model="newType">
@@ -46,7 +48,7 @@ import { ref, computed } from 'vue'
 import { recipesApi } from '../api/recipes'
 import type { StepDto } from '../api/types'
 
-const props = defineProps<{ guid: string; steps: StepDto[] }>()
+const props = defineProps<{ guid: string; steps: StepDto[]; readonly?: boolean }>()
 const emit = defineEmits<{ refresh: [] }>()
 
 const sorted = computed(() => [...props.steps].sort((a, b) => a.order - b.order))

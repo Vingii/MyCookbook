@@ -1,18 +1,21 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyCookbook.Data;
 using MyCookbook.Services;
 
 namespace MyCookbook.Api;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(ApiTokenService tokenService, IConfiguration config) : ControllerBase
+public class AuthController(ApiTokenService tokenService, IConfiguration config, CookbookDatabaseService db) : ControllerBase
 {
     [HttpGet("me")]
     public IActionResult Me() => Ok(new
     {
         username = User.Identity?.Name,
-        isAuthenticated = User.Identity?.IsAuthenticated == true
+        isAuthenticated = User.Identity?.IsAuthenticated == true,
+        isGuest = User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) == true
     });
 
     [HttpGet("logout")]
@@ -25,7 +28,7 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config)
     }
 
     [HttpGet("token")]
-    [Authorize(Policy = "CookieOrApiKey")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> GetToken()
     {
         var user = User.Identity!.Name!;
@@ -38,10 +41,36 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config)
     }
 
     [HttpDelete("token")]
-    [Authorize(Policy = "CookieOrApiKey")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> RevokeToken()
     {
         await tokenService.RevokeTokenAsync(User.Identity!.Name!);
+        return NoContent();
+    }
+
+    [HttpGet("share-token")]
+    [Authorize(Policy = "NotGuest")]
+    public async Task<IActionResult> GetShareToken()
+    {
+        var token = await db.GetUserPreference("ShareToken", User.Identity!.Name!);
+        return Ok(new { token = string.IsNullOrEmpty(token) ? null : token });
+    }
+
+    [HttpPost("share-token")]
+    [Authorize(Policy = "NotGuest")]
+    public async Task<IActionResult> CreateShareToken()
+    {
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        await db.UpdateUserPreference("ShareToken", token, User.Identity!.Name!);
+        return Ok(new { token });
+    }
+
+    [HttpDelete("share-token")]
+    [Authorize(Policy = "NotGuest")]
+    public async Task<IActionResult> RevokeShareToken()
+    {
+        await db.UpdateUserPreference("ShareToken", "", User.Identity!.Name!);
         return NoContent();
     }
 }

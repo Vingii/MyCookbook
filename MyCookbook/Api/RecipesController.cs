@@ -13,13 +13,25 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
+    private async Task<bool> ValidateShareAccess(string targetUser, string? shareToken)
+    {
+        if (targetUser == CurrentUser) return true;
+        if (string.IsNullOrEmpty(shareToken)) return false;
+        var stored = await db.GetUserPreference("ShareToken", targetUser);
+        return !string.IsNullOrEmpty(stored) && stored == shareToken;
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<RecipeDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? category,
-        [FromQuery] string? tag)
+        [FromQuery] string? tag,
+        [FromQuery] string? user,
+        [FromQuery] string? shareToken)
     {
-        var recipes = await db.GetRecipesAsync(CurrentUser);
+        var targetUser = user ?? CurrentUser;
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+        var recipes = await db.GetRecipesAsync(targetUser);
 
         if (!string.IsNullOrWhiteSpace(search))
             recipes = recipes.Where(r => r.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -28,10 +40,11 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
         if (!string.IsNullOrWhiteSpace(tag))
             recipes = recipes.Where(r => r.Tags != null && r.Tags.Any(t => t.Name.Equals(tag, StringComparison.OrdinalIgnoreCase))).ToList();
 
-        return recipes.Select(r => r.ToDto(CurrentUser)).ToList();
+        return recipes.Select(r => r.ToDto(targetUser)).ToList();
     }
 
     [HttpPost]
+    [Authorize(Policy = "NotGuest")]
     public async Task<ActionResult<RecipeDto>> Create([FromBody] CreateRecipeRequest req)
     {
         var recipe = new Recipe
@@ -46,23 +59,28 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpGet("random")]
-    public async Task<ActionResult<RecipeDto>> GetRandom()
+    public async Task<ActionResult<RecipeDto>> GetRandom([FromQuery] string? user, [FromQuery] string? shareToken)
     {
-        var recipes = await db.GetRecipesAsync(CurrentUser);
+        var targetUser = user ?? CurrentUser;
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+        var recipes = await db.GetRecipesAsync(targetUser);
         if (recipes.Count == 0) return NotFound();
         var recipe = recipes[Random.Shared.Next(recipes.Count)];
-        return recipe.ToDto(CurrentUser);
+        return recipe.ToDto(targetUser);
     }
 
     [HttpGet("{guid:guid}")]
-    public async Task<ActionResult<RecipeDto>> GetById(Guid guid)
+    public async Task<ActionResult<RecipeDto>> GetById(Guid guid, [FromQuery] string? user, [FromQuery] string? shareToken)
     {
-        var recipe = await db.GetDetailedRecipeAsync(guid, CurrentUser);
+        var targetUser = user ?? CurrentUser;
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+        var recipe = await db.GetDetailedRecipeAsync(guid, targetUser);
         if (recipe == null) return NotFound();
-        return recipe.ToDto(CurrentUser);
+        return recipe.ToDto(targetUser);
     }
 
     [HttpPut("{guid:guid}")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> Update(Guid guid, [FromBody] UpdateRecipeRequest req)
     {
         var existing = await db.GetDetailedRecipeAsync(guid, CurrentUser);
@@ -78,6 +96,7 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpDelete("{guid:guid}")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> Delete(Guid guid)
     {
         var existing = await db.GetDetailedRecipeAsync(guid, CurrentUser);
@@ -87,6 +106,7 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpPost("{guid:guid}/clone")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<ActionResult<RecipeDto>> Clone(Guid guid)
     {
         var existing = await db.GetDetailedRecipeAsync(guid, CurrentUser);
@@ -96,6 +116,7 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpPost("{guid:guid}/lastcooked")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> MarkCooked(Guid guid)
     {
         var existing = await db.GetDetailedRecipeAsync(guid, CurrentUser);

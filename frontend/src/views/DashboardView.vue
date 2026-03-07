@@ -17,11 +17,13 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRecipesStore } from '../stores/recipes'
+import { useReadonly } from '../composables/useReadonly'
 import RecipeTable from '../components/RecipeTable.vue'
 
 const store = useRecipesStore()
+const { viewingUser, shareToken } = useReadonly()
 
-onMounted(() => store.fetchAll())
+onMounted(() => store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value }))
 
 const favorites = computed(() =>
   store.recipes.filter((r) => r.isFavorite)

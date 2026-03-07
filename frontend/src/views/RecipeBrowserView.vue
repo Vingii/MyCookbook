@@ -2,7 +2,7 @@
   <div>
     <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
       <h1 style="margin: 0;">Recipes</h1>
-      <button @click="createRecipe">+ New Recipe</button>
+      <button v-if="!readonly" @click="createRecipe">+ New Recipe</button>
     </div>
 
     <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
@@ -19,22 +19,26 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
+import { useReadonly } from '../composables/useReadonly'
 import { recipesApi } from '../api/recipes'
 import RecipeTable from '../components/RecipeTable.vue'
 
 const store = useRecipesStore()
 const router = useRouter()
+const { viewingUser, shareToken, readonly } = useReadonly()
 const search = ref('')
 const category = ref('')
 const tag = ref('')
 
-onMounted(() => store.fetchAll())
+onMounted(() => store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value }))
 
 function applyFilters() {
   store.fetchAll({
     search: search.value || undefined,
     category: category.value || undefined,
     tag: tag.value || undefined,
+    user: viewingUser.value || undefined,
+    shareToken: shareToken.value,
   })
 }
 

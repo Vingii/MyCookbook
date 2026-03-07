@@ -13,12 +13,24 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
+    private async Task<bool> ValidateShareAccess(string targetUser, string? shareToken)
+    {
+        if (targetUser == CurrentUser) return true;
+        if (string.IsNullOrEmpty(shareToken)) return false;
+        var stored = await db.GetUserPreference("ShareToken", targetUser);
+        return !string.IsNullOrEmpty(stored) && stored == shareToken;
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<PlannedRecipeDto>>> GetAll(
         [FromQuery] string? from,
-        [FromQuery] string? to)
+        [FromQuery] string? to,
+        [FromQuery] string? user,
+        [FromQuery] string? shareToken)
     {
-        var all = await db.GetPlannedRecipesAsync(CurrentUser);
+        var targetUser = user ?? CurrentUser;
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+        var all = await db.GetPlannedRecipesAsync(targetUser);
         var flat = all.SelectMany(kv => kv.Value);
 
         if (DateOnly.TryParse(from, out var fromDate))
@@ -30,6 +42,7 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "NotGuest")]
     public async Task<ActionResult<PlannedRecipeDto>> Create([FromBody] CreatePlannedRecipeRequest req)
     {
         if (!DateOnly.TryParse(req.Date, out var date))
@@ -51,6 +64,7 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdatePlannedRecipeRequest req)
     {
         if (!DateOnly.TryParse(req.Date, out var date))
@@ -62,6 +76,7 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> Delete(int id)
     {
         var planned = new PlannedRecipe { Id = id };

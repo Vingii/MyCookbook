@@ -10,6 +10,7 @@ const router = createRouter({
     { path: '/planner', component: () => import('../views/PlannerView.vue') },
     { path: '/export', component: () => import('../views/ExportView.vue') },
     { path: '/random', component: () => import('../views/RandomRecipeView.vue') },
+    { path: '/settings', component: () => import('../views/SettingsView.vue') },
     { path: '/unauthorized', component: () => import('../views/UnauthorizedView.vue'), meta: { public: true } },
   ],
 })

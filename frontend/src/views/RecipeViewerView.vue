@@ -2,37 +2,49 @@
   <div v-if="recipe">
     <div style="display: flex; gap: 1rem; align-items: baseline; margin-bottom: 1rem;">
       <h1 style="margin: 0;">
-        <span v-if="!editingName" @dblclick="editingName = true">{{ recipe.name }}</span>
+        <span v-if="readonly || !editingName" @dblclick="!readonly && (editingName = true)">{{ recipe.name }}</span>
         <input v-else v-model="recipe.name" @blur="saveRecipe" @keyup.enter="saveRecipe" autofocus />
       </h1>
-      <button @click="cloneRecipe">Clone</button>
-      <button @click="markCooked">Mark cooked</button>
-      <button @click="toggleFavorite">{{ recipe.isFavorite ? '★' : '☆' }}</button>
-      <button @click="deleteRecipe" style="color: red;">Delete</button>
+      <template v-if="!readonly">
+        <button @click="cloneRecipe">Clone</button>
+        <button @click="markCooked">Mark cooked</button>
+        <button @click="toggleFavorite">{{ recipe.isFavorite ? '★' : '☆' }}</button>
+        <button @click="deleteRecipe" style="color: red;">Delete</button>
+      </template>
+      <template v-else>
+        <span>{{ recipe.isFavorite ? '★' : '☆' }}</span>
+      </template>
     </div>
 
     <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-      <label>Category: <input v-model="recipe.category" @blur="saveRecipe" /></label>
-      <label>Duration (min): <input type="number" v-model.number="recipe.duration" @blur="saveRecipe" /></label>
-      <label>Servings: <input type="number" v-model.number="recipe.servings" @blur="saveRecipe" /></label>
+      <label>Category:
+        <input v-model="recipe.category" @blur="!readonly && saveRecipe()" :disabled="readonly" />
+      </label>
+      <label>Duration (min):
+        <input type="number" v-model.number="recipe.duration" @blur="!readonly && saveRecipe()" :disabled="readonly" />
+      </label>
+      <label>Servings:
+        <input type="number" v-model.number="recipe.servings" @blur="!readonly && saveRecipe()" :disabled="readonly" />
+      </label>
     </div>
 
     <div style="margin-bottom: 1rem;">
       <strong>Tags:</strong>
       <span v-for="tag in recipe.tags" :key="tag" style="margin: 0 4px;">
-        {{ tag }} <button @click="removeTag(tag)">×</button>
+        {{ tag }}
+        <button v-if="!readonly" @click="removeTag(tag)">×</button>
       </span>
-      <input v-model="newTag" placeholder="Add tag..." @keyup.enter="addTag" style="width: 120px;" />
+      <input v-if="!readonly" v-model="newTag" placeholder="Add tag..." @keyup.enter="addTag" style="width: 120px;" />
     </div>
 
     <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
       <div>
         <h2>Ingredients</h2>
-        <IngredientList :guid="guid" :ingredients="recipe.ingredients" @refresh="loadRecipe" />
+        <IngredientList :guid="guid" :ingredients="recipe.ingredients" :readonly="readonly" @refresh="loadRecipe" />
       </div>
       <div style="flex: 1;">
         <h2>Steps</h2>
-        <StepList :guid="guid" :steps="recipe.steps" @refresh="loadRecipe" />
+        <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" @refresh="loadRecipe" />
       </div>
     </div>
   </div>
@@ -43,6 +55,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
+import { useReadonly } from '../composables/useReadonly'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
@@ -50,6 +63,7 @@ import StepList from '../components/StepList.vue'
 const route = useRoute()
 const router = useRouter()
 const guid = route.params.guid as string
+const { viewingUser, shareToken, readonly } = useReadonly()
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const editingName = ref(false)
@@ -60,7 +74,7 @@ onMounted(loadRecipe)
 async function loadRecipe() {
   loading.value = true
   try {
-    recipe.value = await recipesApi.getById(guid)
+    recipe.value = await recipesApi.getById(guid, { user: viewingUser.value || undefined, shareToken: shareToken.value })
   } finally {
     loading.value = false
   }

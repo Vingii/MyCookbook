@@ -19,6 +19,7 @@ public class ExportController(CookbookDatabaseService db) : ControllerBase
     }
 
     [HttpPost("api/import")]
+    [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> Import(IFormFile file)
     {
         if (file == null || file.Length == 0) return BadRequest("No file provided");

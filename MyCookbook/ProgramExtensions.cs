@@ -26,7 +26,12 @@ namespace MyCookbook
             services.AddAuthorizationBuilder()
                 .AddPolicy("CookieOrApiKey", policy =>
                     policy.RequireAuthenticatedUser()
-                          .AddAuthenticationSchemes("HeaderAuth", "ApiKey"));
+                          .AddAuthenticationSchemes("HeaderAuth", "ApiKey"))
+                .AddPolicy("NotGuest", policy =>
+                    policy.RequireAuthenticatedUser()
+                          .AddAuthenticationSchemes("HeaderAuth", "ApiKey")
+                          .RequireAssertion(ctx =>
+                              ctx.User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) != true));
         }
     }
 }
