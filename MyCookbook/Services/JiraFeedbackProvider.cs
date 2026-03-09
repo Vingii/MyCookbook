@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using Serilog;
+﻿using Serilog;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -24,7 +23,7 @@ namespace MyCookbook.Services
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public async Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "")
+        public async Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "")
         {
             string? issueId = await CreateIssue(feedback);
 
@@ -87,7 +86,7 @@ namespace MyCookbook.Services
             }
         }
 
-        private async Task AddAttachmentsToIssue(string issueIdOrKey, IReadOnlyList<IBrowserFile> files)
+        private async Task AddAttachmentsToIssue(string issueIdOrKey, IReadOnlyList<IFormFile> files)
         {
             var url = $"https://{_jiraDomain}/rest/api/3/issue/{issueIdOrKey}/attachments";
 
@@ -98,25 +97,22 @@ namespace MyCookbook.Services
                 try
                 {
                     using var content = new MultipartFormDataContent();
-                    // Max file size 10MB
-                    using var fileStream = file.OpenReadStream(10 * 1024 * 1024);
-                    var streamContent = new StreamContent(fileStream);
+                    var streamContent = new StreamContent(file.OpenReadStream());
                     streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-
-                    content.Add(streamContent, "file", file.Name);
+                    content.Add(streamContent, "file", file.FileName);
 
                     var response = await _client.PostAsync(url, content);
 
                     if (!response.IsSuccessStatusCode)
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
-                        Log.Error($"Failed to upload '{file.Name}'. Status: {response.StatusCode}\n{errorContent}");
+                        Log.Error($"Failed to upload '{file.FileName}'. Status: {response.StatusCode}\n{errorContent}");
                         throw new InvalidOperationException(errorContent);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"An exception occurred while uploading '{file.Name}': {ex.Message}");
+                    Log.Error($"An exception occurred while uploading '{file.FileName}': {ex.Message}");
                     throw;
                 }
             }

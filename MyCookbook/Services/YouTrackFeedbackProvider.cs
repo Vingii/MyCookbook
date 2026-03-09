@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using Serilog;
+﻿using Serilog;
 using System.Net.Http.Headers;
 
 namespace MyCookbook.Services
@@ -22,7 +21,7 @@ namespace MyCookbook.Services
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public async Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "")
+        public async Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "")
         {
             string? issueId = await CreateIssue(feedback, reportingUserName);
 
@@ -79,7 +78,7 @@ namespace MyCookbook.Services
             }
         }
 
-        private async Task AddAttachmentsToIssue(string issueId, IReadOnlyList<IBrowserFile> files)
+        private async Task AddAttachmentsToIssue(string issueId, IReadOnlyList<IFormFile> files)
         {
             var url = $"{_baseUrl}/api/issues/{issueId}/attachments?fields=id,name";
 
@@ -87,11 +86,9 @@ namespace MyCookbook.Services
 
             foreach (var file in files)
             {
-                var fileStream = file.OpenReadStream(10 * 1024 * 1024);
-                var streamContent = new StreamContent(fileStream);
+                var streamContent = new StreamContent(file.OpenReadStream());
                 streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-
-                content.Add(streamContent, "files", file.Name);
+                content.Add(streamContent, "files", file.FileName);
             }
 
             try

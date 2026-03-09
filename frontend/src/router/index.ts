@@ -9,6 +9,7 @@ const router = createRouter({
     { path: '/planner', component: () => import('../views/PlannerView.vue') },
     { path: '/export', component: () => import('../views/ExportView.vue') },
     { path: '/settings', component: () => import('../views/SettingsView.vue') },
+    { path: '/recipe/shared/:guid', component: () => import('../views/SharedRecipeView.vue'), meta: { public: true } },
     { path: '/unauthorized', component: () => import('../views/UnauthorizedView.vue'), meta: { public: true } },
   ],
 })

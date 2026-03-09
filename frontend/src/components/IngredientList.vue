@@ -23,8 +23,21 @@
         />
       </template>
       <template v-else>
-        <span class="text-medium-emphasis" style="min-width: 90px;">{{ ing.amount || '' }}</span>
-        <span class="flex-grow-1">{{ ing.name }}</span>
+        <v-checkbox-btn
+          :model-value="checked.has(ing.id)"
+          density="compact"
+          hide-details
+          @update:model-value="toggleCheck(ing.id)"
+        />
+        <span
+          class="text-medium-emphasis"
+          style="min-width: 90px;"
+          :class="{ 'text-decoration-line-through': checked.has(ing.id) }"
+        >{{ ing.amount || '' }}</span>
+        <span
+          class="flex-grow-1"
+          :class="{ 'text-decoration-line-through text-medium-emphasis': checked.has(ing.id) }"
+        >{{ ing.name }}</span>
       </template>
       <template v-if="!readonly">
         <v-btn
@@ -78,6 +91,14 @@ const newName = ref('')
 const newAmount = ref('')
 const editValues = ref<Record<number, { name: string; amount: string }>>({})
 const editingIngredients = ref(new Set<number>())
+const checked = ref(new Set<number>())
+
+function toggleCheck(id: number) {
+  const s = new Set(checked.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  checked.value = s
+}
 
 watch(() => props.ingredients, (ingredients) => {
   const updated: Record<number, { name: string; amount: string }> = {}

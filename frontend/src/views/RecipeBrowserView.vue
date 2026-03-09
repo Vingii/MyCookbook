@@ -53,7 +53,7 @@
       </v-col>
     </v-row>
 
-    <RecipeTable :recipes="store.recipes" />
+    <RecipeTable :recipes="store.recipes" @clone="handleClone" />
   </div>
 </template>
 
@@ -103,5 +103,10 @@ async function createRecipe() {
   if (!name) return
   const recipe = await recipesApi.create({ name, servings: 2 })
   router.push(`/recipe/${recipe.guid}`)
+}
+
+async function handleClone(guid: string) {
+  await recipesApi.clone(guid)
+  applyFilters()
 }
 </script>

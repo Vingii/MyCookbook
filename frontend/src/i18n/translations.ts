@@ -63,6 +63,20 @@ export const translations = {
     copied: 'Copied!',
     revoke: 'Revoke',
     generateShareLink: 'Generate Share Link',
+    // Bug report
+    bugReport: 'Report a bug',
+    bugReportDesc: 'Describe the issue you encountered.',
+    send: 'Send',
+    attachFiles: 'Attach files (optional)',
+    // Changelog
+    whatsNew: "What's New",
+    close: 'Close',
+    // Recipe actions
+    shareRecipe: 'Share',
+    linkCopied: 'Link copied!',
+    finishCooking: 'Finish Cooking',
+    // Planner
+    cloneToNextDay: 'Clone to next day',
     // Unauthorized
     notAuthenticated: 'Not authenticated',
     notAuthenticatedDesc: 'Please access MyCookbook through your Authentik portal.',
@@ -129,6 +143,20 @@ export const translations = {
     copied: 'Zkopírováno!',
     revoke: 'Zrušit',
     generateShareLink: 'Vygenerovat odkaz',
+    // Bug report
+    bugReport: 'Nahlásit chybu',
+    bugReportDesc: 'Popište problém, který jste zjistili.',
+    send: 'Odeslat',
+    attachFiles: 'Přiložit soubory (volitelné)',
+    // Changelog
+    whatsNew: 'Co je nového',
+    close: 'Zavřít',
+    // Recipe actions
+    shareRecipe: 'Sdílet',
+    linkCopied: 'Odkaz zkopírován!',
+    finishCooking: 'Dokončit vaření',
+    // Planner
+    cloneToNextDay: 'Zkopírovat na další den',
     // Unauthorized
     notAuthenticated: 'Nepřihlášen',
     notAuthenticatedDesc: 'Pro přístup k MyCookbook použijte váš Authentik portál.',
