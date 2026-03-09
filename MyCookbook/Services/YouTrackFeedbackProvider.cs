@@ -86,10 +86,17 @@ namespace MyCookbook.Services
 
         private async Task AddTagToIssue(string issueId, string tagName)
         {
-            var url = $"{_baseUrl}/api/issues/{issueId}/tags?fields=id,name";
             try
             {
-                var response = await _client.PostAsJsonAsync(url, new { name = tagName });
+                var tagId = await ResolveTagId(tagName);
+                if (tagId == null)
+                {
+                    Log.Warning($"YouTrack tag '{tagName}' not found; skipping.");
+                    return;
+                }
+
+                var url = $"{_baseUrl}/api/issues/{issueId}/tags?fields=id,name";
+                var response = await _client.PostAsJsonAsync(url, new { id = tagId });
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
@@ -100,6 +107,16 @@ namespace MyCookbook.Services
             {
                 Log.Warning($"Exception while adding tag '{tagName}' to YouTrack issue {issueId}: {ex.Message}");
             }
+        }
+
+        private async Task<string?> ResolveTagId(string tagName)
+        {
+            var url = $"{_baseUrl}/api/tags?fields=id,name&query={Uri.EscapeDataString(tagName)}";
+            var response = await _client.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return null;
+
+            var tags = await response.Content.ReadFromJsonAsync<YouTrackTag[]>();
+            return tags?.FirstOrDefault(t => string.Equals(t.Name, tagName, StringComparison.OrdinalIgnoreCase))?.Id;
         }
 
         private async Task AddAttachmentsToIssue(string issueId, IReadOnlyList<IFormFile> files)
@@ -138,5 +155,11 @@ namespace MyCookbook.Services
     {
         public string? Id { get; set; }
         public string? IdReadable { get; set; }
+    }
+
+    public class YouTrackTag
+    {
+        public string? Id { get; set; }
+        public string? Name { get; set; }
     }
 }
