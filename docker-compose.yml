@@ -9,7 +9,7 @@ services:
       - ConnectionStrings__DefaultConnection=Server=db;Database=MyCookbookDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-8080}:8080"
     networks:

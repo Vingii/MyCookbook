@@ -1,0 +1,166 @@
+export type Locale = 'en' | 'cs'
+
+export const translations = {
+  en: {
+    // Nav
+    navRecipes: 'Recipes',
+    navPlanner: 'Planner',
+    navSettings: 'Settings',
+    navLogout: 'Logout',
+    // RecipeBrowser / RecipeTable
+    recipes: 'Recipes',
+    newRecipe: 'New Recipe',
+    searchPlaceholder: 'Search...',
+    categoryPlaceholder: 'Category...',
+    tagPlaceholder: 'Tag...',
+    colName: 'Name',
+    colCategory: 'Category',
+    colDuration: 'Duration',
+    colLastCooked: 'Last Cooked',
+    noRecipesFound: 'No recipes found.',
+    // RecipeViewer
+    clone: 'Clone',
+    markCooked: 'Mark Cooked',
+    delete: 'Delete',
+    category: 'Category',
+    durationMin: 'Duration (min)',
+    servings: 'Servings',
+    addTagPlaceholder: 'Add tag...',
+    ingredients: 'Ingredients',
+    steps: 'Steps',
+    // IngredientList
+    amountPlaceholder: 'Amount',
+    ingredientNamePlaceholder: 'Ingredient name',
+    addIngredient: 'Add',
+    // StepList
+    stepDescPlaceholder: 'Step description...',
+    secondsPlaceholder: 'Seconds',
+    addStep: 'Add Step',
+    // Planner
+    mealPlanner: 'Meal Planner',
+    add: 'Add',
+    addToPlanner: 'Add to planner',
+    cancel: 'Cancel',
+    // Export
+    exportImport: 'Export / Import',
+    export: 'Export',
+    exportDesc: 'Download all your recipes as a JSON file.',
+    downloadExport: 'Download Export',
+    import: 'Import',
+    importDesc: 'Import recipes from a JSON file. This will replace all existing recipes.',
+    importing: 'Importing...',
+    // Settings
+    settings: 'Settings',
+    apiKey: 'API Key',
+    apiKeyDesc: 'Use a bearer token to access the API from scripts or Home Assistant.',
+    generateToken: 'Generate Token',
+    revokeToken: 'Revoke Token',
+    saveTokenNote: "Save this token now — it won't be shown again.",
+    shareAccess: 'Share Access',
+    shareAccessDesc: 'Generate a share token to give others read-only access to your recipes and planner. Anyone with the link can browse your data.',
+    shareLink: 'Shareable link:',
+    copy: 'Copy',
+    copied: 'Copied!',
+    revoke: 'Revoke',
+    generateShareLink: 'Generate Share Link',
+    recipeNotFound: 'Recipe not found.',
+    // Bug report
+    bugReport: 'Report a bug',
+    bugReportDesc: 'Describe the issue.',
+    send: 'Send',
+    attachFiles: 'Attach files (optional)',
+    // Changelog
+    whatsNew: "What's New",
+    close: 'Close',
+    // Recipe actions
+    shareRecipe: 'Share',
+    linkCopied: 'Link copied!',
+    finishCooking: 'Finish Cooking',
+    // Planner
+    cloneToNextDay: 'Clone to next day',
+    // Unauthorized
+    notAuthenticated: 'Not authenticated',
+    notAuthenticatedDesc: 'Please access MyCookbook through your Authentik portal.',
+  },
+  cs: {
+    // Nav
+    navRecipes: 'Recepty',
+    navPlanner: 'Plán',
+    navSettings: 'Nastavení',
+    navLogout: 'Odhlásit',
+    // RecipeBrowser / RecipeTable
+    recipes: 'Recepty',
+    newRecipe: 'Přidat recept',
+    searchPlaceholder: 'Hledat...',
+    categoryPlaceholder: 'Kategorie...',
+    tagPlaceholder: 'Štítek...',
+    colName: 'Název',
+    colCategory: 'Kategorie',
+    colDuration: 'Celková doba přípravy',
+    colLastCooked: 'Naposledy vařeno',
+    noRecipesFound: 'Žádné recepty.',
+    // RecipeViewer
+    clone: 'Duplikovat',
+    markCooked: 'Označit jako uvařeno',
+    delete: 'Smazat',
+    category: 'Kategorie',
+    durationMin: 'Doba přípravy (min)',
+    servings: 'Počet porcí',
+    addTagPlaceholder: 'Přidat štítek...',
+    ingredients: 'Ingredience',
+    steps: 'Kroky',
+    // IngredientList
+    amountPlaceholder: 'Množství',
+    ingredientNamePlaceholder: 'Název ingredience',
+    addIngredient: 'Přidat',
+    // StepList
+    stepDescPlaceholder: 'Popis kroku...',
+    secondsPlaceholder: 'Sekundy',
+    addStep: 'Přidat krok',
+    // Planner
+    mealPlanner: 'Plánovač',
+    add: 'Přidat',
+    addToPlanner: 'Přidat do plánu',
+    cancel: 'Storno',
+    // Export
+    exportImport: 'Export / Import',
+    export: 'Export',
+    exportDesc: 'Stáhnout všechny recepty jako JSON soubor.',
+    downloadExport: 'Stáhnout export',
+    import: 'Import',
+    importDesc: 'Importovat recepty ze souboru JSON. Toto nahradí všechny stávající recepty.',
+    importing: 'Importuji...',
+    // Settings
+    settings: 'Nastavení',
+    apiKey: 'API klíč',
+    apiKeyDesc: 'Použijte bearer token pro přístup k API ze skriptů nebo Home Assistant.',
+    generateToken: 'Vygenerovat token',
+    revokeToken: 'Zrušit token',
+    saveTokenNote: 'Uložte si tento token — nebude znovu zobrazen.',
+    shareAccess: 'Sdílený přístup',
+    shareAccessDesc: 'Vygenerujte sdílený token pro čtecí přístup ostatních k vašim receptům a plánu. Kdokoli s odkazem může procházet vaše data.',
+    shareLink: 'Odkaz ke sdílení:',
+    copy: 'Kopírovat',
+    copied: 'Zkopírováno!',
+    revoke: 'Zrušit',
+    generateShareLink: 'Vygenerovat odkaz',
+    recipeNotFound: 'Recept nenalezen.',
+    // Bug report
+    bugReport: 'Nahlásit chybu',
+    bugReportDesc: 'Popište problém.',
+    send: 'Odeslat',
+    attachFiles: 'Přiložit soubory (volitelné)',
+    // Changelog
+    whatsNew: 'Co je nového',
+    close: 'Zavřít',
+    // Recipe actions
+    shareRecipe: 'Sdílet',
+    linkCopied: 'Odkaz zkopírován!',
+    finishCooking: 'Dokončit vaření',
+    // Planner
+    cloneToNextDay: 'Zkopírovat na další den',
+    // Unauthorized
+    notAuthenticated: 'Nepřihlášen',
+    notAuthenticatedDesc: 'Pro přístup k MyCookbook použijte váš Authentik portál.',
+  },
+} satisfies Record<Locale, Record<string, string>>

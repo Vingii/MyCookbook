@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using Serilog;
+﻿using Serilog;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -11,8 +10,9 @@ namespace MyCookbook.Services
         private readonly string _jiraDomain;
         private readonly string _projectKey;
         private readonly string _issueTypeName;
+        private readonly string? _channel;
 
-        public JiraFeedbackProvider(HttpClient client, string jiraDomain, string email, string apiToken, string projectKey, string issueTypeName = "Request")
+        public JiraFeedbackProvider(HttpClient client, string jiraDomain, string email, string apiToken, string projectKey, string issueTypeName = "Request", string? channel = null)
         {
             _client = client;
             _jiraDomain = jiraDomain;
@@ -22,9 +22,10 @@ namespace MyCookbook.Services
             var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiToken}"));
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _channel = channel;
         }
 
-        public async Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "")
+        public async Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "")
         {
             string? issueId = await CreateIssue(feedback);
 
@@ -38,6 +39,10 @@ namespace MyCookbook.Services
         {
             var url = $"https://{_jiraDomain}/rest/api/3/issue";
 
+            var labels = string.IsNullOrEmpty(_channel)
+                ? Array.Empty<string>()
+                : new[] { _channel };
+
             var issueData = new
             {
                 fields = new
@@ -45,6 +50,7 @@ namespace MyCookbook.Services
                     project = new { key = _projectKey },
                     summary = "Anonymous Feedback",
                     issuetype = new { name = _issueTypeName },
+                    labels,
                     description = new
                     {
                         type = "doc",
@@ -87,7 +93,7 @@ namespace MyCookbook.Services
             }
         }
 
-        private async Task AddAttachmentsToIssue(string issueIdOrKey, IReadOnlyList<IBrowserFile> files)
+        private async Task AddAttachmentsToIssue(string issueIdOrKey, IReadOnlyList<IFormFile> files)
         {
             var url = $"https://{_jiraDomain}/rest/api/3/issue/{issueIdOrKey}/attachments";
 
@@ -98,25 +104,22 @@ namespace MyCookbook.Services
                 try
                 {
                     using var content = new MultipartFormDataContent();
-                    // Max file size 10MB
-                    using var fileStream = file.OpenReadStream(10 * 1024 * 1024);
-                    var streamContent = new StreamContent(fileStream);
+                    var streamContent = new StreamContent(file.OpenReadStream());
                     streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-
-                    content.Add(streamContent, "file", file.Name);
+                    content.Add(streamContent, "file", file.FileName);
 
                     var response = await _client.PostAsync(url, content);
 
                     if (!response.IsSuccessStatusCode)
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
-                        Log.Error($"Failed to upload '{file.Name}'. Status: {response.StatusCode}\n{errorContent}");
+                        Log.Error($"Failed to upload '{file.FileName}'. Status: {response.StatusCode}\n{errorContent}");
                         throw new InvalidOperationException(errorContent);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"An exception occurred while uploading '{file.Name}': {ex.Message}");
+                    Log.Error($"An exception occurred while uploading '{file.FileName}': {ex.Message}");
                     throw;
                 }
             }

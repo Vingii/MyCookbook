@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using Serilog;
+﻿using Serilog;
 using System.Net.Http.Headers;
 
 namespace MyCookbook.Services
@@ -10,8 +9,9 @@ namespace MyCookbook.Services
         private readonly string _baseUrl;
         private readonly string _projectId;
         private readonly string _issueTypeName;
+        private readonly string? _channel;
 
-        public YouTrackFeedbackProvider(HttpClient client, string baseUrl, string apiToken, string projectId, string issueTypeName = "Request")
+        public YouTrackFeedbackProvider(HttpClient client, string baseUrl, string apiToken, string projectId, string issueTypeName = "Request", string? channel = null)
         {
             _client = client;
             _baseUrl = baseUrl.TrimEnd('/');
@@ -20,15 +20,20 @@ namespace MyCookbook.Services
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _channel = channel;
         }
 
-        public async Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "")
+        public async Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "")
         {
             string? issueId = await CreateIssue(feedback, reportingUserName);
 
-            if (!string.IsNullOrEmpty(issueId) && files is { Count: > 0 })
+            if (!string.IsNullOrEmpty(issueId))
             {
-                await AddAttachmentsToIssue(issueId, files);
+                if (!string.IsNullOrEmpty(_channel))
+                    await AddTagToIssue(issueId, _channel);
+
+                if (files is { Count: > 0 })
+                    await AddAttachmentsToIssue(issueId, files);
             }
         }
 
@@ -79,7 +84,25 @@ namespace MyCookbook.Services
             }
         }
 
-        private async Task AddAttachmentsToIssue(string issueId, IReadOnlyList<IBrowserFile> files)
+        private async Task AddTagToIssue(string issueId, string tagName)
+        {
+            var url = $"{_baseUrl}/api/issues/{issueId}/tags?fields=id,name";
+            try
+            {
+                var response = await _client.PostAsJsonAsync(url, new { name = tagName });
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Log.Warning($"Failed to add tag '{tagName}' to YouTrack issue {issueId}: {response.StatusCode}\n{errorContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Exception while adding tag '{tagName}' to YouTrack issue {issueId}: {ex.Message}");
+            }
+        }
+
+        private async Task AddAttachmentsToIssue(string issueId, IReadOnlyList<IFormFile> files)
         {
             var url = $"{_baseUrl}/api/issues/{issueId}/attachments?fields=id,name";
 
@@ -87,11 +110,9 @@ namespace MyCookbook.Services
 
             foreach (var file in files)
             {
-                var fileStream = file.OpenReadStream(10 * 1024 * 1024);
-                var streamContent = new StreamContent(fileStream);
+                var streamContent = new StreamContent(file.OpenReadStream());
                 streamContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-
-                content.Add(streamContent, "files", file.Name);
+                content.Add(streamContent, "files", file.FileName);
             }
 
             try

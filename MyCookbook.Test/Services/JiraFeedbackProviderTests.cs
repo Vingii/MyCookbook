@@ -1,6 +1,6 @@
 ﻿using Moq;
 using MyCookbook.Services;
-using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Http;
 using RichardSzalay.MockHttp;
 using System.Net;
 using System.Text;
@@ -61,10 +61,10 @@ namespace MyCookbook.Test.Services
             var expectedIssueId = "10002";
             var createIssueUrl = $"https://{DummyJiraDomain}/rest/api/3/issue";
             var addAttachmentUrl = $"https://{DummyJiraDomain}/rest/api/3/issue/{expectedIssueId}/attachments";
-            var mockFiles = new List<IBrowserFile>
+            var mockFiles = new List<IFormFile>
             {
-                CreateMockBrowserFile("file1.txt", "text/plain", "content1"),
-                CreateMockBrowserFile("file2.jpg", "image/jpeg", "content2")
+                CreateMockFormFile("file1.txt", "text/plain", "content1"),
+                CreateMockFormFile("file2.jpg", "image/jpeg", "content2")
             };
 
             _mockHttp.Expect(HttpMethod.Post, createIssueUrl)
@@ -110,7 +110,7 @@ namespace MyCookbook.Test.Services
             var expectedIssueId = "10003";
             var createIssueUrl = $"https://{DummyJiraDomain}/rest/api/3/issue";
             var addAttachmentUrl = $"https://{DummyJiraDomain}/rest/api/3/issue/{expectedIssueId}/attachments";
-            var mockFiles = new List<IBrowserFile> { CreateMockBrowserFile("fail.zip", "application/zip", "zipcontent") };
+            var mockFiles = new List<IFormFile> { CreateMockFormFile("fail.zip", "application/zip", "zipcontent") };
 
             _mockHttp.When(HttpMethod.Post, createIssueUrl)
                 .Respond("application/json", JsonSerializer.Serialize(new { id = expectedIssueId }));
@@ -125,16 +125,15 @@ namespace MyCookbook.Test.Services
             Assert.Contains("Attachment upload is not permitted.", exception.Message);
         }
 
-        private IBrowserFile CreateMockBrowserFile(string fileName, string contentType, string content)
+        private IFormFile CreateMockFormFile(string fileName, string contentType, string content)
         {
-            var mockFile = new Mock<IBrowserFile>();
+            var mockFile = new Mock<IFormFile>();
             var fileContentBytes = Encoding.UTF8.GetBytes(content);
             var fileStream = new MemoryStream(fileContentBytes);
-            mockFile.Setup(f => f.Name).Returns(fileName);
+            mockFile.Setup(f => f.FileName).Returns(fileName);
             mockFile.Setup(f => f.ContentType).Returns(contentType);
-            mockFile.Setup(f => f.Size).Returns(fileContentBytes.Length);
-            mockFile.Setup(f => f.OpenReadStream(It.IsAny<long>(), It.IsAny<CancellationToken>()))
-                    .Returns(fileStream);
+            mockFile.Setup(f => f.Length).Returns(fileContentBytes.Length);
+            mockFile.Setup(f => f.OpenReadStream()).Returns(fileStream);
             return mockFile.Object;
         }
     }
