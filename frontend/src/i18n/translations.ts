@@ -63,9 +63,10 @@ export const translations = {
     copied: 'Copied!',
     revoke: 'Revoke',
     generateShareLink: 'Generate Share Link',
+    recipeNotFound: 'Recipe not found.',
     // Bug report
     bugReport: 'Report a bug',
-    bugReportDesc: 'Describe the issue you encountered.',
+    bugReportDesc: 'Describe the issue.',
     send: 'Send',
     attachFiles: 'Attach files (optional)',
     // Changelog
@@ -117,7 +118,7 @@ export const translations = {
     secondsPlaceholder: 'Sekundy',
     addStep: 'Přidat krok',
     // Planner
-    mealPlanner: 'Jídelníček',
+    mealPlanner: 'Plánovač',
     add: 'Přidat',
     addToPlanner: 'Přidat do plánu',
     cancel: 'Storno',
@@ -143,9 +144,10 @@ export const translations = {
     copied: 'Zkopírováno!',
     revoke: 'Zrušit',
     generateShareLink: 'Vygenerovat odkaz',
+    recipeNotFound: 'Recept nenalezen.',
     // Bug report
     bugReport: 'Nahlásit chybu',
-    bugReportDesc: 'Popište problém, který jste zjistili.',
+    bugReportDesc: 'Popište problém.',
     send: 'Odeslat',
     attachFiles: 'Přiložit soubory (volitelné)',
     // Changelog

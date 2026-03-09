@@ -21,7 +21,7 @@ namespace MyCookbook.Data.CookbookDatabase
             {
                 RecipeId = recipe.Id,
                 UserName = recipe.UserName,
-                Name = recipe.Name
+                Name = Name
             };
         }
     }

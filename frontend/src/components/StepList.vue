@@ -1,8 +1,28 @@
 <template>
   <div>
-    <div v-for="step in sorted" :key="step.id" class="mb-3">
-      <div class="d-flex align-start ga-2">
-        <span class="text-medium-emphasis mt-2" style="min-width: 24px;">{{ step.order }}.</span>
+    <div v-for="step in sorted" :key="step.id" class="d-flex mb-2" style="min-height: 56px;">
+
+      <!-- Vertical timeline bar -->
+      <div
+        class="step-bar flex-shrink-0 d-flex align-center justify-center"
+        :style="{ background: barColor(step.stepType), cursor: (!readonly && !editingSteps.has(step.id)) ? 'pointer' : 'default' }"
+        @click="!readonly && !editingSteps.has(step.id) && cycleStepType(step)"
+      >
+        <div
+          style="display: flex; align-items: center; justify-content: center;"
+          @click.stop="!readonly && !editingSteps.has(step.id) && promptDuration(step)"
+        >
+          <v-icon v-if="!step.durationSeconds" color="white" size="small">mdi-clock-outline</v-icon>
+          <span
+            v-else
+            style="color: white; font-weight: bold; text-align: center; padding: 0 3px; font-size: 0.65rem; line-height: 1.2; word-break: break-all;"
+          >{{ formatDuration(step.durationSeconds) }}</span>
+        </div>
+      </div>
+
+      <!-- Step content -->
+      <div class="d-flex align-start ga-2 flex-grow-1 pa-2">
+        <span class="text-medium-emphasis mt-1" style="min-width: 20px; font-size: 0.85rem;">{{ step.order }}.</span>
         <div class="flex-grow-1">
           <template v-if="editingSteps.has(step.id)">
             <v-textarea
@@ -43,14 +63,10 @@
           </template>
           <template v-else>
             <div
-              class="text-body-2 py-2"
+              class="text-body-2 py-1"
               style="white-space: pre-wrap; line-height: 1.6;"
               v-html="renderDescription(step.description)"
             />
-            <div v-if="step.durationSeconds || step.stepType" class="d-flex ga-2 mt-1">
-              <v-chip size="small" variant="tonal">{{ step.stepType }}</v-chip>
-              <v-chip v-if="step.durationSeconds" size="small" variant="tonal">{{ formatDuration(step.durationSeconds) }}</v-chip>
-            </div>
           </template>
         </div>
         <template v-if="!readonly">
@@ -130,6 +146,65 @@ watch(() => props.steps, (steps) => {
   editValues.value = updated
 }, { immediate: true })
 
+function barColor(type: string): string {
+  if (type === 'Active') return 'rgb(var(--v-theme-primary))'
+  if (type === 'SemiPassive') return 'rgb(var(--v-theme-warning))'
+  return 'rgb(var(--v-theme-success))'
+}
+
+function formatDuration(sec: number): string {
+  if (!sec) return '0s'
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  const parts = []
+  if (h > 0) parts.push(`${h}h`)
+  if (m > 0) parts.push(`${m}m`)
+  if (s > 0) parts.push(`${s}s`)
+  return parts.join(' ') || '0s'
+}
+
+function parseDuration(input: string): number {
+  input = input.trim().toLowerCase()
+  if (!input || input === '0') return 0
+  const h = input.match(/(\d+)\s*h/)
+  const m = input.match(/(\d+)\s*m(?!s)/)
+  const s = input.match(/(\d+)\s*s/)
+  let total = 0
+  if (h?.[1]) total += parseInt(h[1]) * 3600
+  if (m?.[1]) total += parseInt(m[1]) * 60
+  if (s?.[1]) total += parseInt(s[1])
+  if (total === 0) {
+    const n = parseInt(input)
+    if (!isNaN(n)) return n
+  }
+  return total
+}
+
+async function cycleStepType(step: StepDto) {
+  const next = step.stepType === 'Active' ? 'Passive'
+             : step.stepType === 'Passive' ? 'SemiPassive' : 'Active'
+  await recipesApi.updateStep(props.guid, step.id, {
+    description: step.description,
+    durationSeconds: step.durationSeconds,
+    stepType: next,
+  })
+  emit('refresh')
+}
+
+async function promptDuration(step: StepDto) {
+  const current = step.durationSeconds ? formatDuration(step.durationSeconds) : ''
+  const input = prompt('Duration (e.g. 30s, 2m, 1m30s, 1h):', current)
+  if (input === null) return
+  const seconds = parseDuration(input)
+  await recipesApi.updateStep(props.guid, step.id, {
+    description: step.description,
+    durationSeconds: seconds || undefined,
+    stepType: step.stepType,
+  })
+  emit('refresh')
+}
+
 function toggleEdit(id: number) {
   const s = new Set(editingSteps.value)
   if (s.has(id)) s.delete(id)
@@ -157,12 +232,6 @@ async function saveStepType(step: StepDto, v: string) {
 
 function renderDescription(text: string): string {
   return highlightText(text, props.highlightWords ?? new Set())
-}
-
-function formatDuration(sec: number) {
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
 async function saveStep(step: StepDto) {
@@ -199,3 +268,15 @@ async function addStep() {
   emit('refresh')
 }
 </script>
+
+<style scoped>
+.step-bar {
+  width: 40px;
+  border-radius: 4px 0 0 4px;
+  transition: filter 0.15s ease;
+  user-select: none;
+}
+.step-bar:hover:not([style*="cursor: default"]) {
+  filter: brightness(1.1);
+}
+</style>

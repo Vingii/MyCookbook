@@ -9,7 +9,7 @@
         {{ ui.locale === 'en' ? 'EN' : 'CS' }}
       </v-btn>
       <v-btn icon="mdi-bug" variant="text" :title="ui.t.bugReport" @click="feedbackOpen = true" />
-      <v-btn icon="mdi-new-releases" variant="text" :title="ui.t.whatsNew" @click="changelogOpen = true" />
+      <v-btn icon="mdi-history" variant="text" :title="ui.t.whatsNew" @click="changelogOpen = true" />
       <v-btn variant="text" :to="'/settings'">{{ ui.t.navSettings }}</v-btn>
       <v-btn variant="text" href="/api/auth/logout">{{ ui.t.navLogout }}</v-btn>
     </v-app-bar>

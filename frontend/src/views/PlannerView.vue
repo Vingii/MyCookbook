@@ -4,9 +4,10 @@
       <h1 class="text-h4">{{ ui.t.mealPlanner }}</h1>
     </div>
 
-    <div v-for="(week, wi) in weeks" :key="wi" class="mb-4">
-      <v-row>
-        <v-col v-for="day in week" :key="day.date" cols="12" sm="6" md="auto" style="min-width: 180px; flex: 1;">
+    <div v-for="(week, wi) in weeks" :key="wi">
+      <v-divider v-if="wi > 0" class="my-4" />
+      <div class="d-flex flex-wrap ga-2 mb-2">
+        <div v-for="day in week" :key="day.date" style="flex: 0 0 180px;">
           <v-card variant="outlined" min-height="120">
             <v-card-title class="text-body-2 font-weight-bold pb-1">{{ day.label }}</v-card-title>
             <v-card-text class="pt-0">
@@ -47,8 +48,8 @@
               >{{ ui.t.add }}</v-btn>
             </v-card-text>
           </v-card>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </div>
 
     <!-- Add recipe dialog -->

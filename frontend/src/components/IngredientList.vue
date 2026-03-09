@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-for="ing in sorted" :key="ing.id" class="d-flex align-center ga-2 mb-1">
+    <div v-for="ing in sorted" :key="ing.id" class="d-flex align-start ga-2 mb-1">
       <template v-if="!readonly && editingIngredients.has(ing.id)">
         <v-text-field
           :model-value="editValues[ing.id]?.amount"
@@ -23,14 +23,15 @@
         />
       </template>
       <template v-else>
-        <v-checkbox-btn
-          :model-value="checked.has(ing.id)"
+        <v-btn
+          :icon="checked.has(ing.id) ? 'mdi-checkbox-marked' : 'mdi-checkbox-blank-outline'"
+          size="x-small"
+          variant="text"
           density="compact"
-          hide-details
-          @update:model-value="toggleCheck(ing.id)"
+          @click="toggleCheck(ing.id)"
         />
         <span
-          class="text-medium-emphasis"
+          class="text-medium-emphasis text-center"
           style="min-width: 90px;"
           :class="{ 'text-decoration-line-through': checked.has(ing.id) }"
         >{{ ing.amount || '' }}</span>

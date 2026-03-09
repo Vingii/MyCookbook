@@ -71,7 +71,7 @@
         {{ recipe.category || '—' }}
       </div>
       <div>
-        <div class="text-medium-emphasis text-caption">{{ ui.t.durationMin }}</div>
+        <div class="text-medium-emphasis text-caption">{{ ui.t.colDuration }}</div>
         {{ recipe.durationText || '—' }}
       </div>
       <div>
@@ -100,8 +100,6 @@
         />
       </div>
     </div>
-
-    <StepTimeline :steps="recipe.steps" class="mb-4" />
 
     <v-row>
       <v-col cols="12" md="5">
@@ -139,7 +137,6 @@ import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
-import StepTimeline from '../components/StepTimeline.vue'
 
 const route = useRoute()
 const router = useRouter()
