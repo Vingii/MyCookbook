@@ -1,28 +1,39 @@
 <template>
   <div>
     <div v-for="ing in sorted" :key="ing.id" class="d-flex align-center ga-2 mb-1">
-      <v-text-field
-        :model-value="editValues[ing.id]?.amount"
-        density="compact"
-        hide-details
-        variant="outlined"
-        :placeholder="ui.t.amountPlaceholder"
-        style="max-width: 90px;"
-        :readonly="readonly"
-        @update:model-value="(v: string) => setAmount(ing.id, v)"
-        @blur="saveIngredient(ing)"
-      />
-      <v-text-field
-        :model-value="editValues[ing.id]?.name"
-        density="compact"
-        hide-details
-        variant="outlined"
-        class="flex-grow-1"
-        :readonly="readonly"
-        @update:model-value="(v: string) => setName(ing.id, v)"
-        @blur="saveIngredient(ing)"
-      />
+      <template v-if="!readonly && editingIngredients.has(ing.id)">
+        <v-text-field
+          :model-value="editValues[ing.id]?.amount"
+          density="compact"
+          hide-details
+          variant="outlined"
+          :placeholder="ui.t.amountPlaceholder"
+          style="max-width: 90px;"
+          @update:model-value="(v: string) => setAmount(ing.id, v)"
+          @blur="saveIngredient(ing)"
+        />
+        <v-text-field
+          :model-value="editValues[ing.id]?.name"
+          density="compact"
+          hide-details
+          variant="outlined"
+          class="flex-grow-1"
+          @update:model-value="(v: string) => setName(ing.id, v)"
+          @blur="saveIngredient(ing)"
+        />
+      </template>
+      <template v-else>
+        <span class="text-medium-emphasis" style="min-width: 90px;">{{ ing.amount || '' }}</span>
+        <span class="flex-grow-1">{{ ing.name }}</span>
+      </template>
       <template v-if="!readonly">
+        <v-btn
+          :icon="editingIngredients.has(ing.id) ? 'mdi-check' : 'mdi-pencil'"
+          size="small"
+          variant="text"
+          :color="editingIngredients.has(ing.id) ? 'primary' : undefined"
+          @click="toggleEdit(ing.id)"
+        />
         <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveDown(ing)" />
         <v-btn icon="mdi-arrow-down" size="small" variant="text" @click="moveUp(ing)" />
         <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="remove(ing)" />
@@ -66,6 +77,7 @@ const sorted = computed(() => [...props.ingredients].sort((a, b) => a.order - b.
 const newName = ref('')
 const newAmount = ref('')
 const editValues = ref<Record<number, { name: string; amount: string }>>({})
+const editingIngredients = ref(new Set<number>())
 
 watch(() => props.ingredients, (ingredients) => {
   const updated: Record<number, { name: string; amount: string }> = {}
@@ -74,6 +86,13 @@ watch(() => props.ingredients, (ingredients) => {
   }
   editValues.value = updated
 }, { immediate: true })
+
+function toggleEdit(id: number) {
+  const s = new Set(editingIngredients.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  editingIngredients.value = s
+}
 
 function setAmount(id: number, v: string) {
   const e = editValues.value[id]

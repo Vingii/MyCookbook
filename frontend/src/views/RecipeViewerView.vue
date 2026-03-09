@@ -31,56 +31,54 @@
       </v-col>
     </v-row>
 
-    <v-row class="mb-4" align="center">
-      <template v-if="!readonly && editingMeta">
-        <v-col cols="12" sm="4">
-          <v-text-field
-            v-model="recipe.category"
-            :label="ui.t.category"
-            density="compact"
-            variant="outlined"
-            hide-details
-            @blur="saveRecipe"
-          />
-        </v-col>
-        <v-col cols="6" sm="4">
-          <v-text-field
-            v-model.number="recipe.duration"
-            :label="ui.t.durationMin"
-            type="number"
-            density="compact"
-            variant="outlined"
-            hide-details
-            @blur="saveRecipe"
-          />
-        </v-col>
-        <v-col cols="6" sm="4">
-          <v-text-field
-            v-model.number="recipe.servings"
-            :label="ui.t.servings"
-            type="number"
-            density="compact"
-            variant="outlined"
-            hide-details
-            @blur="saveRecipe"
-          />
-        </v-col>
-      </template>
-      <template v-else>
-        <v-col cols="12" sm="4">
-          <span class="text-medium-emphasis text-caption">{{ ui.t.category }}</span>
-          <div>{{ recipe.category || '—' }}</div>
-        </v-col>
-        <v-col cols="6" sm="4">
-          <span class="text-medium-emphasis text-caption">{{ ui.t.durationMin }}</span>
-          <div>{{ recipe.duration ?? '—' }}</div>
-        </v-col>
-        <v-col cols="6" sm="4">
-          <span class="text-medium-emphasis text-caption">{{ ui.t.servings }}</span>
-          <div>{{ recipe.servings ?? '—' }}</div>
-        </v-col>
-      </template>
+    <v-row v-if="!readonly && editingMeta" class="mb-4" align="center">
+      <v-col cols="12" sm="4">
+        <v-text-field
+          v-model="recipe.category"
+          :label="ui.t.category"
+          density="compact"
+          variant="outlined"
+          hide-details
+          @blur="saveRecipe"
+        />
+      </v-col>
+      <v-col cols="6" sm="4">
+        <v-text-field
+          v-model.number="recipe.duration"
+          :label="ui.t.durationMin"
+          type="number"
+          density="compact"
+          variant="outlined"
+          hide-details
+          @blur="saveRecipe"
+        />
+      </v-col>
+      <v-col cols="6" sm="4">
+        <v-text-field
+          v-model.number="recipe.servings"
+          :label="ui.t.servings"
+          type="number"
+          density="compact"
+          variant="outlined"
+          hide-details
+          @blur="saveRecipe"
+        />
+      </v-col>
     </v-row>
+    <div v-else class="d-flex flex-wrap ga-6 mb-4 text-body-2">
+      <div>
+        <div class="text-medium-emphasis text-caption">{{ ui.t.category }}</div>
+        {{ recipe.category || '—' }}
+      </div>
+      <div>
+        <div class="text-medium-emphasis text-caption">{{ ui.t.durationMin }}</div>
+        {{ recipe.duration ?? '—' }}
+      </div>
+      <div>
+        <div class="text-medium-emphasis text-caption">{{ ui.t.servings }}</div>
+        {{ recipe.servings ?? '—' }}
+      </div>
+    </div>
 
     <div class="mb-4">
       <div class="d-flex align-center flex-wrap ga-2">
