@@ -10,8 +10,9 @@ namespace MyCookbook.Services
         private readonly string _jiraDomain;
         private readonly string _projectKey;
         private readonly string _issueTypeName;
+        private readonly string? _channel;
 
-        public JiraFeedbackProvider(HttpClient client, string jiraDomain, string email, string apiToken, string projectKey, string issueTypeName = "Request")
+        public JiraFeedbackProvider(HttpClient client, string jiraDomain, string email, string apiToken, string projectKey, string issueTypeName = "Request", string? channel = null)
         {
             _client = client;
             _jiraDomain = jiraDomain;
@@ -21,6 +22,7 @@ namespace MyCookbook.Services
             var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiToken}"));
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authToken);
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _channel = channel;
         }
 
         public async Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "")
@@ -37,6 +39,10 @@ namespace MyCookbook.Services
         {
             var url = $"https://{_jiraDomain}/rest/api/3/issue";
 
+            var labels = string.IsNullOrEmpty(_channel)
+                ? Array.Empty<string>()
+                : new[] { _channel };
+
             var issueData = new
             {
                 fields = new
@@ -44,6 +50,7 @@ namespace MyCookbook.Services
                     project = new { key = _projectKey },
                     summary = "Anonymous Feedback",
                     issuetype = new { name = _issueTypeName },
+                    labels,
                     description = new
                     {
                         type = "doc",

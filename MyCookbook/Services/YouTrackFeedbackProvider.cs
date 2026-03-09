@@ -9,8 +9,9 @@ namespace MyCookbook.Services
         private readonly string _baseUrl;
         private readonly string _projectId;
         private readonly string _issueTypeName;
+        private readonly string? _channel;
 
-        public YouTrackFeedbackProvider(HttpClient client, string baseUrl, string apiToken, string projectId, string issueTypeName = "Request")
+        public YouTrackFeedbackProvider(HttpClient client, string baseUrl, string apiToken, string projectId, string issueTypeName = "Request", string? channel = null)
         {
             _client = client;
             _baseUrl = baseUrl.TrimEnd('/');
@@ -19,15 +20,20 @@ namespace MyCookbook.Services
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _channel = channel;
         }
 
         public async Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "")
         {
             string? issueId = await CreateIssue(feedback, reportingUserName);
 
-            if (!string.IsNullOrEmpty(issueId) && files is { Count: > 0 })
+            if (!string.IsNullOrEmpty(issueId))
             {
-                await AddAttachmentsToIssue(issueId, files);
+                if (!string.IsNullOrEmpty(_channel))
+                    await AddTagToIssue(issueId, _channel);
+
+                if (files is { Count: > 0 })
+                    await AddAttachmentsToIssue(issueId, files);
             }
         }
 
@@ -75,6 +81,24 @@ namespace MyCookbook.Services
             {
                 Log.Error($"An exception occurred while creating YouTrack issue: {ex.Message}");
                 throw;
+            }
+        }
+
+        private async Task AddTagToIssue(string issueId, string tagName)
+        {
+            var url = $"{_baseUrl}/api/issues/{issueId}/tags?fields=id,name";
+            try
+            {
+                var response = await _client.PostAsJsonAsync(url, new { name = tagName });
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Log.Warning($"Failed to add tag '{tagName}' to YouTrack issue {issueId}: {response.StatusCode}\n{errorContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Exception while adding tag '{tagName}' to YouTrack issue {issueId}: {ex.Message}");
             }
         }
 
