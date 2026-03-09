@@ -2,23 +2,25 @@
   <div>
     <div v-for="ing in sorted" :key="ing.id" class="d-flex align-center ga-2 mb-1">
       <v-text-field
-        :model-value="ing.amount"
+        :model-value="editValues[ing.id]?.amount"
         density="compact"
         hide-details
         variant="outlined"
         :placeholder="ui.t.amountPlaceholder"
         style="max-width: 90px;"
         :readonly="readonly"
-        @change="(v: string) => saveIngredient(ing, { amount: v, name: ing.name })"
+        @update:model-value="(v: string) => setAmount(ing.id, v)"
+        @blur="saveIngredient(ing)"
       />
       <v-text-field
-        :model-value="ing.name"
+        :model-value="editValues[ing.id]?.name"
         density="compact"
         hide-details
         variant="outlined"
         class="flex-grow-1"
         :readonly="readonly"
-        @change="(v: string) => saveIngredient(ing, { amount: ing.amount ?? '', name: v })"
+        @update:model-value="(v: string) => setName(ing.id, v)"
+        @blur="saveIngredient(ing)"
       />
       <template v-if="!readonly">
         <v-btn icon="mdi-arrow-up" size="small" variant="text" @click="moveDown(ing)" />
@@ -51,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { recipesApi } from '../api/recipes'
 import { useUiStore } from '../stores/ui'
 import type { IngredientDto } from '../api/types'
@@ -63,10 +65,31 @@ const ui = useUiStore()
 const sorted = computed(() => [...props.ingredients].sort((a, b) => a.order - b.order))
 const newName = ref('')
 const newAmount = ref('')
+const editValues = ref<Record<number, { name: string; amount: string }>>({})
 
-async function saveIngredient(ing: IngredientDto, update: { name: string; amount: string }) {
-  if (update.name === ing.name && update.amount === ing.amount) return
-  await recipesApi.updateIngredient(props.guid, ing.id, { name: update.name, amount: update.amount })
+watch(() => props.ingredients, (ingredients) => {
+  const updated: Record<number, { name: string; amount: string }> = {}
+  for (const ing of ingredients) {
+    updated[ing.id] = { name: ing.name ?? '', amount: ing.amount ?? '' }
+  }
+  editValues.value = updated
+}, { immediate: true })
+
+function setAmount(id: number, v: string) {
+  const e = editValues.value[id]
+  if (e) e.amount = v
+}
+
+function setName(id: number, v: string) {
+  const e = editValues.value[id]
+  if (e) e.name = v
+}
+
+async function saveIngredient(ing: IngredientDto) {
+  const update = editValues.value[ing.id]
+  if (!update) return
+  if (update.name === (ing.name ?? '') && update.amount === (ing.amount ?? '')) return
+  await recipesApi.updateIngredient(props.guid, ing.id, { name: update.name, amount: update.amount || undefined })
   emit('refresh')
 }
 

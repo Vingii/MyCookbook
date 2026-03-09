@@ -30,7 +30,7 @@ public static class DtoMapper
     public static IngredientDto ToDto(this Ingredient ingredient) => new()
     {
         Id = ingredient.Id,
-        Name = ingredient.Name,
+        Name = ingredient.Name ?? "",
         Amount = ingredient.Amount,
         Order = ingredient.Order
     };
@@ -38,7 +38,7 @@ public static class DtoMapper
     public static StepDto ToDto(this Step step) => new()
     {
         Id = step.Id,
-        Description = step.Description,
+        Description = step.Description ?? "",
         Order = step.Order,
         DurationSeconds = step.Duration.HasValue ? (int)step.Duration.Value.TotalSeconds : null,
         StepType = step.StepType.ToString()

@@ -6,36 +6,38 @@
         <div class="flex-grow-1">
           <template v-if="editingSteps.has(step.id)">
             <v-textarea
-              :model-value="step.description"
+              :model-value="editValues[step.id]?.description"
               density="compact"
               hide-details
               variant="outlined"
               auto-grow
               rows="2"
-              @change="(v: string) => saveStep(step, { description: v, stepType: step.stepType, durationSeconds: step.durationSeconds ?? undefined })"
+              @update:model-value="(v: string) => setDescription(step.id, v)"
+              @blur="saveStep(step)"
             />
             <div class="d-flex ga-2 mt-1">
               <v-select
-                :model-value="step.stepType"
+                :model-value="editValues[step.id]?.stepType"
                 :items="stepTypes"
                 density="compact"
                 hide-details
                 variant="outlined"
                 style="max-width: 160px;"
-                @update:model-value="(v: string) => saveStep(step, { description: step.description, stepType: v, durationSeconds: step.durationSeconds ?? undefined })"
+                @update:model-value="(v: string) => saveStepType(step, v)"
               />
               <v-text-field
-                :model-value="step.durationSeconds ?? null"
+                :model-value="editValues[step.id]?.durationSeconds ?? null"
                 type="number"
                 density="compact"
                 hide-details
                 variant="outlined"
                 :placeholder="ui.t.secondsPlaceholder"
                 style="max-width: 120px;"
-                @change="(v: string) => saveStep(step, { description: step.description, stepType: step.stepType, durationSeconds: v ? Number(v) : undefined })"
+                @update:model-value="(v: string) => setDuration(step.id, v)"
+                @blur="saveStep(step)"
               />
-              <span v-if="step.durationSeconds" class="text-medium-emphasis text-caption mt-2">
-                {{ formatDuration(step.durationSeconds) }}
+              <span v-if="editValues[step.id]?.durationSeconds" class="text-medium-emphasis text-caption mt-2">
+                {{ formatDuration(editValues[step.id]?.durationSeconds ?? 0) }}
               </span>
             </div>
           </template>
@@ -102,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { recipesApi } from '../api/recipes'
 import { useUiStore } from '../stores/ui'
 import { highlightText } from '../composables/useIngredientHighlighter'
@@ -118,12 +120,39 @@ const newDesc = ref('')
 const newType = ref('Active')
 const newDuration = ref<number | null>(null)
 const editingSteps = ref(new Set<number>())
+const editValues = ref<Record<number, { description: string; stepType: string; durationSeconds?: number }>>({})
+
+watch(() => props.steps, (steps) => {
+  const updated: Record<number, { description: string; stepType: string; durationSeconds?: number }> = {}
+  for (const s of steps) {
+    updated[s.id] = { description: s.description ?? '', stepType: s.stepType, durationSeconds: s.durationSeconds }
+  }
+  editValues.value = updated
+}, { immediate: true })
 
 function toggleEdit(id: number) {
   const s = new Set(editingSteps.value)
   if (s.has(id)) s.delete(id)
   else s.add(id)
   editingSteps.value = s
+}
+
+function setDescription(id: number, v: string) {
+  const e = editValues.value[id]
+  if (e) e.description = v
+}
+
+function setDuration(id: number, v: string) {
+  const e = editValues.value[id]
+  if (e) e.durationSeconds = v ? Number(v) : undefined
+}
+
+async function saveStepType(step: StepDto, v: string) {
+  const e = editValues.value[step.id]
+  if (!e) return
+  e.stepType = v
+  await recipesApi.updateStep(props.guid, step.id, e)
+  emit('refresh')
 }
 
 function renderDescription(text: string): string {
@@ -136,7 +165,9 @@ function formatDuration(sec: number) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
-async function saveStep(step: StepDto, update: { description: string; stepType: string; durationSeconds?: number }) {
+async function saveStep(step: StepDto) {
+  const update = editValues.value[step.id]
+  if (!update) return
   await recipesApi.updateStep(props.guid, step.id, update)
   emit('refresh')
 }

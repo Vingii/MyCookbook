@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.StaticFiles;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Services;
@@ -99,7 +100,12 @@ namespace MyCookbook
 
                 app.UseRouting();
 
-                app.UseStaticFiles();
+                var provider = new FileExtensionContentTypeProvider();
+                provider.Mappings[".jsonl"] = "application/jsonlines+json"; 
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    ContentTypeProvider = provider
+                });
 
                 app.UseAuthentication();
                 app.UseAuthorization();
