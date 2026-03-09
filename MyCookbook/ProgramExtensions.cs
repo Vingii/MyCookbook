@@ -12,7 +12,8 @@ namespace MyCookbook
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var client = httpClientFactory.CreateClient();
 
-                return new YouTrackFeedbackProvider(client, config["YouTrack:BaseUrl"], config["YouTrack:Token"], config["YouTrack:ProjectId"]);
+                var channel = config["Cookbook:Channel"];
+                return new YouTrackFeedbackProvider(client, config["YouTrack:BaseUrl"], config["YouTrack:Token"], config["YouTrack:ProjectId"], channel: channel);
             });
         }
 
