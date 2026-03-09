@@ -92,7 +92,7 @@ namespace MyCookbook
 
                 if (!app.Environment.IsDevelopment())
                 {
-                    app.UseExceptionHandler();
+                    app.UseExceptionHandler("/error");
                     app.UseHsts();
                 }
 
