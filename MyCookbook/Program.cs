@@ -110,6 +110,23 @@ namespace MyCookbook
                 app.UseAuthentication();
                 app.UseAuthorization();
 
+                // Persist display name so ?user= share links can use it instead of raw UID
+                app.Use(async (context, next) =>
+                {
+                    var uid = context.User.Identity?.Name;
+                    var displayName = context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
+                    if (uid != null && displayName != null)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            using var scope = context.RequestServices.CreateScope();
+                            var db = scope.ServiceProvider.GetRequiredService<CookbookDatabaseService>();
+                            await db.UpdateUserPreference("DisplayName", displayName, uid);
+                        });
+                    }
+                    await next();
+                });
+
                 app.MapControllers();
                 app.MapMethods("/", [HttpMethods.Head], () => Results.StatusCode(200));
                 app.MapFallbackToFile("index.html");

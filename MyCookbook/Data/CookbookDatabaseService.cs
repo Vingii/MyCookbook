@@ -606,6 +606,15 @@ namespace MyCookbook.Data
             return preference?.Value;
         }
 
+        public async Task<string> ResolveUserIdAsync(string displayNameOrId)
+        {
+            var context = await GetContext();
+            var match = await context.UserPreferences
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Key == "DisplayName" && p.Value == displayNameOrId);
+            return match?.UserName ?? displayNameOrId;
+        }
+
         public async Task<string> Export(string user)
         {
             var context = await GetContext();
