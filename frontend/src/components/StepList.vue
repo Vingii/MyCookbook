@@ -1,11 +1,16 @@
 <template>
   <div>
-    <div v-for="step in sorted" :key="step.id" class="d-flex mb-2" style="min-height: 56px;">
+    <div v-for="(step, idx) in sorted" :key="step.id" class="d-flex" style="min-height: 56px;">
 
       <!-- Vertical timeline bar -->
       <div
         class="step-bar flex-shrink-0 d-flex align-center justify-center"
-        :style="{ background: barColor(step.stepType), cursor: (!readonly && !editingSteps.has(step.id)) ? 'pointer' : 'default' }"
+        :style="{
+          background: barColor(step.stepType),
+          cursor: (!readonly && !editingSteps.has(step.id)) ? 'pointer' : 'default',
+          borderTopLeftRadius: idx === 0 ? '4px' : '0',
+          borderBottomLeftRadius: idx === sorted.length - 1 ? '4px' : '0',
+        }"
         @click="!readonly && !editingSteps.has(step.id) && cycleStepType(step)"
       >
         <div
@@ -95,26 +100,7 @@
         rows="2"
         class="mb-2"
       />
-      <div class="d-flex ga-2 align-center">
-        <v-select
-          v-model="newType"
-          :items="stepTypes"
-          density="compact"
-          hide-details
-          variant="outlined"
-          style="max-width: 160px;"
-        />
-        <v-text-field
-          v-model.number="newDuration"
-          type="number"
-          :placeholder="ui.t.secondsPlaceholder"
-          density="compact"
-          hide-details
-          variant="outlined"
-          style="max-width: 120px;"
-        />
-        <v-btn color="primary" size="small" @click="addStep">{{ ui.t.addStep }}</v-btn>
-      </div>
+      <v-btn color="primary" size="small" @click="addStep">{{ ui.t.addStep }}</v-btn>
     </div>
   </div>
 </template>
@@ -272,7 +258,6 @@ async function addStep() {
 <style scoped>
 .step-bar {
   width: 40px;
-  border-radius: 4px 0 0 4px;
   transition: filter 0.15s ease;
   user-select: none;
 }
