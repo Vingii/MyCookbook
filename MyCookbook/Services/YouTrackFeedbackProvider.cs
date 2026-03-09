@@ -119,8 +119,13 @@ namespace MyCookbook.Services
                 return null;
             }
 
-            var tags = await response.Content.ReadFromJsonAsync<YouTrackTag[]>();
-            return tags?.FirstOrDefault(t => string.Equals(t.Name, tagName, StringComparison.OrdinalIgnoreCase))?.Id;
+            var json = await response.Content.ReadAsStringAsync();
+            Log.Debug($"YouTrack tags response: {json}");
+            var tags = System.Text.Json.JsonSerializer.Deserialize<YouTrackTag[]>(json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var match = tags?.FirstOrDefault(t => string.Equals(t.Name, tagName, StringComparison.OrdinalIgnoreCase));
+            Log.Debug($"Resolved tag '{tagName}' -> {match?.Id ?? "null"}");
+            return match?.Id;
         }
 
         private async Task AddAttachmentsToIssue(string issueId, IReadOnlyList<IFormFile> files)
