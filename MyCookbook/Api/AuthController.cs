@@ -13,7 +13,7 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config,
     [HttpGet("me")]
     public IActionResult Me() => Ok(new
     {
-        username = User.Identity?.Name,
+        username = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity?.Name,
         isAuthenticated = User.Identity?.IsAuthenticated == true,
         isGuest = User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) == true
     });

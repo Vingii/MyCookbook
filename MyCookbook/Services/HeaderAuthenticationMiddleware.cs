@@ -36,9 +36,15 @@ public class HeaderAuthenticationHandler(
         if (userId == null)
             return Task.FromResult(AuthenticateResult.NoResult());
 
-        var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId) };
+        // ClaimTypes.Name is used as UserName throughout the app and must match
+        // what was stored in the DB by the old Blazor app (X-Authentik-Uid).
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Name, userId),
+        };
         if (userName != null)
-            claims.Add(new Claim(ClaimTypes.Name, userName));
+            claims.Add(new Claim(ClaimTypes.GivenName, userName));
         if (Request.Headers.TryGetValue("X-Authentik-Email", out var email))
             claims.Add(new Claim(ClaimTypes.Email, email.ToString()));
 

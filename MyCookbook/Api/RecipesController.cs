@@ -13,6 +13,9 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
+    private async Task<string> ResolveUser(string? user) =>
+        user != null ? await db.ResolveUserIdAsync(user) : CurrentUser;
+
     private async Task<bool> ValidateShareAccess(string targetUser, string? shareToken)
     {
         if (targetUser == CurrentUser) return true;
@@ -29,7 +32,7 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
         [FromQuery] string? user,
         [FromQuery] string? shareToken)
     {
-        var targetUser = user ?? CurrentUser;
+        var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var recipes = await db.GetRecipesAsync(targetUser);
 
@@ -61,7 +64,7 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     [HttpGet("random")]
     public async Task<ActionResult<RecipeDto>> GetRandom([FromQuery] string? user, [FromQuery] string? shareToken)
     {
-        var targetUser = user ?? CurrentUser;
+        var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var recipes = await db.GetRecipesAsync(targetUser);
         if (recipes.Count == 0) return NotFound();
@@ -72,7 +75,7 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     [HttpGet("{guid:guid}")]
     public async Task<ActionResult<RecipeDto>> GetById(Guid guid, [FromQuery] string? user, [FromQuery] string? shareToken)
     {
-        var targetUser = user ?? CurrentUser;
+        var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var recipe = await db.GetDetailedRecipeAsync(guid, targetUser);
         if (recipe == null) return NotFound();

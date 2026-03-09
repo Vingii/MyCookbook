@@ -13,6 +13,9 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
+    private async Task<string> ResolveUser(string? user) =>
+        user != null ? await db.ResolveUserIdAsync(user) : CurrentUser;
+
     private async Task<bool> ValidateShareAccess(string targetUser, string? shareToken)
     {
         if (targetUser == CurrentUser) return true;
@@ -28,7 +31,7 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
         [FromQuery] string? user,
         [FromQuery] string? shareToken)
     {
-        var targetUser = user ?? CurrentUser;
+        var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var all = await db.GetPlannedRecipesAsync(targetUser);
         var flat = all.SelectMany(kv => kv.Value);
