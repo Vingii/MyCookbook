@@ -111,9 +111,13 @@ namespace MyCookbook.Services
 
         private async Task<string?> ResolveTagId(string tagName)
         {
-            var url = $"{_baseUrl}/api/tags?fields=id,name&query={Uri.EscapeDataString(tagName)}";
+            var url = $"{_baseUrl}/api/tags?fields=id,name";
             var response = await _client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                Log.Warning($"Failed to fetch YouTrack tags: {response.StatusCode}");
+                return null;
+            }
 
             var tags = await response.Content.ReadFromJsonAsync<YouTrackTag[]>();
             return tags?.FirstOrDefault(t => string.Equals(t.Name, tagName, StringComparison.OrdinalIgnoreCase))?.Id;
