@@ -46,6 +46,7 @@
   </ItemGroup>
 
   <Target Name="BuildFrontend" BeforeTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Exec Command="npm ci" WorkingDirectory="../frontend" />
     <Exec Command="npm run build" WorkingDirectory="../frontend" />
   </Target>
 
