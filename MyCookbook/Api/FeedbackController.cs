@@ -23,7 +23,8 @@ namespace MyCookbook.Api
             if (string.IsNullOrWhiteSpace(message))
                 return BadRequest("Message is required.");
 
-            var userName = User.Identity?.Name ?? "";
+            var userName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                          ?? User.Identity?.Name ?? "";
             await _feedbackProvider.ProvideFeedback(message, files, userName);
             return Ok();
         }
