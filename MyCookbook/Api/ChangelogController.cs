@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MyCookbook.Data;
 using MyCookbook.Services;
 using System.Reflection;
 
@@ -6,19 +8,19 @@ namespace MyCookbook.Api
 {
     [ApiController]
     [Route("api/changelog")]
-    public class ChangelogController : ControllerBase
+    public class ChangelogController(ChangelogService changelogService, CookbookDatabaseService db) : ControllerBase
     {
-        private readonly ChangelogService _changelogService;
+        private string CurrentUser => HttpContext.User.Identity!.Name!;
 
-        public ChangelogController(ChangelogService changelogService)
-        {
-            _changelogService = changelogService;
-        }
+        private static string CurrentVersion => Assembly.GetEntryAssembly()
+            ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion.Split('+').First()
+            ?? "0.0.0";
 
         [HttpGet]
         public async Task<IActionResult> GetEntries()
         {
-            var entries = await _changelogService.GetLatestChangelogEntries(20);
+            var entries = await changelogService.GetLatestChangelogEntries(20);
             return Ok(entries.Select(e => new
             {
                 e.Version,
@@ -28,13 +30,22 @@ namespace MyCookbook.Api
         }
 
         [HttpGet("version")]
-        public IActionResult GetVersion()
+        public IActionResult GetVersion() => Ok(CurrentVersion);
+
+        [HttpGet("lastSeen")]
+        [Authorize(Policy = "CookieOrApiKey")]
+        public async Task<IActionResult> GetLastSeen()
         {
-            var version = Assembly.GetEntryAssembly()
-                ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                ?.InformationalVersion.Split('+').First()
-                ?? "0.0.0";
-            return Ok(version);
+            var value = await db.GetUserPreference("LastSeenVersion", CurrentUser);
+            return Ok(value);
+        }
+
+        [HttpPut("lastSeen")]
+        [Authorize(Policy = "CookieOrApiKey")]
+        public async Task<IActionResult> MarkAsSeen()
+        {
+            await db.UpdateUserPreference("LastSeenVersion", CurrentVersion, CurrentUser);
+            return Ok();
         }
     }
 }

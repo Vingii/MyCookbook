@@ -9,7 +9,7 @@
         {{ ui.locale === 'en' ? 'EN' : 'CS' }}
       </v-btn>
       <v-btn icon="mdi-bug" variant="text" :title="ui.t.bugReport" @click="feedbackOpen = true" />
-      <v-btn icon="mdi-history" variant="text" :title="ui.t.whatsNew" @click="changelogOpen = true" />
+      <v-btn icon="mdi-history" variant="text" :title="ui.t.whatsNew" @click="openChangelogManually" />
       <v-btn variant="text" :to="'/settings'">{{ ui.t.navSettings }}</v-btn>
       <v-btn variant="text" href="/api/auth/logout">{{ ui.t.navLogout }}</v-btn>
     </v-app-bar>
@@ -20,7 +20,7 @@
     </v-main>
 
     <FeedbackDialog v-model="feedbackOpen" />
-    <ChangelogDialog v-model="changelogOpen" />
+    <ChangelogDialog v-model="changelogOpen" :since-version="changelogSinceVersion" />
   </v-app>
 </template>
 
@@ -34,14 +34,23 @@ import ChangelogDialog from './components/ChangelogDialog.vue'
 const ui = useUiStore()
 const feedbackOpen = ref(false)
 const changelogOpen = ref(false)
+const changelogSinceVersion = ref<string | null>(null)
+
+function openChangelogManually() {
+  changelogSinceVersion.value = null
+  changelogOpen.value = true
+}
 
 onMounted(async () => {
   try {
-    const currentVersion = await changelogApi.getVersion()
-    const lastSeen = localStorage.getItem('lastSeenVersion')
+    const [currentVersion, lastSeen] = await Promise.all([
+      changelogApi.getVersion(),
+      changelogApi.getLastSeen(),
+    ])
     if (lastSeen !== currentVersion) {
+      changelogSinceVersion.value = lastSeen
       changelogOpen.value = true
-      localStorage.setItem('lastSeenVersion', currentVersion)
+      await changelogApi.markAsSeen()
     }
   } catch {
     // Ignore changelog version check errors

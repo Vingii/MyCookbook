@@ -1,17 +1,26 @@
 <template>
   <v-dialog :model-value="modelValue" max-width="600" scrollable @update:model-value="$emit('update:modelValue', $event)">
     <v-card>
-      <v-card-title>{{ ui.t.whatsNew }}</v-card-title>
+      <v-card-title class="d-flex align-center justify-space-between">
+        <span>{{ ui.t.whatsNew }}</span>
+        <v-btn
+            icon="mdi-close"
+            variant="text"
+            density="comfortable"
+            @click="$emit('update:modelValue', false)"
+        ></v-btn>
+      </v-card-title>
+
       <v-card-text>
         <div v-if="loading" class="text-center pa-4">
           <v-progress-circular indeterminate color="primary" />
         </div>
         <div v-else>
           <v-card
-            v-for="entry in entries"
-            :key="entry.version"
-            variant="outlined"
-            class="mb-3"
+              v-for="entry in displayEntries"
+              :key="entry.version"
+              variant="outlined"
+              class="mb-3"
           >
             <v-card-title class="text-body-1 font-weight-bold">
               v{{ entry.version }}
@@ -25,20 +34,16 @@
           </v-card>
         </div>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="primary" @click="$emit('update:modelValue', false)">{{ ui.t.close }}</v-btn>
-      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { changelogApi, type ChangelogEntry } from '../api/changelog'
 import { useUiStore } from '../stores/ui'
 
-const props = defineProps<{ modelValue: boolean }>()
+const props = defineProps<{ modelValue: boolean; sinceVersion?: string | null }>()
 defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const ui = useUiStore()
@@ -55,6 +60,21 @@ watch(() => props.modelValue, async (open) => {
     }
   }
 })
+
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) - (pb[i] ?? 0)
+  }
+  return 0
+}
+
+const displayEntries = computed(() =>
+  props.sinceVersion
+    ? entries.value.filter(e => compareVersions(e.version, props.sinceVersion!) > 0)
+    : entries.value
+)
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString(ui.locale === 'cs' ? 'cs-CZ' : 'en-US')

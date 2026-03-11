@@ -9,4 +9,6 @@ export interface ChangelogEntry {
 export const changelogApi = {
   getEntries: () => client.get<ChangelogEntry[]>('/changelog').then((r) => r.data),
   getVersion: () => client.get<string>('/changelog/version').then((r) => r.data),
+  getLastSeen: () => client.get<string | null>('/changelog/lastSeen').then((r) => r.data),
+  markAsSeen: () => client.put('/changelog/lastSeen'),
 }
