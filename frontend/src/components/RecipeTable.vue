@@ -1,47 +1,61 @@
 <template>
-  <v-table hover>
-    <thead>
-      <tr>
-        <th>{{ ui.t.colName }}</th>
-        <th>{{ ui.t.colCategory }}</th>
-        <th>{{ ui.t.colDuration }}</th>
-        <th>{{ ui.t.colLastCooked }}</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr
-        v-for="recipe in recipes"
-        :key="recipe.guid"
-        @click="$router.push(`/recipe/${recipe.guid}`)"
-        style="cursor: pointer;"
-      >
-        <td>{{ recipe.name }}</td>
-        <td>{{ recipe.category }}</td>
-        <td>{{ recipe.durationText }}</td>
-        <td>{{ formatDate(recipe.lastCooked) }}</td>
-        <td @click.stop>
-          <v-btn icon="mdi-content-copy" size="small" variant="text" :title="ui.t.clone" @click="$emit('clone', recipe.guid)" />
-        </td>
-      </tr>
-      <tr v-if="!recipes.length">
-        <td colspan="5" class="text-medium-emphasis pa-4">{{ ui.t.noRecipesFound }}</td>
-      </tr>
-    </tbody>
-  </v-table>
+  <v-data-table
+      :headers="headers"
+      :items="recipes"
+      :hover="true"
+      :no-data-text="ui.t.noRecipesFound"
+      @click:row="onRowClick"
+      class="recipe-table"
+  >
+    <template v-slot:item.lastCooked="{ value }">
+      {{ formatDate(value) }}
+    </template>
+
+    <template v-slot:item.actions="{ item }">
+      <v-btn
+          icon="mdi-content-copy"
+          size="small"
+          variant="text"
+          :title="ui.t.clone"
+          @click.stop="emit('clone', item.guid)"
+      />
+    </template>
+  </v-data-table>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUiStore } from '../stores/ui'
 import type { RecipeDto } from '../api/types'
 
 defineProps<{ recipes: RecipeDto[] }>()
-defineEmits<{ clone: [guid: string] }>()
+
+const emit = defineEmits<{ clone: [guid: string] }>()
 
 const ui = useUiStore()
+const router = useRouter()
+
+const headers = computed(() => [
+  { title: ui.t.colName, key: 'name', sortable: true },
+  { title: ui.t.colCategory, key: 'category', sortable: true },
+  { title: ui.t.colDuration, key: 'durationText', sortable: true },
+  { title: ui.t.colLastCooked, key: 'lastCooked', sortable: true },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+])
 
 function formatDate(d?: string) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString(ui.locale === 'cs' ? 'cs-CZ' : 'en-US')
 }
+
+function onRowClick(_e: MouseEvent, { item }: { item: RecipeDto }) {
+  router.push(`/recipe/${item.guid}`)
+}
 </script>
+
+<style scoped>
+.recipe-table :deep(.v-data-table__tr) {
+  cursor: pointer;
+}
+</style>
