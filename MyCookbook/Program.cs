@@ -40,6 +40,7 @@ namespace MyCookbook
                 builder.Host.UseSerilog(Log.Logger);
 
                 builder.Services.AddTransient<CookbookDatabaseService>();
+                builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>
                     options.UseSqlServer(connectionString + ";MultipleActiveResultSets=True", providerOptions => providerOptions.EnableRetryOnFailure()));

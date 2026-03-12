@@ -6,50 +6,59 @@
 
     <div v-for="(week, wi) in weeks" :key="wi">
       <v-divider v-if="wi > 0" class="my-4" />
-      <div class="d-flex flex-wrap ga-2 mb-2">
-        <div v-for="day in week" :key="day.date" style="flex: 0 0 180px;">
-          <v-card variant="outlined" min-height="120">
-            <v-card-title class="text-body-2 font-weight-bold pb-1">{{ day.label }}</v-card-title>
+
+      <v-row dense>
+        <v-col
+            v-for="day in week"
+            :key="day.date"
+            cols="12"
+            sm="6"
+            md="3"
+        >
+          <v-card variant="outlined" min-height="120" class="fill-height">
+            <v-card-title class="text-body-2 font-weight-bold pb-1">
+              {{ day.label }}
+            </v-card-title>
             <v-card-text class="pt-0">
               <div v-for="plan in getPlansForDate(day.date)" :key="plan.id" class="d-flex align-center mb-1">
                 <router-link :to="`/recipe/${plan.recipeGuid}`" class="text-body-2 flex-grow-1 text-decoration-none">
                   {{ plan.recipeName }}
                 </router-link>
                 <v-btn
-                  :icon="plan.fromFridge ? 'mdi-fridge' : 'mdi-silverware-fork-knife'"
-                  size="x-small"
-                  variant="text"
-                  :color="plan.fromFridge ? 'info' : undefined"
-                  :title="plan.fromFridge ? 'From fridge' : 'Cook'"
-                  @click="toggleFromFridge(plan)"
+                    :icon="plan.fromFridge ? 'mdi-fridge' : 'mdi-silverware-fork-knife'"
+                    size="x-small"
+                    variant="text"
+                    :color="plan.fromFridge ? 'info' : undefined"
+                    :title="plan.fromFridge ? 'From fridge' : 'Cook'"
+                    @click="toggleFromFridge(plan)"
                 />
                 <v-btn
-                  v-if="!readonly"
-                  icon="mdi-content-copy"
-                  size="x-small"
-                  variant="text"
-                  :title="ui.t.cloneToNextDay"
-                  @click="cloneToNextDay(plan)"
+                    v-if="!readonly"
+                    icon="mdi-content-copy"
+                    size="x-small"
+                    variant="text"
+                    :title="ui.t.cloneToNextDay"
+                    @click="cloneToNextDay(plan)"
                 />
                 <v-btn
-                  v-if="!readonly"
-                  icon="mdi-close"
-                  size="x-small"
-                  variant="text"
-                  @click="deletePlan(plan.id)"
+                    v-if="!readonly"
+                    icon="mdi-close"
+                    size="x-small"
+                    variant="text"
+                    @click="deletePlan(plan.id)"
                 />
               </div>
               <v-btn
-                v-if="!readonly"
-                size="small"
-                variant="text"
-                prepend-icon="mdi-plus"
-                @click="openAddDialog(day.date)"
+                  v-if="!readonly"
+                  size="small"
+                  variant="text"
+                  prepend-icon="mdi-plus"
+                  @click="openAddDialog(day.date)"
               >{{ ui.t.add }}</v-btn>
             </v-card-text>
           </v-card>
-        </div>
-      </div>
+        </v-col>
+      </v-row>
     </div>
 
     <!-- Add recipe dialog -->
