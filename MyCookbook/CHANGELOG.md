@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Step duration now defaults to minutes.
 - Switched ingredient name and amount order.
+- Improved Enter behavior in ingredient / step edit boxes.
+- Removed step type and duration boxes from edit mode.
 
 ### Fixed
 - Fixed tablet recipe view layout.
