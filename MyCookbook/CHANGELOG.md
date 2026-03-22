@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed tablet recipe view layout.
+- Fixed recipe view displaying old values after closing edit mode.
 
 ## [2.0.4] - 2026-03-12
 ### Added

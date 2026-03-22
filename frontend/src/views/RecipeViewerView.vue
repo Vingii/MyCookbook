@@ -24,7 +24,7 @@
         </div>
       </v-col>
       <v-col v-if="!readonly" cols="auto" class="d-flex ga-2">
-        <v-btn v-if="editingMeta" icon="mdi-check" size="small" variant="text" color="primary" @click="editingMeta = false" />
+        <v-btn v-if="editingMeta" icon="mdi-check" size="small" variant="text" color="primary" @click="editingMeta = false; loadRecipe()" />
         <v-btn variant="outlined" prepend-icon="mdi-share-variant" @click="shareRecipe">{{ ui.t.shareRecipe }}</v-btn>
         <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.clone }}</v-btn>
         <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">{{ ui.t.delete }}</v-btn>
