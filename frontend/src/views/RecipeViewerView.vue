@@ -102,11 +102,11 @@
     </div>
 
     <v-row>
-      <v-col cols="12" md="5">
+      <v-col cols="12" lg="5">
         <h2 class="text-h6 mb-2">{{ ui.t.ingredients }}</h2>
         <IngredientList :guid="guid" :ingredients="recipe.ingredients" :readonly="readonly" @refresh="loadRecipe" />
       </v-col>
-      <v-col cols="12" md="7">
+      <v-col cols="12" lg="7">
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
         <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" :highlight-words="highlightWords" @refresh="loadRecipe" />
       </v-col>
