@@ -3,6 +3,15 @@
     <div v-for="ing in sorted" :key="ing.id" class="d-flex align-start ga-2 mb-1">
       <template v-if="!readonly && editingIngredients.has(ing.id)">
         <v-text-field
+            :model-value="editValues[ing.id]?.name"
+            density="compact"
+            hide-details
+            variant="outlined"
+            class="flex-grow-1"
+            @update:model-value="(v: string) => setName(ing.id, v)"
+            @blur="saveIngredient(ing)"
+        />
+        <v-text-field
           :model-value="editValues[ing.id]?.amount"
           density="compact"
           hide-details
@@ -10,15 +19,6 @@
           :placeholder="ui.t.amountPlaceholder"
           style="max-width: 90px;"
           @update:model-value="(v: string) => setAmount(ing.id, v)"
-          @blur="saveIngredient(ing)"
-        />
-        <v-text-field
-          :model-value="editValues[ing.id]?.name"
-          density="compact"
-          hide-details
-          variant="outlined"
-          class="flex-grow-1"
-          @update:model-value="(v: string) => setName(ing.id, v)"
           @blur="saveIngredient(ing)"
         />
       </template>
@@ -31,14 +31,14 @@
           @click="toggleCheck(ing.id)"
         />
         <span
-          class="text-medium-emphasis text-center"
-          style="min-width: 90px;"
-          :class="{ 'text-decoration-line-through': checked.has(ing.id) }"
-        >{{ ing.amount || '' }}</span>
-        <span
           class="flex-grow-1"
           :class="{ 'text-decoration-line-through text-medium-emphasis': checked.has(ing.id) }"
         >{{ ing.name }}</span>
+        <span
+            class="text-medium-emphasis text-center"
+            style="min-width: 90px;"
+            :class="{ 'text-decoration-line-through': checked.has(ing.id) }"
+        >{{ ing.amount || '' }}</span>
       </template>
       <template v-if="!readonly">
         <v-btn
@@ -56,14 +56,6 @@
 
     <div v-if="!readonly" class="d-flex align-center ga-2 mt-3">
       <v-text-field
-        v-model="newAmount"
-        :placeholder="ui.t.amountPlaceholder"
-        density="compact"
-        hide-details
-        variant="outlined"
-        style="max-width: 90px;"
-      />
-      <v-text-field
         v-model="newName"
         :placeholder="ui.t.ingredientNamePlaceholder"
         density="compact"
@@ -71,6 +63,14 @@
         variant="outlined"
         class="flex-grow-1"
         @keyup.enter="addIngredient"
+      />
+      <v-text-field
+          v-model="newAmount"
+          :placeholder="ui.t.amountPlaceholder"
+          density="compact"
+          hide-details
+          variant="outlined"
+          style="max-width: 90px;"
       />
       <v-btn color="primary" size="small" @click="addIngredient">{{ ui.t.addIngredient }}</v-btn>
     </div>

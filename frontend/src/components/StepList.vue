@@ -161,7 +161,7 @@ function parseDuration(input: string): number {
   if (m?.[1]) total += parseInt(m[1]) * 60
   if (s?.[1]) total += parseInt(s[1])
   if (total === 0) {
-    const n = parseInt(input)
+    const n = parseInt(input) * 60
     if (!isNaN(n)) return n
   }
   return total
