@@ -2,8 +2,9 @@
   <div>
     <div v-for="ing in sorted" :key="ing.id" class="d-flex align-start ga-2 mb-1">
       <template v-if="!readonly && editingIngredients.has(ing.id)">
-        <v-text-field
+        <v-combobox
             :model-value="editValues[ing.id]?.name"
+            :items="store.ingredientNames"
             density="compact"
             hide-details
             variant="outlined"
@@ -55,8 +56,9 @@
     </div>
 
     <div v-if="!readonly" class="d-flex align-center ga-2 mt-3">
-      <v-text-field
+      <v-combobox
         v-model="newName"
+        :items="store.ingredientNames"
         :placeholder="ui.t.ingredientNamePlaceholder"
         density="compact"
         hide-details
@@ -78,15 +80,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { recipesApi } from '../api/recipes'
 import { useUiStore } from '../stores/ui'
+import { useRecipesStore } from '../stores/recipes'
 import type { IngredientDto } from '../api/types'
 
 const props = defineProps<{ guid: string; ingredients: IngredientDto[]; readonly?: boolean }>()
 const emit = defineEmits<{ refresh: [] }>()
 
 const ui = useUiStore()
+const store = useRecipesStore()
+
+onMounted(() => {
+  if (store.ingredientNames.length === 0) store.fetchIngredientNames()
+})
 const sorted = computed(() => [...props.ingredients].sort((a, b) => a.order - b.order))
 const newName = ref('')
 const newAmount = ref('')

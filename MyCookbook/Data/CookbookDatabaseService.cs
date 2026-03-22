@@ -477,6 +477,18 @@ namespace MyCookbook.Data
             return true;
         }
 
+        public async Task<List<string>> GetAllIngredientNamesAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            return await context.Ingredients
+                .Where(i => i.UserName == user && i.Name != null)
+                .Select(i => i.Name)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToListAsync();
+        }
+
         public async Task<Ingredient> CreateIngredientAsync(Ingredient ingredient, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());

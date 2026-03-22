@@ -12,7 +12,7 @@
     </v-row>
 
     <v-row class="mb-4">
-      <v-col cols="12" sm="4">
+      <v-col cols="12" sm="6" md="3">
         <v-text-field
           v-model="search"
           :placeholder="ui.t.searchPlaceholder"
@@ -21,11 +21,11 @@
           hide-details
           variant="outlined"
           clearable
-          @input="applyFilters"
+          @input="onSearchInput"
           @click:clear="onSearchClear"
         />
       </v-col>
-      <v-col cols="12" sm="4">
+      <v-col cols="12" sm="6" md="3">
         <v-autocomplete
           v-model="category"
           :items="categories"
@@ -38,7 +38,7 @@
           @update:model-value="applyFilters"
         />
       </v-col>
-      <v-col cols="12" sm="4">
+      <v-col cols="12" sm="6" md="3">
         <v-autocomplete
           v-model="tag"
           :items="tags"
@@ -51,9 +51,24 @@
           @update:model-value="applyFilters"
         />
       </v-col>
+      <v-col cols="12" sm="6" md="3">
+        <v-autocomplete
+          v-model="selectedIngredients"
+          :items="store.ingredientNames"
+          :placeholder="ui.t.ingredientFilterPlaceholder"
+          prepend-inner-icon="mdi-food-apple-outline"
+          density="compact"
+          hide-details
+          variant="outlined"
+          multiple
+          clearable
+          chips
+          closable-chips
+        />
+      </v-col>
     </v-row>
 
-    <RecipeTable :recipes="store.recipes" @clone="handleClone" />
+    <RecipeTable :recipes="filteredRecipes" @clone="handleClone" />
   </div>
 </template>
 
@@ -73,6 +88,7 @@ const { viewingUser, shareToken, readonly } = useReadonly()
 const search = ref('')
 const category = ref<string | null>(null)
 const tag = ref<string | null>(null)
+const selectedIngredients = ref<string[]>([])
 
 const categories = computed(() =>
   [...new Set(store.recipes.map((r) => r.category).filter(Boolean))].sort() as string[]
@@ -80,8 +96,19 @@ const categories = computed(() =>
 const tags = computed(() =>
   [...new Set(store.recipes.flatMap((r) => r.tags ?? []))].sort()
 )
+const filteredRecipes = computed(() => {
+  if (selectedIngredients.value.length === 0) return store.recipes
+  return store.recipes.filter((r) =>
+    selectedIngredients.value.some((ing) =>
+      r.ingredients.some((i) => i.name.toLowerCase() === ing.toLowerCase())
+    )
+  )
+})
 
-onMounted(() => store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value }))
+onMounted(() => {
+  store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value })
+  store.fetchIngredientNames()
+})
 
 function applyFilters() {
   store.fetchAll({
@@ -93,7 +120,15 @@ function applyFilters() {
   })
 }
 
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function onSearchInput() {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(applyFilters, 200)
+}
+
 function onSearchClear() {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
   search.value = ''
   applyFilters()
 }
