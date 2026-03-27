@@ -5,27 +5,18 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-MyCookbook-94a01692-2198-4064-8628-81c676655f3a</UserSecretsId>
-    <PackageProjectUrl>https://localhost:44390</PackageProjectUrl>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-	<Version>2.0.5</Version>
+    <SpaRoot>..\frontend\</SpaRoot>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
+    <Version>2.0.6</Version>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="CHANGELOG.md" />
-  </ItemGroup>
 
   <ItemGroup>
     <Content Include="CHANGELOG.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-      
-<ItemGroup>
-  <Content Update="wwwroot\**">
-    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-  </Content>
-</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="EfCore.SchemaCompare" Version="8.0.4" />
@@ -44,10 +35,4 @@
     <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.0" />
     <PackageReference Include="System.Resources.ResourceManager" Version="4.3.0" />
   </ItemGroup>
-
-  <Target Name="BuildFrontend" BeforeTargets="Build" Condition="'$(Configuration)' == 'Release'">
-    <Exec Command="npm ci" WorkingDirectory="../frontend" />
-    <Exec Command="npm run build" WorkingDirectory="../frontend" />
-  </Target>
-
 </Project>
