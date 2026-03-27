@@ -7,7 +7,7 @@ RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet restore "MyCookbook/MyCookbook.csproj"
 
 # Stage 2: Frontend Build
-FROM node:20-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 WORKDIR /src/frontend
 COPY frontend/package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
