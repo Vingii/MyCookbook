@@ -1,10 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.Extensions.Localization;
-using MyCookbook.Components.Account;
-using MyCookbook.Data;
+using Microsoft.AspNetCore.Authentication;
 using MyCookbook.Services;
 
 namespace MyCookbook
@@ -18,77 +12,27 @@ namespace MyCookbook
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
                 var client = httpClientFactory.CreateClient();
 
-                return new YouTrackFeedbackProvider(client, config["YouTrack:BaseUrl"], config["YouTrack:Token"], config["YouTrack:ProjectId"]);
+                var channel = config["Cookbook:Channel"];
+                return new YouTrackFeedbackProvider(client, config["YouTrack:BaseUrl"], config["YouTrack:Token"], config["YouTrack:ProjectId"], channel: channel);
             });
         }
 
-        public static void AddCultureLocalization(this IServiceCollection services, ConfigurationManager config)
+        public static void AddApiKeyAuth(this IServiceCollection services)
         {
+            services.AddTransient<ApiTokenService>();
+            services.AddAuthentication("HeaderAuth")
+                .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("HeaderAuth", _ => { })
+                .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", _ => { });
 
-            var cultureProvider = new CultureProvider("en", config.GetSection("SupportedCultures").Get<string[]>() ?? new string[] { "en" });
-            services.AddLocalization(options => options.ResourcesPath = "LanguageResources");
-            services.AddScoped<LanguageNotifier>();
-            services.AddSingleton(cultureProvider);
-            services.AddScoped(typeof(IStringLocalizer<>), typeof(CookbookStringLocalizer<>));
-            services.Configure<RequestLocalizationOptions>(options =>
-            {
-                options.AddSupportedCultures(cultureProvider.SupportedCultures);
-                options.AddSupportedUICultures(cultureProvider.SupportedCultures);
-                options.RequestCultureProviders = new List<IRequestCultureProvider>()
-                    {
-                        cultureProvider
-                    };
-            });
-        }
-        
-        public static void AddAuth(this IServiceCollection services, IConfiguration config, bool isDev)
-        {
-            services.AddCascadingAuthenticationState();
-            services.AddScoped<IdentityUserAccessor>();
-            services.AddScoped<IdentityRedirectManager>();
-
-            services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-            Action<IdentityOptions> identityOptions = isDev
-                ? options =>
-                    {
-                        options.Password.RequireDigit = false;
-                        options.Password.RequireLowercase = false;
-                        options.Password.RequireNonAlphanumeric = false;
-                        options.Password.RequireUppercase = false;
-                        options.Password.RequiredLength = 1;
-                        options.Password.RequiredUniqueChars = 1;
-                        options.SignIn.RequireConfirmedEmail = false;
-                        options.SignIn.RequireConfirmedAccount = false;
-                    }
-            : options =>
-                {
-                    options.Password.RequireDigit = false;
-                    options.Password.RequireLowercase = false;
-                    options.Password.RequireNonAlphanumeric = false;
-                    options.Password.RequireUppercase = false;
-                    options.Password.RequiredLength = 8;
-                    options.Password.RequiredUniqueChars = 1;
-                    options.SignIn.RequireConfirmedAccount = true;
-                };
-
-            services.AddIdentity<ApplicationUser, IdentityRole>(identityOptions)
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddSignInManager()
-                .AddDefaultTokenProviders();
-
-            services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-                })
-               .AddCookie("Cookies");
-
-            if (isDev)
-            {
-                services.AddTransient<IEmailSender, MailgunEmailSender>();
-            }
-            services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+            services.AddAuthorizationBuilder()
+                .AddPolicy("CookieOrApiKey", policy =>
+                    policy.RequireAuthenticatedUser()
+                          .AddAuthenticationSchemes("HeaderAuth", "ApiKey"))
+                .AddPolicy("NotGuest", policy =>
+                    policy.RequireAuthenticatedUser()
+                          .AddAuthenticationSchemes("HeaderAuth", "ApiKey")
+                          .RequireAssertion(ctx =>
+                              ctx.User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) != true));
         }
     }
 }

@@ -191,6 +191,36 @@ namespace MyCookbook.Data
             return true;
         }
 
+        public async Task UpdateLastCookedForPlannedDateAsync(DateOnly date)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+
+            var pairs = await context.PlannedRecipes
+                .Where(x => x.Date == date)
+                .Select(x => new { x.RecipeId, x.UserName })
+                .Distinct()
+                .ToListAsync();
+
+            if (pairs.Count == 0) return;
+
+            var recipeIds = pairs.Select(p => p.RecipeId).Distinct().ToList();
+            var recipes = await context.Recipes
+                .Where(r => recipeIds.Contains(r.Id))
+                .ToListAsync();
+
+            var asDateTime = date.ToDateTime(TimeOnly.MinValue);
+            var recipeById = recipes.ToDictionary(r => r.Id);
+
+            foreach (var pair in pairs)
+            {
+                if (recipeById.TryGetValue(pair.RecipeId, out var recipe) && recipe.UserName == pair.UserName)
+                    recipe.LastCooked = asDateTime;
+            }
+
+            await context.SaveChangesAsync();
+        }
+
         public async Task<bool> DeleteRecipeAsync(Recipe recipe, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
@@ -447,6 +477,18 @@ namespace MyCookbook.Data
             return true;
         }
 
+        public async Task<List<string>> GetAllIngredientNamesAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            return await context.Ingredients
+                .Where(i => i.UserName == user && i.Name != null)
+                .Select(i => i.Name)
+                .Distinct()
+                .OrderBy(n => n)
+                .ToListAsync();
+        }
+
         public async Task<Ingredient> CreateIngredientAsync(Ingredient ingredient, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
@@ -604,6 +646,15 @@ namespace MyCookbook.Data
             var context = await GetContext();
             var preference = await context.UserPreferences.Where(x => x.UserName == user && x.Key == key).AsNoTracking().FirstOrDefaultAsync();
             return preference?.Value;
+        }
+
+        public async Task<string> ResolveUserIdAsync(string displayNameOrId)
+        {
+            var context = await GetContext();
+            var match = await context.UserPreferences
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Key == "DisplayName" && p.Value == displayNameOrId);
+            return match?.UserName ?? displayNameOrId;
         }
 
         public async Task<string> Export(string user)

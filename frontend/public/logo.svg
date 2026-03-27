@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+  <!-- Modern SVG styling with Dark Mode detection -->
+  <style>
+    .brand-stroke { stroke: #594AE2; }
+    .brand-fill { fill: #594AE2; }
+
+    /* Dynamically swaps to a high-contrast purple if the browser is in Dark Mode */
+    @media (prefers-color-scheme: dark) {
+    .brand-stroke { stroke: #7C6FF0; }
+    .brand-fill { fill: #7C6FF0; }
+    }
+  </style>
+
+  <!-- Solid white cover background -->
+  <path d="M 6.5 22 A 2.5 2.5 0 0 1 4 19.5 V 4.5 A 2.5 2.5 0 0 1 6.5 2 H 17.5 A 2.5 2.5 0 0 1 20 4.5 V 22 Z" fill="#FFFFFF" stroke="none" />
+
+  <!-- Bottom Pages Shading -->
+  <path d="M 4 19.5 A 2.5 2.5 0 0 1 6.5 17 H 20 V 22 H 6.5 A 2.5 2.5 0 0 1 4 19.5 Z" class="brand-fill" fill-opacity="0.15" stroke="none" />
+
+  <!-- Outer lines and inner details -->
+  <g class="brand-stroke" stroke-width="2.5">
+    <path d="M 6.5 22 A 2.5 2.5 0 0 1 4 19.5 V 4.5 A 2.5 2.5 0 0 1 6.5 2 H 17.5 A 2.5 2.5 0 0 1 20 4.5 V 22 Z" />
+    <path d="M 4 19.5 A 2.5 2.5 0 0 1 6.5 17 H 20" />
+    <line x1="9" y1="7.5" x2="15" y2="7.5" />
+    <line x1="9" y1="11.5" x2="15" y2="11.5" />
+  </g>
+</svg>

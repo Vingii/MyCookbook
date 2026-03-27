@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-
-namespace MyCookbook.Services
+﻿namespace MyCookbook.Services
 {
     public interface IFeedbackProvider
     {
-        Task ProvideFeedback(string feedback, IReadOnlyList<IBrowserFile>? files, string reportingUserName = "");
+        Task ProvideFeedback(string feedback, IReadOnlyList<IFormFile>? files = null, string reportingUserName = "");
     }
 }

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
-using MudBlazor.Services;
-using MyCookbook.Components;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.StaticFiles;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Services;
@@ -19,35 +19,28 @@ namespace MyCookbook
 
             var config = builder.Configuration;
 
-            string lokiUri = builder.Configuration["LOKI_URI"] ?? "http://localhost:3100";
-
             try
             {
                 // Add services to the container.
                 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-                builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
-                builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-                builder.Services.AddRazorPages();
-                builder.Services.AddRazorComponents()
-                    .AddInteractiveServerComponents();
-                builder.Services.AddServerSideBlazor();
-                builder.Services.AddMudServices();
+                builder.Services.AddControllers()
+                    .AddJsonOptions(o =>
+                    {
+                        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    });
                 builder.Services.AddHttpClient();
                 builder.Services.AddHttpContextAccessor();
 
                 builder.Services.AddSingleton<ChangelogService>();
                 builder.Services.AddFeedbackProvider(config);
-                builder.Services.AddSingleton<ILanguageDictionary, MemoryLanguageDictionary>();
-                builder.Services.AddCultureLocalization(config);
-                builder.Services.AddAuth(config, builder.Environment.IsDevelopment());
-                builder.Services.AddScoped<UserSettings>();
+                builder.Services.AddApiKeyAuth();
 
                 Log.Logger = BuildLogger(config);
                 builder.Host.UseSerilog(Log.Logger);
 
                 builder.Services.AddTransient<CookbookDatabaseService>();
+                builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>
                     options.UseSqlServer(connectionString + ";MultipleActiveResultSets=True", providerOptions => providerOptions.EnableRetryOnFailure()));
@@ -74,60 +67,70 @@ namespace MyCookbook
                     return next();
                 });
 
-                using (var scope = app.Services.CreateScope())
+                var migrationAttempts = 0;
+                while (true)
                 {
+                    using var scope = app.Services.CreateScope();
                     var services = scope.ServiceProvider;
                     try
                     {
                         var cookbookDbContext = services.GetRequiredService<CookbookDatabaseContext>();
                         if (cookbookDbContext.Database.IsRelational())
-                        {
                             cookbookDbContext.Database.Migrate();
-                        }
-                        var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
-                        if (applicationDbContext.Database.IsRelational())
-                        {
-                            applicationDbContext.Database.Migrate();
-                        }
+                        break;
+                    }
+                    catch (Exception ex) when (migrationAttempts++ < 5)
+                    {
+                        Log.Warning(ex, "Migration attempt {Attempt} failed, retrying in 5s...", migrationAttempts);
+                        Thread.Sleep(5000);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "An error occurred while migrating the database.");
-                        throw; 
+                        throw;
                     }
                 }
 
-                if (app.Environment.IsDevelopment())
+                if (!app.Environment.IsDevelopment())
                 {
-                    app.UseMigrationsEndPoint();
-                }
-                else
-                {
-                    app.UseExceptionHandler("/Error");
+                    app.UseExceptionHandler("/error");
                     app.UseHsts();
                 }
-
-                app.UseRequestLocalization();
 
                 app.UseSerilogRequestLogging();
 
                 app.UseRouting();
 
-                app.UseStaticFiles();
+                var provider = new FileExtensionContentTypeProvider();
+                provider.Mappings[".jsonl"] = "application/jsonlines+json"; 
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    ContentTypeProvider = provider
+                });
 
                 app.UseAuthentication();
-                app.UseMiddleware<HeaderAuthenticationMiddleware>();
                 app.UseAuthorization();
-                app.UseAntiforgery();
 
-                app.MapRazorComponents<App>()
-                    .AddInteractiveServerRenderMode();
-                app.MapBlazorHub().WithOrder(-1);
+                // Persist display name so ?user= share links can use it instead of raw UID
+                app.Use(async (context, next) =>
+                {
+                    var uid = context.User.Identity?.Name;
+                    var displayName = context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
+                    if (uid != null && displayName != null)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            using var scope = context.RequestServices.CreateScope();
+                            var db = scope.ServiceProvider.GetRequiredService<CookbookDatabaseService>();
+                            await db.UpdateUserPreference("DisplayName", displayName, uid);
+                        });
+                    }
+                    await next();
+                });
 
                 app.MapControllers();
                 app.MapMethods("/", [HttpMethods.Head], () => Results.StatusCode(200));
-
-                app.MapAdditionalIdentityEndpoints();
+                app.MapFallbackToFile("index.html");
 
                 app.Run();
             }

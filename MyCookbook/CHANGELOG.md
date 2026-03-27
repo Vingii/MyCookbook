@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.5] - 2026-03-22
+### Added
+- Added ingredient filtering.
+- Added ingredient name autocomplete.
+
+### Changed
+- Step duration now defaults to minutes.
+- Switched ingredient name and amount order.
+- Improved Enter behavior in ingredient / step edit boxes.
+- Removed step type and duration boxes from edit mode.
+
+### Fixed
+- Fixed tablet recipe view layout.
+- Fixed recipe view displaying old values after closing edit mode.
+
+## [2.0.4] - 2026-03-12
+### Added
+- "Last cooked" date is now (also) based on meal planner.
+
+### Changed
+- Meal planner column count reduced to 4.
+- Updated icon.
+
+## [2.0.3] - 2026-03-11
+### Added
+- Added recipe table sorting.
+
+### Fixed
+- Changelog now only shows new changes.
+
+## [2.0.2] - 2026-03-11
+### Changed
+- Made dark mode background lighter.
+
+## [2.0.1] - 2026-03-09
+### Changed
+- Made dark mode background lighter.
+
+## [2.0.0] - 2026-03-09
+### Added
+- Created API.
+
+### Changed
+- New UI framework (Vue).
+
 ## [1.5.2] - 2026-03-07
 ### Fixed
 - Fixed step duration input.
