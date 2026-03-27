@@ -21,10 +21,18 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore & Test
         run: |
           dotnet restore MyCookbook.sln
-          dotnet test MyCookbook.Test/MyCookbook.Test.csproj -c Release
+          dotnet test MyCookbook.Test/MyCookbook.Test.csproj -c Release --no-restore
 
       - name: Extract version
         id: prep
@@ -35,7 +43,6 @@ jobs:
             TAGS="${{ env.DOCKER_IMAGE_NAME }}:beta"
           fi
           echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,11 +54,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: MyCookbook/Dockerfile
           push: true
           tags: ${{ steps.prep.outputs.tags }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
