@@ -43,7 +43,7 @@ namespace MyCookbook
                 builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>
-                    options.UseSqlServer(connectionString + ";MultipleActiveResultSets=True", providerOptions => providerOptions.EnableRetryOnFailure()));
+                    options.UseNpgsql(connectionString, providerOptions => providerOptions.EnableRetryOnFailure()));
 
                 builder.Services.Configure<ForwardedHeadersOptions>(options =>
                 {

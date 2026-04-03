@@ -6,7 +6,7 @@ services:
     container_name: mycookbook
     image: localhost/mycookbook:latest
     environment:
-      - ConnectionStrings__DefaultConnection=Server=db;Database=MyCookbookDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Host=db;Database=MyCookbookDb;Username=postgres;Password=${SA_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -18,28 +18,27 @@ services:
       - .env
 
   db:
-    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    image: postgres:16
     container_name: mycookbook-db
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=${SA_PASSWORD}
+      - POSTGRES_PASSWORD=${SA_PASSWORD}
+      - POSTGRES_DB=MyCookbookDb
+      - POSTGRES_USER=postgres
     healthcheck:
-      test: [ "CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD}", "-Q", "SELECT 1", "-C"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
     volumes:
-      - mssql-data:/var/opt/mssql
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - mycookbook-network
-    env_file:
-      - .env
 
 networks:
   mycookbook-network:
     driver: bridge
 
 volumes:
-  mssql-data:
+  postgres-data:
     driver: local

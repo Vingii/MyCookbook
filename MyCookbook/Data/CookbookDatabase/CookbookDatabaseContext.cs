@@ -36,7 +36,7 @@ namespace MyCookbook.Data.CookbookDatabase
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.Order).HasDefaultValueSql("((1))");
+                entity.Property(e => e.Order).HasDefaultValueSql("1");
 
                 entity.Property(e => e.UserName)
                     .IsRequired()
@@ -45,8 +45,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Ingredients)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.ClientCascade)
-                    .HasConstraintName("FK__Ingredien__Recip__5EBF139D");
+                    .OnDelete(DeleteBehavior.ClientCascade);
             });
 
             modelBuilder.Entity<Recipe>(entity =>
@@ -62,7 +61,7 @@ namespace MyCookbook.Data.CookbookDatabase
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.Servings).HasDefaultValueSql("((1))");
+                entity.Property(e => e.Servings).HasDefaultValueSql("1");
 
                 entity.Property(e => e.UserName).IsRequired();
             });
@@ -76,8 +75,7 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Steps)
                     .HasForeignKey(d => d.RecipeId)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__Steps__RecipeId__5BE2A6F2");
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<FavoriteRecipe>(entity =>
