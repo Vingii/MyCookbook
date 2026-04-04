@@ -1,0 +1,14 @@
+{
+  "name": "mycookbook-e2e",
+  "private": true,
+  "scripts": {
+    "test": "bddgen && playwright test",
+    "test:ui": "bddgen && playwright test --ui",
+    "codegen": "playwright codegen http://localhost:8080"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "playwright-bdd": "^8.2.0",
+    "typescript": "~5.9.3"
+  }
+}

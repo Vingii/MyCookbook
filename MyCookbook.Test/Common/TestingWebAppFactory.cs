@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MyCookbook.Data.CookbookDatabase;
@@ -36,6 +37,7 @@ namespace MyCookbook.Test.Common
                 services.AddDbContextFactory<CookbookDatabaseContext>(options =>
                 {
                     options.UseInMemoryDatabase($"InMemoryCookbookDbForTesting{dbGuid}");
+                    options.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
                 });
 
                 services.AddTransient(_ => new TestDbContextFactory());

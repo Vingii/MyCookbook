@@ -1,16 +1,6 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Build & Run
 
 ```bash
-# Build the backend
-dotnet build
-
-# Run the web app (requires SQL Server - see docker-compose.yml)
-dotnet run --project MyCookbook
-
 # Run all tests
 dotnet test
 
@@ -22,12 +12,6 @@ dotnet test MyCookbook.Test --filter "FullyQualifiedName~RecipeTableTests.SomeTe
 
 # Build and run with Podman Compose (includes SQL Server)
 podman compose up --build
-
-# Frontend dev mode (proxies /api to localhost:5000)
-cd frontend && npm run dev   # http://localhost:5173
-
-# Build frontend for production (outputs to MyCookbook/wwwroot/)
-cd frontend && npm run build
 ```
 
 ## Architecture
@@ -113,12 +97,6 @@ There is no local login/register. All auth is external:
 
 Policy `"CookieOrApiKey"` accepts either HeaderAuth or API key. Login/logout redirect to `/api/auth/logout` and trigger a page reload.
 
-### Testing
-
-Tests use:
-- `TestingWebAppFactory` replaces SQL Server with EF Core InMemory (unique DB per test via Guid)
-- Moq + RichardSzalay.MockHttp for mocking
-
 ### Logging
 
 Serilog with Console and Grafana Loki sinks.
@@ -140,4 +118,74 @@ Serilog with Console and Grafana Loki sinks.
 
 ## Versioning
 
-Version is set in `MyCookbook/MyCookbook.csproj` as `<Version>`. The project follows [Semantic Versioning](https://semver.org/). All changes are documented in `MyCookbook/CHANGELOG.md` using the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. When releasing, update both the `<Version>` in the `.csproj` and add an entry to `CHANGELOG.md`.
+Version is set in `MyCookbook/MyCookbook.csproj` as `<Version>`. The project follows [Semantic Versioning](https://semver.org/). All changes are documented in `MyCookbook/CHANGELOG.md` using the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. When adding a feature, update both the `<Version>` in the `.csproj` and add an entry to `CHANGELOG.md`.
+
+## Testing and Coverage
+
+**After implementing a feature or fixing a bug, run coverage to verify the affected code is tested.**
+
+### Backend
+
+```bash
+# Run tests with coverage (outputs Cobertura XML to MyCookbook.Test/TestResults/)
+dotnet test --collect:"XPlat Code Coverage"
+
+# Optional: generate an HTML report (one-time global install)
+dotnet tool install -g dotnet-reportgenerator-globaltool
+reportgenerator \
+  -reports:"MyCookbook.Test/TestResults/**/coverage.cobertura.xml" \
+  -targetdir:"coverage-report" \
+  -reporttypes:Html
+# Then open coverage-report/index.html
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage (outputs to frontend/coverage/)
+npm run test:coverage
+```
+
+### Known test limitations
+
+- `DEV_AUTO_LOGIN=devuser` is always active in the Development environment used by `TestingWebAppFactory`, so testing 401 responses requires a separate factory subclass that overrides this config key.
+- EF Core InMemory does not enforce relational constraints, so referential integrity bugs will not be caught in integration tests.
+- `CookbookDatabaseService.AddTag()` has a known bug (missing `SaveChangesAsync`); `TagsController` works around this directly.
+
+## E2E Tests
+
+E2E tests use [Playwright](https://playwright.dev/) with [`playwright-bdd`](https://vitalets.github.io/playwright-bdd/) (Gherkin `.feature` files). The full stack must be running first.
+
+```bash
+# Start the app (if not already running)
+podman compose up --build -d
+
+# Install dependencies (first time only)
+cd e2e
+npm install
+npx playwright install --with-deps chromium
+
+# Run all E2E tests
+npm test
+
+# Open Playwright UI debugger
+npm run test:ui
+
+# Open codegen to inspect live selectors
+npm run codegen
+```
+
+Feature files live in `e2e/features/`, step definitions in `e2e/steps/`.
+`playwright-bdd` generates Playwright test files into `e2e/.features-gen/` (gitignored) — rebuilt automatically on each `npm test`.
+
+Auth is handled automatically via `DEV_AUTO_LOGIN=devuser` (set in `.env`). Each scenario creates its own recipe data via the REST API and cleans it up after.
+
+**If a selector breaks**, run `npm run codegen` against the running app to find the correct locator — Vuetify's generated DOM can be verbose.

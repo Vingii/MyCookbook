@@ -29,10 +29,53 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Restore & Test
         run: |
           dotnet restore MyCookbook.sln
           dotnet test MyCookbook.Test/MyCookbook.Test.csproj -c Release --no-restore
+
+      - name: Frontend Test
+        run: |
+          cd frontend
+          npm ci
+          npm test
+
+      - name: Set up E2E Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E deps
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Start stack for E2E
+        run: |
+          docker compose up --build -d
+          timeout 90 bash -c 'until curl -sf http://localhost:8080/api/auth/me; do sleep 3; done'
+
+      - name: Run E2E tests
+        working-directory: e2e
+        run: npm test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
 
       - name: Extract version
         id: prep
