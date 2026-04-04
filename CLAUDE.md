@@ -122,36 +122,47 @@ Version is set in `MyCookbook/MyCookbook.csproj` as `<Version>`. The project fol
 
 ## Testing and Coverage
 
-**After implementing a feature or fixing a bug, run coverage to verify the affected code is tested.**
+**After finishing any implementation, Claude must run both test suites with coverage and print the results as a coverage table.**
 
-### Backend
+To do this, run the following commands and then display a summary table of the output:
 
 ```bash
-# Run tests with coverage (outputs Cobertura XML to MyCookbook.Test/TestResults/)
-dotnet test --collect:"XPlat Code Coverage"
+# Backend — runs tests and writes Cobertura XML to MyCookbook.Test/TestResults/
+dotnet test MyCookbook.Test/MyCookbook.Test.csproj --collect:"XPlat Code Coverage"
 
-# Optional: generate an HTML report (one-time global install)
-dotnet tool install -g dotnet-reportgenerator-globaltool
+# Frontend — runs tests and writes lcov + HTML to frontend/coverage/
+cd frontend && npm run test:coverage && cd ..
+
+# Unified HTML report (backend + frontend together) — requires reportgenerator installed
+# dotnet tool install -g dotnet-reportgenerator-globaltool  ← one-time
+# If 'reportgenerator' is not found, use: ~/.dotnet/tools/reportgenerator
 reportgenerator \
-  -reports:"MyCookbook.Test/TestResults/**/coverage.cobertura.xml" \
+  -reports:"MyCookbook.Test/TestResults/**/coverage.cobertura.xml;frontend/coverage/lcov.info" \
   -targetdir:"coverage-report" \
-  -reporttypes:Html
-# Then open coverage-report/index.html
+  -reporttypes:TextSummary
+cat coverage-report/Summary.txt
 ```
 
-### Frontend
+After running the above, print a markdown table with at minimum:
+
+| Area | Line % | Branch % |
+|------|--------|----------|
+| Backend (C#) | … | … |
+| Frontend (TS) | … | … |
+
+Pull the backend numbers from `coverage-report/Summary.txt` and the frontend numbers from the `npm run test:coverage` console output.
+
+### Other test commands
 
 ```bash
-cd frontend
+# Run backend tests only (no coverage)
+dotnet test MyCookbook.Test/MyCookbook.Test.csproj
 
-# Run tests
-npm test
+# Run a single test class
+dotnet test MyCookbook.Test --filter "FullyQualifiedName~RecipeTableTests"
 
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage (outputs to frontend/coverage/)
-npm run test:coverage
+# Run frontend tests in watch mode
+cd frontend && npm run test:watch
 ```
 
 ### Known test limitations
