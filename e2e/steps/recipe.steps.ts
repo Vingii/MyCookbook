@@ -17,10 +17,12 @@ Then('I do not see {string} in the recipe list', async ({ page }, name: string) 
 })
 
 // createRecipe uses window.prompt() — register the dialog handler before clicking
-When('I create a recipe named {string}', async ({ page }, name: string) => {
+When('I create a recipe named {string}', async ({ page, createdGuids }, name: string) => {
   page.once('dialog', (dialog) => dialog.accept(name))
   await page.getByRole('button', { name: 'New Recipe' }).click()
   await page.waitForURL(/\/recipe\/[0-9a-f-]{36}$/)
+  const match = page.url().match(/\/recipe\/([0-9a-f-]{36})$/)
+  if (match) createdGuids.push(match[1])
 })
 
 When('I click on {string} in the recipe list', async ({ page }, name: string) => {
@@ -33,10 +35,11 @@ When('I search for {string}', async ({ page }, text: string) => {
 })
 
 When('I clear the search', async ({ page }) => {
-  // Vuetify's clearable v-text-field renders a button inside .v-field__clearable
-  // If this selector breaks, run `npm run codegen` to find the live selector
-  await page.locator('.v-field__clearable button').click()
-  await page.waitForTimeout(300) // wait for debounce to settle
+  // Vuetify 4 renders the clearable icon as <i>, not <button>, so we trigger
+  // the @input handler directly by filling with empty and dispatching input.
+  await page.getByPlaceholder('Search...').fill('')
+  await page.getByPlaceholder('Search...').dispatchEvent('input')
+  await page.waitForTimeout(300) // 200ms debounce + buffer
 })
 
 // deleteRecipe uses window.confirm()

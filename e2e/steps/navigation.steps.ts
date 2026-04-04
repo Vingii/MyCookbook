@@ -5,6 +5,12 @@ import { Given, Then } from '../fixtures/world'
 Given('I am on the recipe browser page', async ({ page }) => {
   await page.goto('/')
   await page.locator('.recipe-table').waitFor()
+  // Dismiss any auto-opening overlay (e.g. changelog dialog) that would block clicks
+  const scrim = page.locator('.v-overlay__scrim')
+  if (await scrim.isVisible()) {
+    await page.keyboard.press('Escape')
+    await scrim.waitFor({ state: 'hidden' })
+  }
 })
 
 Then('I am on the detail page for {string}', async ({ page }, name: string) => {

@@ -116,6 +116,14 @@ Serilog with Console and Grafana Loki sinks.
 | `YouTrack__BaseUrl` / `YouTrack__Token` / `YouTrack__ProjectKey` | YouTrack feedback integration |
 | `Mailgun__ApiKey` / `Mailgun__FromEmail` / `Mailgun__MailDomain` | Email sending (dev only) |
 
+## Git Commits
+
+Use a single short subject line (≤72 chars). Do not add a body, bullet points, or `Co-Authored-By` trailers unless explicitly asked.
+
+```bash
+git commit -m "Fix E2E test reliability"
+```
+
 ## Versioning
 
 Version is set in `MyCookbook/MyCookbook.csproj` as `<Version>`. The project follows [Semantic Versioning](https://semver.org/). All changes are documented in `MyCookbook/CHANGELOG.md` using the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. When adding a feature, update both the `<Version>` in the `.csproj` and add an entry to `CHANGELOG.md`.
