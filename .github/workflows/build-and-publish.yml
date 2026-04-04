@@ -83,7 +83,7 @@ jobs:
           load: true
           tags: localhost/mycookbook:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=min
+          cache-to: type=gha,mode=max
 
       - name: Start stack for E2E
         run: |
@@ -132,4 +132,4 @@ jobs:
           push: true
           tags: ${{ steps.prep.outputs.tags }}
           cache-from: type=gha
-          cache-to: type=gha,mode=min
+          cache-to: type=gha,mode=max
