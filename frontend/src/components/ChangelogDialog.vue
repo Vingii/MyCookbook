@@ -44,7 +44,7 @@ import { changelogApi, type ChangelogEntry } from '../api/changelog'
 import { useUiStore } from '../stores/ui'
 
 const props = defineProps<{ modelValue: boolean; sinceVersion?: string | null }>()
-defineEmits<{ 'update:modelValue': [value: boolean] }>()
+const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const ui = useUiStore()
 const entries = ref<ChangelogEntry[]>([])
@@ -57,6 +57,9 @@ watch(() => props.modelValue, async (open) => {
       entries.value = await changelogApi.getEntries()
     } finally {
       loading.value = false
+      if (props.sinceVersion != null && displayEntries.value.length === 0) {
+        emit('update:modelValue', false)
+      }
     }
   }
 })
