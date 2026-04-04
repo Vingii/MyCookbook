@@ -17,7 +17,7 @@ RUN npm run build
 
 # Stage 3: Publish
 FROM build-env AS publish
-COPY . .
+COPY MyCookbook/ MyCookbook/
 COPY --from=frontend-build /src/MyCookbook/wwwroot /src/MyCookbook/wwwroot
 
 WORKDIR "/src/MyCookbook"
