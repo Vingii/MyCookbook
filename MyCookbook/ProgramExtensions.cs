@@ -20,7 +20,12 @@ namespace MyCookbook
         public static void AddApiKeyAuth(this IServiceCollection services)
         {
             services.AddTransient<ApiTokenService>();
-            services.AddAuthentication("HeaderAuth")
+            services.AddAuthentication("Default")
+                .AddPolicyScheme("Default", "Default", options =>
+                {
+                    options.ForwardDefaultSelector = ctx =>
+                        ctx.Request.Headers.ContainsKey("Authorization") ? "ApiKey" : "HeaderAuth";
+                })
                 .AddScheme<AuthenticationSchemeOptions, HeaderAuthenticationHandler>("HeaderAuth", _ => { })
                 .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", _ => { });
 
