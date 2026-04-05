@@ -5,6 +5,9 @@
         <v-alert type="warning" :title="ui.t.notAuthenticated">
           {{ ui.t.notAuthenticatedDesc }}
         </v-alert>
+        <v-btn class="mt-4" color="primary" href="/api/auth/login" block>
+          {{ ui.t.login }}
+        </v-btn>
       </v-col>
     </v-row>
   </v-container>

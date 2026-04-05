@@ -81,7 +81,8 @@ export const translations = {
     cloneToNextDay: 'Clone to next day',
     // Unauthorized
     notAuthenticated: 'Not authenticated',
-    notAuthenticatedDesc: 'Please access MyCookbook through your Authentik portal.',
+    notAuthenticatedDesc: 'Please log in to access MyCookbook.',
+    login: 'Log in',
   },
   cs: {
     // Nav
@@ -163,6 +164,7 @@ export const translations = {
     cloneToNextDay: 'Zkopírovat na další den',
     // Unauthorized
     notAuthenticated: 'Nepřihlášen',
-    notAuthenticatedDesc: 'Pro přístup k MyCookbook použijte váš Authentik portál.',
+    notAuthenticatedDesc: 'Pro přístup k MyCookbook se prosím přihlaste.',
+    login: 'Přihlásit se',
   },
 } satisfies Record<Locale, Record<string, string>>

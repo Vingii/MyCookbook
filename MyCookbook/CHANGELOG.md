@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.0] - 2026-04-05
 ### Added
-- Added token query parameter support.
+- Token query parameter (`?token=`) support.
+
+### Changed
+- Changed authentication from reverse proxy to OIDC.
 
 ## [2.0.10] - 2026-04-03
 ### Changed

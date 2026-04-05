@@ -34,7 +34,7 @@ namespace MyCookbook
 
                 builder.Services.AddSingleton<ChangelogService>();
                 builder.Services.AddFeedbackProvider(config);
-                builder.Services.AddApiKeyAuth();
+                builder.Services.AddApiKeyAuth(config);
 
                 Log.Logger = BuildLogger(config);
                 builder.Host.UseSerilog(Log.Logger);
@@ -108,6 +108,7 @@ namespace MyCookbook
                     ContentTypeProvider = provider
                 });
 
+                app.UseMiddleware<TokenQueryParamMiddleware>();
                 app.UseAuthentication();
                 app.UseAuthorization();
 

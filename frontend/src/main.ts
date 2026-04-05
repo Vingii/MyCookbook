@@ -1,6 +1,5 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { storeToken } from './api/client'
 import 'vuetify/styles'
 import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
@@ -23,15 +22,5 @@ const vuetify = createVuetify({
     },
   },
 })
-
-const params = new URLSearchParams(window.location.search)
-const urlToken = params.get('token')
-if (urlToken) {
-  storeToken(urlToken)
-  params.delete('token')
-  const newSearch = params.toString()
-  const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash
-  window.history.replaceState({}, '', newUrl)
-}
 
 createApp(App).use(createPinia()).use(router).use(vuetify).mount('#app')

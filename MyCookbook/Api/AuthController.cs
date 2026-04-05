@@ -1,4 +1,7 @@
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyCookbook.Data;
@@ -18,13 +21,25 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config,
         isGuest = User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) == true
     });
 
+    [HttpGet("login")]
+    public IActionResult Login(string? returnUrl = null) =>
+        Challenge(
+            new AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
+            OpenIdConnectDefaults.AuthenticationScheme);
+
     [HttpGet("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        var authentikUrl = config["COOKBOOK_AUTHENTIK_URL"];
-        var cookbookUrl = config["COOKBOOK_URL"];
-        var redirectUri = Uri.EscapeDataString(cookbookUrl ?? "/");
-        return Redirect($"{authentikUrl}/application/o/cookbook/end-session/?post_logout_redirect_uri={redirectUri}");
+        if (config["DEV_AUTO_LOGIN"] is { Length: > 0 })
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Redirect("/");
+        }
+
+        return SignOut(
+            new AuthenticationProperties { RedirectUri = config["COOKBOOK_URL"] ?? "/" },
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     [HttpGet("token")]
