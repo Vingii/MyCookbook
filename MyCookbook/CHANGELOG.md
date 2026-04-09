@@ -4,9 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [x.y.z] - yyyy-mm-dd
+## [2.2.0] - 2026-04-09
+### Added
+- Meal planner recipes are now draggable between days.
+
 ### Changed
 - Made query parameter token authentication less persistent.
+- Improved meal planner day card appearance with day tints and weekend highlighting.
+- Meal planner now shows 2 columns on tablets (was 4).
+- Meal planner week dividers now show week numbers.
+- Meal planner day names now start with a capital letter.
 
 ### Fixed
 - Fixed bug report name when using token authentication.

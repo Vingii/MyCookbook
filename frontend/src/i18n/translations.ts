@@ -79,6 +79,7 @@ export const translations = {
     finishCooking: 'Finish Cooking',
     // Planner
     cloneToNextDay: 'Clone to next day',
+    week: 'Week',
     // Unauthorized
     notAuthenticated: 'Not authenticated',
     notAuthenticatedDesc: 'Please log in to access MyCookbook.',
@@ -162,6 +163,7 @@ export const translations = {
     finishCooking: 'Dokončit vaření',
     // Planner
     cloneToNextDay: 'Zkopírovat na další den',
+    week: 'Týden',
     // Unauthorized
     notAuthenticated: 'Nepřihlášen',
     notAuthenticatedDesc: 'Pro přístup k MyCookbook se prosím přihlaste.',

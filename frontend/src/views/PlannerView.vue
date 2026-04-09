@@ -5,7 +5,13 @@
     </div>
 
     <div v-for="(week, wi) in weeks" :key="wi">
-      <v-divider v-if="wi > 0" class="my-4" />
+      <div v-if="wi > 0" class="d-flex align-center ga-3 my-5">
+        <v-divider />
+        <span class="text-caption text-medium-emphasis text-no-wrap font-weight-bold text-uppercase px-2">
+          {{ ui.t.week }} {{ wi + 1 }}
+        </span>
+        <v-divider />
+      </div>
 
       <v-row dense>
         <v-col
@@ -13,17 +19,46 @@
             :key="day.date"
             cols="12"
             sm="6"
-            md="3"
+            lg="3"
         >
-          <v-card variant="outlined" min-height="120" class="fill-height">
-            <v-card-title class="text-body-2 font-weight-bold pb-1">
+          <v-card
+              variant="outlined"
+              :color="day.isToday ? 'primary' : undefined"
+              min-height="120"
+              class="fill-height"
+              :class="{ 'drop-target': !readonly && dragOverDate === day.date, 'day-weekend': day.isWeekend, 'day-weekday': !day.isWeekend }"
+              @dragover.prevent="onDragOver(day.date)"
+              @dragleave="onDragLeave(day.date)"
+              @drop.prevent="onDrop(day.date)"
+          >
+            <v-card-title class="text-body-2 font-weight-bold pb-1 d-flex align-center ga-1">
+              <v-icon v-if="day.isToday" icon="mdi-calendar-today" size="x-small" />
               {{ day.label }}
             </v-card-title>
             <v-card-text class="pt-0">
-              <div v-for="plan in getPlansForDate(day.date)" :key="plan.id" class="d-flex align-center mb-1">
-                <router-link :to="`/recipe/${plan.recipeGuid}`" class="text-body-2 flex-grow-1 text-decoration-none">
-                  {{ plan.recipeName }}
-                </router-link>
+              <div
+                  v-for="plan in getPlansForDate(day.date)"
+                  :key="plan.id"
+                  class="d-flex align-center mb-1"
+                  :draggable="!readonly"
+                  @dragstart="onDragStart($event, plan)"
+                  @dragend="onDragEnd"
+                  :class="{ 'drag-source': draggingId === plan.id }"
+              >
+                <v-icon
+                    v-if="!readonly"
+                    icon="mdi-drag"
+                    size="x-small"
+                    class="drag-handle mr-1 text-medium-emphasis"
+                />
+                <v-btn
+                    :to="`/recipe/${plan.recipeGuid}`"
+                    variant="text"
+                    size="small"
+                    color="default"
+                    class="text-none flex-grow-1 justify-start px-1"
+                    density="compact"
+                >{{ plan.recipeName }}</v-btn>
                 <v-btn
                     :icon="plan.fromFridge ? 'mdi-fridge' : 'mdi-silverware-fork-knife'"
                     size="x-small"
@@ -116,9 +151,12 @@ const days = computed(() => {
     const d = new Date(monday)
     d.setDate(monday.getDate() + i)
     const date = d.toISOString().substring(0, 10)
+    const dow2 = d.getDay()
     result.push({
       date,
-      label: d.toLocaleDateString(ui.locale === 'cs' ? 'cs-CZ' : 'en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+      label: (() => { const s = d.toLocaleDateString(ui.locale === 'cs' ? 'cs-CZ' : 'en-US', { weekday: 'long', month: 'short', day: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1) })(),
+      isWeekend: dow2 === 0 || dow2 === 6,
+      isToday: date === now.toISOString().substring(0, 10),
     })
   }
   return result
@@ -177,4 +215,61 @@ async function cloneToNextDay(plan: PlannedRecipeDto) {
   await plannerApi.create({ recipeGuid: plan.recipeGuid, date: nextDate, fromFridge: !plan.fromFridge })
   fetchPlans()
 }
+
+// Drag and drop
+const draggingId = ref<number | null>(null)
+const draggingPlan = ref<PlannedRecipeDto | null>(null)
+const dragOverDate = ref<string | null>(null)
+
+function onDragStart(event: DragEvent, plan: PlannedRecipeDto) {
+  draggingId.value = plan.id
+  draggingPlan.value = plan
+  event.dataTransfer!.effectAllowed = 'move'
+}
+
+function onDragEnd() {
+  draggingId.value = null
+  draggingPlan.value = null
+  dragOverDate.value = null
+}
+
+function onDragOver(date: string) {
+  dragOverDate.value = date
+}
+
+function onDragLeave(date: string) {
+  if (dragOverDate.value === date) dragOverDate.value = null
+}
+
+async function onDrop(date: string) {
+  const plan = draggingPlan.value
+  dragOverDate.value = null
+  if (!plan || plan.date === date) return
+  await plannerApi.update(plan.id, { date, fromFridge: plan.fromFridge })
+  fetchPlans()
+}
 </script>
+
+<style scoped>
+.drag-handle {
+  cursor: grab;
+  opacity: 0.4;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+.drag-source {
+  opacity: 0.4;
+}
+.day-weekday {
+  background: rgba(128, 128, 128, 0.07);
+}
+.day-weekend {
+  background: rgba(128, 128, 128, 0.15);
+}
+.drop-target {
+  outline: 2px dashed currentColor;
+  opacity: 0.8;
+  outline-offset: -2px;
+}
+</style>
