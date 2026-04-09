@@ -32,6 +32,9 @@ public class ApiTokenService(CookbookDatabaseService db)
         return pref?.UserName;
     }
 
+    public async Task<string?> GetDisplayNameAsync(string user) =>
+        await db.GetUserPreference("DisplayName", user);
+
     private static string HashToken(string rawToken)
     {
         var bytes = System.Text.Encoding.UTF8.GetBytes(rawToken);

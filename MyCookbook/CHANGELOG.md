@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Made query parameter token authentication less persistent.
 
+### Fixed
+- Fixed bug report name when using token authentication.
+
 ## [2.1.0] - 2026-04-05
 ### Added
 - Token query parameter (`?token=`) support.
