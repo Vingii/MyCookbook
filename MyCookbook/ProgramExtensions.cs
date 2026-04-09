@@ -52,11 +52,18 @@ namespace MyCookbook
             }
             else
             {
+                var authority = config["Authentik:Authority"]
+                    ?? throw new InvalidOperationException("Authentik:Authority is not configured.");
+                var clientId = config["Authentik:ClientId"]
+                    ?? throw new InvalidOperationException("Authentik:ClientId is not configured.");
+                var clientSecret = config["Authentik:ClientSecret"]
+                    ?? throw new InvalidOperationException("Authentik:ClientSecret is not configured.");
+
                 authBuilder.AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
                 {
-                    options.Authority = config["Authentik:Authority"];
-                    options.ClientId = config["Authentik:ClientId"];
-                    options.ClientSecret = config["Authentik:ClientSecret"];
+                    options.Authority = authority;
+                    options.ClientId = clientId;
+                    options.ClientSecret = clientSecret;
                     options.ResponseType = OpenIdConnectResponseType.Code;
                     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                     options.SaveTokens = true;

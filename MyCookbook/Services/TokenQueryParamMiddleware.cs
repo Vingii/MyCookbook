@@ -37,7 +37,7 @@ public class TokenQueryParamMiddleware(RequestDelegate next)
                     new AuthenticationProperties
                     {
                         IsPersistent = true,
-                        ExpiresUtc = DateTimeOffset.UtcNow.AddDays(90),
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddHours(3),
                     });
 
                 var query = QueryHelpers.ParseQuery(context.Request.QueryString.Value);

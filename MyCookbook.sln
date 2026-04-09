@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E5988260-886C-42D1-809F-A4418E587DD8}"
 	ProjectSection(SolutionItems) = preProject
 		.env = .env
+		MyCookbook/CHANGELOG.md = MyCookbook/CHANGELOG.md
 		README.md = README.md
 		CLAUDE.md = CLAUDE.md
 		.github\workflows\build-and-publish.yml = .github\workflows\build-and-publish.yml
