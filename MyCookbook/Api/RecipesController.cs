@@ -1,3 +1,8 @@
+using System.Globalization;
+using System.Text;
+using FuzzySharp;
+using FuzzySharp.SimilarityRatio;
+using FuzzySharp.SimilarityRatio.Scorer.StrategySensitive;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyCookbook.Api.Dto;
@@ -15,6 +20,13 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
 
     private async Task<string> ResolveUser(string? user) =>
         user != null ? await db.ResolveUserIdAsync(user) : CurrentUser;
+
+    private static string NormalizeName(string s) =>
+        new string(
+            s.Normalize(NormalizationForm.FormD)
+             .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+             .ToArray()
+        ).ToLowerInvariant();
 
     private async Task<bool> ValidateShareAccess(string targetUser, string? shareToken)
     {
@@ -36,12 +48,25 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var recipes = await db.GetRecipesAsync(targetUser);
 
-        if (!string.IsNullOrWhiteSpace(search))
-            recipes = recipes.Where(r => r.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
         if (!string.IsNullOrWhiteSpace(category))
             recipes = recipes.Where(r => r.Category?.Equals(category, StringComparison.OrdinalIgnoreCase) == true).ToList();
         if (!string.IsNullOrWhiteSpace(tag))
             recipes = recipes.Where(r => r.Tags != null && r.Tags.Any(t => t.Name.Equals(tag, StringComparison.OrdinalIgnoreCase))).ToList();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var threshold = search.Length <= 3 ? 60 : 70;
+            var results = Process.ExtractAll(
+                new Recipe { Name = search },
+                recipes,
+                r => NormalizeName(r.Name),
+                scorer: ScorerCache.Get<PartialTokenSortScorer>()
+            );
+            recipes = results
+                .Where(x => x.Score >= threshold)
+                .Select(x => x.Value)
+                .ToList();
+        }
 
         return recipes.Select(r => r.ToDto(targetUser)).ToList();
     }

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-04-14
+### Changed
+- Use fuzzy search for recipe names (case-insensitive, ignores diacritics, handles typos).
+
 ## [2.2.0] - 2026-04-09
 ### Added
 - Meal planner recipes are now draggable between days.
