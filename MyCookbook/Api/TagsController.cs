@@ -20,6 +20,12 @@ public class TagsController(CookbookDatabaseService db) : ControllerBase
         return tags.Select(t => t.Name).Distinct().OrderBy(n => n).ToList();
     }
 
+    [HttpGet("api/categories")]
+    public async Task<ActionResult<List<string>>> GetAllCategories([FromQuery] string? user)
+    {
+        return await db.GetAllCategoriesAsync(user ?? CurrentUser);
+    }
+
     [HttpPost("api/recipes/{guid:guid}/tags")]
     [Authorize(Policy = "NotGuest")]
     public async Task<IActionResult> AddTag(Guid guid, [FromBody] AddTagRequest req)

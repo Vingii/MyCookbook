@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted } from 'vue'
 import { usePlannerStore } from '../stores/planner'
 import { useRecipesStore } from '../stores/recipes'
 import { useUiStore } from '../stores/ui'
@@ -142,6 +142,7 @@ import type { RecipeDto, PlannedRecipeDto } from '../api/types'
 const plannerStore = usePlannerStore()
 const recipesStore = useRecipesStore()
 const ui = useUiStore()
+watchEffect(() => { document.title = ui.t.mealPlanner })
 const { viewingUser, shareToken, readonly } = useReadonly()
 const dialogOpen = ref(false)
 const dialogDate = ref('')

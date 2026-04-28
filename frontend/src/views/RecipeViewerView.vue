@@ -33,8 +33,9 @@
 
     <v-row v-if="!readonly && editingMeta" class="mb-4" align="center">
       <v-col cols="12" sm="4">
-        <v-text-field
+        <v-combobox
           v-model="recipe.category"
+          :items="store.allCategories"
           :label="ui.t.category"
           density="compact"
           variant="outlined"
@@ -88,16 +89,22 @@
           :closable="!readonly"
           @click:close="removeTag(tag)"
         >{{ tag }}</v-chip>
-        <v-text-field
-          v-if="!readonly"
+        <v-combobox
+          v-if="!readonly && editingMeta"
           v-model="newTag"
-          :placeholder="ui.t.addTagPlaceholder"
+          v-model:menu="tagMenuOpen"
+          :items="availableTags"
+          :label="ui.t.addTagPlaceholder"
           density="compact"
           hide-details
           variant="outlined"
-          style="max-width: 150px;"
+          style="max-width: 200px;"
           @keyup.enter="addTag"
-        />
+        >
+          <template #item="{ props }">
+            <v-list-item v-bind="{ ...props, onClick: () => onDropdownItemClick(props.value as string) }" />
+          </template>
+        </v-combobox>
       </div>
     </div>
 
@@ -128,11 +135,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { useReadonly } from '../composables/useReadonly'
 import { useUiStore } from '../stores/ui'
+import { useRecipesStore } from '../stores/recipes'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
@@ -143,14 +151,25 @@ const router = useRouter()
 const guid = route.params.guid as string
 const { viewingUser, shareToken, readonly } = useReadonly()
 const ui = useUiStore()
+const store = useRecipesStore()
 const recipe = ref<RecipeDto | null>(null)
+watch(recipe, (r) => { document.title = r?.name ?? 'MyCookbook' }, { immediate: true })
 const loading = ref(true)
 const newTag = ref('')
+const tagMenuOpen = ref(false)
 const highlightWords = ref(new Set<string>())
 const editingMeta = ref(false)
 const snackbar = ref(false)
 
-onMounted(loadRecipe)
+const availableTags = computed(() =>
+  store.allTags.filter((t) => !recipe.value?.tags?.includes(t))
+)
+
+onMounted(() => {
+  loadRecipe()
+  if (store.allTags.length === 0) store.fetchAllTags()
+  if (store.allCategories.length === 0) store.fetchAllCategories()
+})
 
 async function loadRecipe() {
   loading.value = true
@@ -170,6 +189,7 @@ async function saveRecipe() {
     duration: recipe.value.duration,
     servings: recipe.value.servings,
   })
+  store.fetchAllCategories()
 }
 
 async function cloneRecipe() {
@@ -188,11 +208,25 @@ async function deleteRecipe() {
   router.push('/')
 }
 
+async function onDropdownItemClick(value: string) {
+  tagMenuOpen.value = false
+  await commitTag(value)
+  await nextTick()
+  tagMenuOpen.value = false
+}
+
 async function addTag() {
-  if (!newTag.value.trim()) return
-  await recipesApi.addTag(guid, newTag.value.trim())
+  await nextTick() // let combobox commit selected value before reading
+  const value = typeof newTag.value === 'string' ? newTag.value.trim() : ''
+  if (!value) return
+  await commitTag(value)
+}
+
+async function commitTag(value: string) {
   newTag.value = ''
+  await recipesApi.addTag(guid, value)
   await loadRecipe()
+  await store.fetchAllTags()
 }
 
 async function removeTag(name: string) {

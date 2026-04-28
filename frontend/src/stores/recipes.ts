@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { recipesApi } from '../api/recipes'
+import { tagsApi, categoriesApi } from '../api/tags'
 import type { RecipeDto } from '../api/types'
 
 export const useRecipesStore = defineStore('recipes', () => {
   const recipes = ref<RecipeDto[]>([])
   const loading = ref(false)
   const ingredientNames = ref<string[]>([])
+  const allTags = ref<string[]>([])
+  const allCategories = ref<string[]>([])
 
   async function fetchAll(params?: { search?: string; category?: string; tag?: string; user?: string; shareToken?: string }) {
     loading.value = true
@@ -21,5 +24,13 @@ export const useRecipesStore = defineStore('recipes', () => {
     ingredientNames.value = await recipesApi.getAllIngredientNames()
   }
 
-  return { recipes, loading, ingredientNames, fetchAll, fetchIngredientNames }
+  async function fetchAllTags() {
+    allTags.value = await tagsApi.getAll()
+  }
+
+  async function fetchAllCategories() {
+    allCategories.value = await categoriesApi.getAll()
+  }
+
+  return { recipes, loading, ingredientNames, allTags, allCategories, fetchAll, fetchIngredientNames, fetchAllTags, fetchAllCategories }
 })

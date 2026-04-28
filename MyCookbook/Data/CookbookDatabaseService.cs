@@ -600,6 +600,19 @@ namespace MyCookbook.Data
             return await context.Tags.Where(x => x.UserName == user).AsNoTracking().ToListAsync();
         }
 
+        public async Task<List<string>> GetAllCategoriesAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            return await context.Recipes
+                .Where(x => x.UserName == user && x.Category != null && x.Category != "")
+                .Select(x => x.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<bool> AddTag(Recipe recipe, string user, string name)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());

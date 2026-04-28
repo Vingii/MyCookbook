@@ -5,6 +5,7 @@
       :hover="true"
       :no-data-text="ui.t.noRecipesFound"
       @click:row="onRowClick"
+      :row-props="({ item }) => ({ onAuxclick: (e: MouseEvent) => onRowAuxClick(e, item) })"
       class="recipe-table"
   >
     <template v-slot:item.lastCooked="{ value }">
@@ -51,6 +52,13 @@ function formatDate(d?: string) {
 
 function onRowClick(_e: MouseEvent, { item }: { item: RecipeDto }) {
   router.push(`/recipe/${item.guid}`)
+}
+
+function onRowAuxClick(e: MouseEvent, item: RecipeDto) {
+  if (e.button === 1) {
+    e.preventDefault()
+    window.open(`/recipe/${item.guid}`, '_blank')
+  }
 }
 </script>
 

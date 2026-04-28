@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRecipesStore } from '../stores/recipes'
 import { useUiStore } from '../stores/ui'
@@ -83,6 +83,7 @@ import RecipeTable from '../components/RecipeTable.vue'
 
 const store = useRecipesStore()
 const ui = useUiStore()
+watchEffect(() => { document.title = ui.t.recipes })
 const router = useRouter()
 const { viewingUser, shareToken, readonly } = useReadonly()
 const search = ref('')

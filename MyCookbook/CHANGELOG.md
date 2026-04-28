@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.4.0] - 2026-04-28
+### Added
+- Autofill dropdowns for ingredients, categories and tags.
+- Middle click opens a recipe in a new tab.
+- Variable tab names.
+
 ### Changed
 - Use fuzzy search in meal planner.
 - Enter confirms the planner dialog (typing partial match → arrow down → enter → enter behaves correctly).
