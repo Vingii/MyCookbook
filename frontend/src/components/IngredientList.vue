@@ -43,7 +43,7 @@
             class="text-medium-emphasis text-center"
             style="min-width: 90px;"
             :class="{ 'text-decoration-line-through': checked.has(ing.id) }"
-        >{{ ing.amount || '' }}</span>
+        >{{ formatAmount(ing.amount) }}</span>
       </template>
       <template v-if="!readonly">
         <v-btn
@@ -113,6 +113,11 @@ const newNameRef = ref<any>(null)
 const newAmountRef = ref<any>(null)
 const ingNameRefs: Record<number, any> = {}
 const ingAmountRefs: Record<number, any> = {}
+
+function formatAmount(amount: string | undefined | null): string {
+  if (!amount) return ''
+  return amount.replace(/(\d)([^\d\s.,\/])/g, '$1 $2')
+}
 
 function toggleCheck(id: number) {
   const s = new Set(checked.value)

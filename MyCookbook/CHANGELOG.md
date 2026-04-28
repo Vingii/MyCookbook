@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Autofill dropdowns for ingredients, categories and tags.
 - Middle click opens a recipe in a new tab.
 - Variable tab names.
+- Automatic space in ingredient amount (1kg → 1 kg).
 
 ### Changed
 - Use fuzzy search in meal planner.
