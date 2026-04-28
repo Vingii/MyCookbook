@@ -101,18 +101,23 @@
       <v-card>
         <v-card-title>{{ ui.t.addToPlanner }}</v-card-title>
         <v-card-text>
-          <v-autocomplete
-            v-model="selectedRecipeGuid"
-            :items="recipesStore.recipes"
-            item-title="name"
-            item-value="guid"
-            :placeholder="ui.t.searchPlaceholder"
-            prepend-inner-icon="mdi-magnify"
-            density="compact"
-            variant="outlined"
-            hide-details
-            autofocus
-          />
+          <div @keydown.enter.capture="onAutocompleteWrapperEnter">
+            <v-autocomplete
+              v-model="selectedRecipeGuid"
+              v-model:search="autocompleteSearch"
+              v-model:menu="autocompleteMenuOpen"
+              :items="filteredRecipes"
+              item-title="name"
+              item-value="guid"
+              :placeholder="ui.t.searchPlaceholder"
+              prepend-inner-icon="mdi-magnify"
+              density="compact"
+              variant="outlined"
+              hide-details
+              autofocus
+              :custom-filter="noFilter"
+            />
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -125,13 +130,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePlannerStore } from '../stores/planner'
 import { useRecipesStore } from '../stores/recipes'
 import { useUiStore } from '../stores/ui'
 import { useReadonly } from '../composables/useReadonly'
 import { plannerApi } from '../api/planner'
-import type { PlannedRecipeDto } from '../api/types'
+import { recipesApi } from '../api/recipes'
+import type { RecipeDto, PlannedRecipeDto } from '../api/types'
 
 const plannerStore = usePlannerStore()
 const recipesStore = useRecipesStore()
@@ -140,6 +146,37 @@ const { viewingUser, shareToken, readonly } = useReadonly()
 const dialogOpen = ref(false)
 const dialogDate = ref('')
 const selectedRecipeGuid = ref<string | null>(null)
+const autocompleteSearch = ref('')
+const filteredRecipes = ref<RecipeDto[]>([])
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
+const noFilter = () => true
+const autocompleteMenuOpen = ref(false)
+
+function onAutocompleteWrapperEnter(e: KeyboardEvent) {
+  if (!autocompleteMenuOpen.value && selectedRecipeGuid.value) {
+    e.stopPropagation()
+    e.preventDefault()
+    confirmAdd()
+  }
+}
+
+watch(dialogOpen, (open) => {
+  if (open) {
+    autocompleteSearch.value = ''
+    filteredRecipes.value = recipesStore.recipes
+  }
+})
+
+watch(autocompleteSearch, (query) => {
+  if (searchDebounce) clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(async () => {
+    filteredRecipes.value = await recipesApi.getAll({
+      search: query || undefined,
+      user: viewingUser.value || undefined,
+      shareToken: shareToken.value,
+    })
+  }, 200)
+})
 
 const days = computed(() => {
   const result = []
