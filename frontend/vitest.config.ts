@@ -6,6 +6,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    // Vuetify ships components with side-effect CSS imports that Node cannot load externalized.
+    server: { deps: { inline: ['vuetify'] } },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],

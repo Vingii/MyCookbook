@@ -6,7 +6,11 @@ namespace MyCookbook.Api;
 
 public static class DtoMapper
 {
-    public static RecipeDto ToDto(this Recipe recipe, string user) => new()
+    public static RecipeDto ToDto(
+        this Recipe recipe,
+        string user,
+        List<RecipeLinkDto>? links = null,
+        List<RecipeRefDto>? usedIn = null) => new()
     {
         Guid = recipe.Guid,
         Name = recipe.Name,
@@ -24,7 +28,9 @@ public static class DtoMapper
         Steps = recipe.Steps?
             .OrderBy(s => s.Order)
             .Select(s => s.ToDto())
-            .ToList() ?? []
+            .ToList() ?? [],
+        Links = links ?? [],
+        UsedIn = usedIn ?? []
     };
 
     public static IngredientDto ToDto(this Ingredient ingredient) => new()

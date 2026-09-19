@@ -13,4 +13,10 @@ public class RecipeDto
     public List<string> Tags { get; set; } = [];
     public List<IngredientDto> Ingredients { get; set; } = [];
     public List<StepDto> Steps { get; set; } = [];
+
+    /// <summary>Resolved <c>[[wiki links]]</c> occurring in this recipe's steps. Only populated on detail requests.</summary>
+    public List<RecipeLinkDto> Links { get; set; } = [];
+
+    /// <summary>Recipes whose steps link to this one. Only populated on authenticated detail requests.</summary>
+    public List<RecipeRefDto> UsedIn { get; set; } = [];
 }

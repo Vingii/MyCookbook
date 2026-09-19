@@ -68,6 +68,9 @@ namespace MyCookbook.Data.CookbookDatabase
 
             modelBuilder.Entity<Step>(entity =>
             {
+                // Backlink lookup and rename propagation both scan this user's steps for wiki links.
+                entity.HasIndex(e => e.UserName, "IX_Steps_UserName");
+
                 entity.Property(e => e.UserName)
                     .IsRequired()
                     .HasMaxLength(450);

@@ -30,24 +30,21 @@
         <span class="text-medium-emphasis mt-1" style="min-width: 20px; font-size: 0.85rem;">{{ step.order }}.</span>
         <div class="flex-grow-1">
           <template v-if="editingSteps.has(step.id)">
-            <v-textarea
+            <StepTextarea
               :ref="(el: any) => { if (el) stepDescRefs[step.id] = el }"
-              :model-value="editValues[step.id]?.description"
-              density="compact"
-              hide-details
-              variant="outlined"
-              auto-grow
-              rows="2"
+              :model-value="editValues[step.id]?.description ?? ''"
+              :names="store.allRecipeNames"
               @update:model-value="(v: string) => setDescription(step.id, v)"
               @blur="saveStep(step)"
-              @keydown.enter.exact.prevent="saveAndCloseStep(step)"
+              @enter="saveAndCloseStep(step)"
             />
           </template>
           <template v-else>
             <div
-              class="text-body-2 py-1"
+              class="text-body-2 py-1 step-text"
               style="white-space: pre-wrap; line-height: 1.6;"
               v-html="renderDescription(step.description)"
+              @click="onDescriptionClick"
             />
           </template>
         </div>
@@ -67,17 +64,13 @@
     </div>
 
     <div v-if="!readonly" class="mt-3">
-      <v-textarea
+      <StepTextarea
         ref="newDescRef"
         v-model="newDesc"
+        :names="store.allRecipeNames"
         :placeholder="ui.t.stepDescPlaceholder"
-        density="compact"
-        hide-details
-        variant="outlined"
-        auto-grow
-        rows="2"
         class="mb-2"
-        @keydown.enter.exact.prevent="addStep"
+        @enter="addStep"
       />
       <v-btn color="primary" size="small" @click="addStep">{{ ui.t.addStep }}</v-btn>
     </div>
@@ -85,16 +78,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { useUiStore } from '../stores/ui'
+import { useRecipesStore } from '../stores/recipes'
 import { highlightText } from '../composables/useIngredientHighlighter'
-import type { StepDto } from '../api/types'
+import { renderWithLinks, useRecipeHref } from '../composables/useRecipeLinks'
+import type { StepDto, RecipeLinkDto } from '../api/types'
+import StepTextarea from './StepTextarea.vue'
 
-const props = defineProps<{ guid: string; steps: StepDto[]; readonly?: boolean; highlightWords?: Set<string> }>()
+const props = defineProps<{
+  guid: string
+  steps: StepDto[]
+  readonly?: boolean
+  highlightWords?: Set<string>
+  links?: RecipeLinkDto[]
+}>()
 const emit = defineEmits<{ refresh: [] }>()
 
 const ui = useUiStore()
+const store = useRecipesStore()
+const router = useRouter()
+const recipeHref = useRecipeHref()
+
+onMounted(() => {
+  if (!props.readonly && store.allRecipeNames.length === 0) store.fetchAllRecipeNames()
+})
 const sorted = computed(() => [...props.steps].sort((a, b) => a.order - b.order))
 const newDesc = ref('')
 const newType = ref('Active')
@@ -186,7 +196,20 @@ function setDescription(id: number, v: string) {
 }
 
 function renderDescription(text: string): string {
-  return highlightText(text, props.highlightWords ?? new Set())
+  return renderWithLinks(
+    text,
+    props.links ?? [],
+    (part) => highlightText(part, props.highlightWords ?? new Set()),
+    recipeHref,
+  )
+}
+
+/** Recipe links are real anchors so middle-click opens a new tab; plain clicks stay in the SPA. */
+function onDescriptionClick(e: MouseEvent) {
+  const anchor = (e.target as HTMLElement).closest?.('a.recipe-link') as HTMLAnchorElement | null
+  if (!anchor || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  router.push(anchor.getAttribute('href')!)
 }
 
 async function saveStep(step: StepDto) {
@@ -239,5 +262,19 @@ async function addStep() {
 }
 .step-bar:hover:not([style*="cursor: default"]) {
   filter: brightness(1.1);
+}
+.step-text :deep(.recipe-link) {
+  color: rgb(var(--v-theme-primary));
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+.step-text :deep(.recipe-link:hover) {
+  opacity: 0.8;
+}
+/* A link whose target recipe does not exist — visible to the editor, unobtrusive while cooking. */
+.step-text :deep(.recipe-link-missing) {
+  opacity: 0.6;
+  border-bottom: 1px dashed currentColor;
 }
 </style>

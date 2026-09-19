@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MyCookbook.Data.CookbookDatabase;
 using MyCookbook.Logging;
+using MyCookbook.Model;
+using MyCookbook.Utils;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -70,6 +72,56 @@ namespace MyCookbook.Data
                  .Include(x => x.FavoriteRecipes)
                  .Include(x => x.Tags)
                  .AsNoTracking().ToListAsync();
+        }
+
+        /// <summary>Guid + name of every recipe of the user, for resolving wiki-style links.</summary>
+        public async Task<List<RecipeRef>> GetRecipeRefsAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            return await context.Recipes
+                 .Where(x => x.UserName == user)
+                 .AsNoTracking()
+                 .Select(x => new RecipeRef(x.Guid, x.Name))
+                 .ToListAsync();
+        }
+
+        /// <summary>Every step of the user whose description contains a wiki-style link, with its owning recipe.</summary>
+        public async Task<List<StepDescriptionRef>> GetLinkingStepsAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            return await context.Steps
+                 .Where(x => x.UserName == user && x.Description != null && x.Description.Contains("[["))
+                 .AsNoTracking()
+                 .Select(x => new StepDescriptionRef(x.Recipe.Guid, x.Recipe.Name, x.Description))
+                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Repoints every wiki-style link that references <paramref name="oldName"/> at
+        /// <paramref name="newName"/>, so renaming a recipe does not break the links to it.
+        /// Returns how many steps were rewritten.
+        /// </summary>
+        public async Task<int> RenameRecipeReferencesAsync(string oldName, string newName, string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            var context = await GetContext();
+            var steps = await context.Steps
+                 .Where(x => x.UserName == user && x.Description != null && x.Description.Contains("[["))
+                 .ToListAsync();
+
+            var changed = 0;
+            foreach (var step in steps)
+            {
+                var updated = RecipeLinks.Rename(step.Description, oldName, newName);
+                if (updated == step.Description) continue;
+                step.Description = updated;
+                changed++;
+            }
+
+            if (changed > 0) await context.SaveChangesAsync();
+            return changed;
         }
 
         public async Task<List<Recipe>> GetFavoriteRecipesAsync(string user)

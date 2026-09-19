@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyCookbook.Api.Dto;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
+using MyCookbook.Utils;
 
 namespace MyCookbook.Api;
 
@@ -23,7 +24,7 @@ public class StepsController(CookbookDatabaseService db) : ControllerBase
         var step = new Step
         {
             RecipeId = recipe.Id,
-            Description = req.Description,
+            Description = RecipeLinks.Expand(req.Description),
             Order = maxOrder + 1,
             Duration = req.DurationSeconds.HasValue ? TimeSpan.FromSeconds(req.DurationSeconds.Value) : null,
             StepType = DtoMapper.ParseStepType(req.StepType)
@@ -41,7 +42,7 @@ public class StepsController(CookbookDatabaseService db) : ControllerBase
         var step = recipe.Steps?.FirstOrDefault(s => s.Id == id);
         if (step == null) return NotFound();
 
-        step.Description = req.Description;
+        step.Description = RecipeLinks.Expand(req.Description);
         step.Duration = req.DurationSeconds.HasValue ? TimeSpan.FromSeconds(req.DurationSeconds.Value) : null;
         step.StepType = DtoMapper.ParseStepType(req.StepType);
         await db.UpdateStepAsync(step, CurrentUser);
