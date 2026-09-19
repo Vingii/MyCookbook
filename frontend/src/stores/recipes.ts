@@ -10,6 +10,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   const ingredientNames = ref<string[]>([])
   const allTags = ref<string[]>([])
   const allCategories = ref<string[]>([])
+  const allRecipeNames = ref<string[]>([])
 
   async function fetchAll(params?: { search?: string; category?: string; tag?: string; user?: string; shareToken?: string }) {
     loading.value = true
@@ -32,5 +33,12 @@ export const useRecipesStore = defineStore('recipes', () => {
     allCategories.value = await categoriesApi.getAll()
   }
 
-  return { recipes, loading, ingredientNames, allTags, allCategories, fetchAll, fetchIngredientNames, fetchAllTags, fetchAllCategories }
+  async function fetchAllRecipeNames() {
+    allRecipeNames.value = await recipesApi.getAllNames()
+  }
+
+  return {
+    recipes, loading, ingredientNames, allTags, allCategories, allRecipeNames,
+    fetchAll, fetchIngredientNames, fetchAllTags, fetchAllCategories, fetchAllRecipeNames,
+  }
 })

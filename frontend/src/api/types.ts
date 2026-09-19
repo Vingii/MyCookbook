@@ -10,6 +10,22 @@ export interface RecipeDto {
   tags: string[]
   ingredients: IngredientDto[]
   steps: StepDto[]
+  /** Resolved [[wiki links]] occurring in this recipe's steps. Only present on detail requests. */
+  links: RecipeLinkDto[]
+  /** Recipes whose steps link to this one. Only present on authenticated detail requests. */
+  usedIn: RecipeRefDto[]
+}
+
+export interface RecipeLinkDto {
+  /** The text between the brackets, as the user typed it. */
+  text: string
+  name: string
+  guid: string
+}
+
+export interface RecipeRefDto {
+  guid: string
+  name: string
 }
 
 export interface IngredientDto {

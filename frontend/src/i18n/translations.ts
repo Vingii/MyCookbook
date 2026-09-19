@@ -34,7 +34,7 @@ export const translations = {
     ingredientNamePlaceholder: 'Ingredient name',
     addIngredient: 'Add',
     // StepList
-    stepDescPlaceholder: 'Step description...',
+    stepDescPlaceholder: 'Step description...  type [[ to link a recipe',
     secondsPlaceholder: 'Seconds',
     addStep: 'Add Step',
     // Planner
@@ -77,6 +77,7 @@ export const translations = {
     shareRecipe: 'Share',
     linkCopied: 'Link copied!',
     finishCooking: 'Finish Cooking',
+    usedIn: 'Used in',
     // Planner
     cloneToNextDay: 'Clone to next day',
     week: 'Week',
@@ -118,7 +119,7 @@ export const translations = {
     ingredientNamePlaceholder: 'Název ingredience',
     addIngredient: 'Přidat',
     // StepList
-    stepDescPlaceholder: 'Popis kroku...',
+    stepDescPlaceholder: 'Popis kroku...  napište [[ pro odkaz na recept',
     secondsPlaceholder: 'Sekundy',
     addStep: 'Přidat krok',
     // Planner
@@ -161,6 +162,7 @@ export const translations = {
     shareRecipe: 'Sdílet',
     linkCopied: 'Odkaz zkopírován!',
     finishCooking: 'Dokončit vaření',
+    usedIn: 'Použito v',
     // Planner
     cloneToNextDay: 'Zkopírovat na další den',
     week: 'Týden',

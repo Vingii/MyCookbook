@@ -34,7 +34,7 @@
       </v-col>
       <v-col cols="12" md="7">
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
-        <StepList :guid="guid" :steps="recipe.steps" :readonly="true" :highlight-words="highlightWords" />
+        <StepList :guid="guid" :steps="recipe.steps" :readonly="true" :highlight-words="highlightWords" :links="recipe.links" />
       </v-col>
     </v-row>
   </div>
@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
@@ -55,22 +55,27 @@ import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
 
 const route = useRoute()
-const guid = route.params.guid as string
+// Computed rather than captured: following a recipe link reuses this component instance.
+const guid = computed(() => route.params.guid as string)
 const ui = useUiStore()
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const highlightWords = ref(new Set<string>())
 
-onMounted(async () => {
+onMounted(loadRecipe)
+watch(guid, loadRecipe)
+
+async function loadRecipe() {
+  loading.value = true
   try {
-    recipe.value = await recipesApi.getShared(guid)
+    recipe.value = await recipesApi.getShared(guid.value)
     highlightWords.value = await getHighlightWords(recipe.value.ingredients.map((i) => i.name))
   } catch {
     recipe.value = null
   } finally {
     loading.value = false
   }
-})
+}
 </script>
 
 <style scoped>

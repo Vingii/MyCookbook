@@ -8,13 +8,14 @@ using Microsoft.AspNetCore.Mvc;
 using MyCookbook.Api.Dto;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
+using MyCookbook.Services;
 
 namespace MyCookbook.Api;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "CookieOrApiKey")]
-public class RecipesController(CookbookDatabaseService db) : ControllerBase
+public class RecipesController(CookbookDatabaseService db, RecipeLinkService recipeLinks) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
@@ -86,6 +87,17 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { guid = created.Guid }, created.ToDto(CurrentUser));
     }
 
+    /// <summary>Recipe names, for the [[wiki link]] autocomplete in the step editor.</summary>
+    [HttpGet("names")]
+    public async Task<ActionResult<List<string>>> GetNames()
+    {
+        var refs = await db.GetRecipeRefsAsync(CurrentUser);
+        return refs
+            .Select(r => r.Name)
+            .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
     [HttpGet("random")]
     public async Task<ActionResult<RecipeDto>> GetRandom([FromQuery] string? user, [FromQuery] string? shareToken)
     {
@@ -104,7 +116,10 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var recipe = await db.GetDetailedRecipeAsync(guid, targetUser);
         if (recipe == null) return NotFound();
-        return recipe.ToDto(targetUser);
+        return recipe.ToDto(
+            targetUser,
+            await recipeLinks.GetLinksAsync(recipe, targetUser),
+            await recipeLinks.GetBacklinksAsync(recipe, targetUser));
     }
 
     [HttpPut("{guid:guid}")]
@@ -114,12 +129,20 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
         var existing = await db.GetDetailedRecipeAsync(guid, CurrentUser);
         if (existing == null) return NotFound();
 
+        var previousName = existing.Name;
+
         existing.Name = req.Name;
         existing.Category = req.Category;
         existing.Duration = req.Duration;
         existing.Servings = req.Servings;
 
         await db.UpdateRecipeAsync(existing, CurrentUser);
+
+        // Links point at recipes by name, so a rename has to be carried into every step that
+        // references this recipe. Only the reference is rewritten — display text is left alone.
+        if (!string.Equals(previousName, req.Name, StringComparison.Ordinal))
+            await db.RenameRecipeReferencesAsync(previousName, req.Name, CurrentUser);
+
         return Ok();
     }
 
@@ -159,6 +182,8 @@ public class RecipesController(CookbookDatabaseService db) : ControllerBase
     {
         var recipe = await db.GetDetailedRecipeByIdAsync(guid.ToString());
         if (recipe == null) return NotFound();
-        return recipe.ToDto(recipe.UserName);
+        // Forward links are part of the recipe's own text, so they are shared with it.
+        // Backlinks are deliberately omitted — they would expose recipes the owner did not share.
+        return recipe.ToDto(recipe.UserName, await recipeLinks.GetLinksAsync(recipe, recipe.UserName));
     }
 }

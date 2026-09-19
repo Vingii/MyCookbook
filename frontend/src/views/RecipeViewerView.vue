@@ -115,9 +115,30 @@
       </v-col>
       <v-col cols="12" lg="7">
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
-        <StepList :guid="guid" :steps="recipe.steps" :readonly="readonly" :highlight-words="highlightWords" @refresh="loadRecipe" />
+        <StepList
+          :guid="guid"
+          :steps="recipe.steps"
+          :readonly="readonly"
+          :highlight-words="highlightWords"
+          :links="recipe.links"
+          @refresh="loadRecipe"
+        />
       </v-col>
     </v-row>
+
+    <div v-if="recipe.usedIn?.length" class="mt-6">
+      <div class="text-medium-emphasis text-caption mb-1">{{ ui.t.usedIn }}</div>
+      <div class="d-flex flex-wrap ga-2">
+        <v-chip
+          v-for="source in recipe.usedIn"
+          :key="source.guid"
+          :href="recipeHref(source.guid)"
+          size="small"
+          prepend-icon="mdi-link-variant"
+          @click="openLinkedRecipe($event, source.guid)"
+        >{{ source.name }}</v-chip>
+      </div>
+    </div>
 
     <div v-if="!readonly" class="d-flex justify-center mt-6">
       <v-btn color="success" size="large" prepend-icon="mdi-check-circle" @click="finishCooking">
@@ -142,13 +163,16 @@ import { useReadonly } from '../composables/useReadonly'
 import { useUiStore } from '../stores/ui'
 import { useRecipesStore } from '../stores/recipes'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
+import { useRecipeHref } from '../composables/useRecipeLinks'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
 
 const route = useRoute()
 const router = useRouter()
-const guid = route.params.guid as string
+// Computed rather than captured: following a recipe link reuses this component instance.
+const guid = computed(() => route.params.guid as string)
+const recipeHref = useRecipeHref()
 const { viewingUser, shareToken, readonly } = useReadonly()
 const ui = useUiStore()
 const store = useRecipesStore()
@@ -171,40 +195,55 @@ onMounted(() => {
   if (store.allCategories.length === 0) store.fetchAllCategories()
 })
 
+watch(guid, () => {
+  editingMeta.value = false
+  loadRecipe()
+})
+
 async function loadRecipe() {
   loading.value = true
   try {
-    recipe.value = await recipesApi.getById(guid, { user: viewingUser.value || undefined, shareToken: shareToken.value })
+    recipe.value = await recipesApi.getById(guid.value, { user: viewingUser.value || undefined, shareToken: shareToken.value })
     highlightWords.value = await getHighlightWords(recipe.value.ingredients.map((i) => i.name))
   } finally {
     loading.value = false
   }
 }
 
+/** Backlink chips are real anchors, so middle-click opens a new tab like everywhere else. */
+function openLinkedRecipe(e: MouseEvent | KeyboardEvent, targetGuid: string) {
+  if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+  if (e instanceof MouseEvent && e.button !== 0) return
+  e.preventDefault()
+  router.push(recipeHref(targetGuid))
+}
+
 async function saveRecipe() {
   if (!recipe.value) return
-  await recipesApi.update(guid, {
+  await recipesApi.update(guid.value, {
     name: recipe.value.name,
     category: recipe.value.category,
     duration: recipe.value.duration,
     servings: recipe.value.servings,
   })
   store.fetchAllCategories()
+  // The name may have changed, which repoints existing links and changes what the autocomplete offers.
+  store.fetchAllRecipeNames()
 }
 
 async function cloneRecipe() {
-  const cloned = await recipesApi.clone(guid)
+  const cloned = await recipesApi.clone(guid.value)
   router.push(`/recipe/${cloned.guid}`)
 }
 
 async function finishCooking() {
-  await recipesApi.markCooked(guid)
+  await recipesApi.markCooked(guid.value)
   router.push('/')
 }
 
 async function deleteRecipe() {
   if (!confirm(`${ui.t.delete} "${recipe.value?.name}"?`)) return
-  await recipesApi.delete(guid)
+  await recipesApi.delete(guid.value)
   router.push('/')
 }
 
@@ -224,18 +263,18 @@ async function addTag() {
 
 async function commitTag(value: string) {
   newTag.value = ''
-  await recipesApi.addTag(guid, value)
+  await recipesApi.addTag(guid.value, value)
   await loadRecipe()
   await store.fetchAllTags()
 }
 
 async function removeTag(name: string) {
-  await recipesApi.deleteTag(guid, name)
+  await recipesApi.deleteTag(guid.value, name)
   await loadRecipe()
 }
 
 async function shareRecipe() {
-  const url = `${window.location.origin}/recipe/shared/${guid}`
+  const url = `${window.location.origin}/recipe/shared/${guid.value}`
   await navigator.clipboard.writeText(url)
   snackbar.value = true
 }

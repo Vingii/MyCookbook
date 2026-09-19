@@ -16,6 +16,9 @@ export const recipesApi = {
   getAllIngredientNames: () =>
     client.get<string[]>('/ingredients').then((r) => r.data),
 
+  getAllNames: () =>
+    client.get<string[]>('/recipes/names').then((r) => r.data),
+
   getById: (guid: string, params?: { user?: string; shareToken?: string }) =>
     client.get<RecipeDto>(`/recipes/${guid}`, { params }).then((r) => r.data),
 
