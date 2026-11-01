@@ -42,6 +42,17 @@ namespace MyCookbook
                 builder.Services.AddTransient<CookbookDatabaseService>();
                 builder.Services.AddTransient<RecipeLinkService>();
                 builder.Services.AddTransient<SharedItemService>();
+                // AI recipe import (MC-69): pages are fetched through a client that only connects to public addresses.
+                builder.Services.AddHttpClient(RecipePageFetcher.HttpClientName, c =>
+                {
+                    c.Timeout = TimeSpan.FromSeconds(20);
+                    c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; MyCookbook recipe import)");
+                    c.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml");
+                }).ConfigurePrimaryHttpMessageHandler(RecipePageFetcher.CreateHandler);
+                builder.Services.AddHttpClient(LlmClient.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(120));
+                builder.Services.AddTransient<RecipePageFetcher>();
+                builder.Services.AddTransient<LlmClient>();
+                builder.Services.AddTransient<RecipeImportService>();
                 builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>

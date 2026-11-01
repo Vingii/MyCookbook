@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patch notes are now available in Czech.
 - Recipes shared with you have a Clone button that saves a copy to your own recipes.
 - New "Shared" page: recipes others share with you are listed there after you open them, so you can find them again. Search them, pin the ones you want to keep, and remove the rest.
+- New recipe from a link: paste a link to a recipe on the web and AI prepares it for your cookbook. Choose between a version adapted to your recipes (translated, with your ingredient names, categories and tags) and the original, then save.
 
 ### Changed
 - On phones, the top bar's less-used buttons (theme, language, bug report, What's New, Settings, Logout) moved into a ⋮ menu, so none of them are cut off.

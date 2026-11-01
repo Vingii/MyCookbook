@@ -7,6 +7,7 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import RecipeBrowserView from '../RecipeBrowserView.vue'
+import { recipeImportApi } from '../../api/recipeImport'
 
 const xs = ref(false)
 vi.mock('vuetify', async (importOriginal) => ({
@@ -21,6 +22,10 @@ vi.mock('../../api/recipes', () => ({
   },
 }))
 
+vi.mock('../../api/recipeImport', () => ({
+  recipeImportApi: { isEnabled: vi.fn().mockResolvedValue(false) },
+}))
+
 const vuetify = createVuetify({ components, directives })
 
 async function mountView() {
@@ -31,7 +36,7 @@ async function mountView() {
   router.push('/')
   await router.isReady()
   const wrapper = mount(RecipeBrowserView, {
-    global: { plugins: [vuetify, router], stubs: { RecipeTable: true } },
+    global: { plugins: [vuetify, router], stubs: { RecipeTable: true, RecipeImportDialog: true } },
   })
   await flushPromises()
   return wrapper
@@ -87,5 +92,29 @@ describe('RecipeBrowserView filters', () => {
 
     expect(badgeShown()).toBe(true)
     expect(badge().text()).toBe('2')
+  })
+})
+
+describe('RecipeBrowserView import from link (MC-69)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
+  const hasImportButton = (wrapper: Awaited<ReturnType<typeof mountView>>) =>
+    wrapper.findAll('button').some((b) => b.text() === 'From link')
+
+  it('offers import from a link when AI is configured', async () => {
+    vi.mocked(recipeImportApi.isEnabled).mockResolvedValueOnce(true)
+    const wrapper = await mountView()
+
+    expect(hasImportButton(wrapper)).toBe(true)
+  })
+
+  it('hides it when AI is not configured', async () => {
+    vi.mocked(recipeImportApi.isEnabled).mockResolvedValueOnce(false)
+    const wrapper = await mountView()
+
+    expect(hasImportButton(wrapper)).toBe(false)
   })
 })
