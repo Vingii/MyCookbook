@@ -23,7 +23,7 @@
               class="mb-3"
           >
             <v-card-title class="text-body-1 font-weight-bold">
-              v{{ entry.version }}
+              {{ entry.version }}
               <span v-if="entry.releaseDate" class="text-caption text-medium-emphasis ml-2">
                 {{ formatDate(entry.releaseDate) }}
               </span>
@@ -48,13 +48,16 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const ui = useUiStore()
 const entries = ref<ChangelogEntry[]>([])
+const entriesLocale = ref<string | null>(null)
 const loading = ref(false)
 
-watch(() => props.modelValue, async (open) => {
-  if (open && entries.value.length === 0) {
+// Refetch when opened for the first time or after the language changed.
+watch([() => props.modelValue, () => ui.locale], async ([open]) => {
+  if (open && entriesLocale.value !== ui.locale) {
     loading.value = true
     try {
-      entries.value = await changelogApi.getEntries()
+      entries.value = await changelogApi.getEntries(ui.locale)
+      entriesLocale.value = ui.locale
     } finally {
       loading.value = false
       if (props.sinceVersion != null && displayEntries.value.length === 0) {
