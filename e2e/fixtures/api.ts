@@ -1,5 +1,6 @@
 import { test as base } from 'playwright-bdd'
 import { request } from '@playwright/test'
+import { E2E_HEADERS } from './user'
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:8080'
 
@@ -11,7 +12,7 @@ export const test = base.extend<{
     const guids: string[] = []
     await use(guids)
     // cleanup after each scenario
-    const ctx = await request.newContext({ baseURL: BASE_URL })
+    const ctx = await request.newContext({ baseURL: BASE_URL, extraHTTPHeaders: E2E_HEADERS })
     for (const guid of guids) {
       await ctx.delete(`/api/recipes/${guid}`)
     }
@@ -19,7 +20,7 @@ export const test = base.extend<{
   },
 
   createRecipe: async ({ createdGuids }, use) => {
-    const ctx = await request.newContext({ baseURL: BASE_URL })
+    const ctx = await request.newContext({ baseURL: BASE_URL, extraHTTPHeaders: E2E_HEADERS })
     await use(async (name: string, category?: string) => {
       const res = await ctx.post('/api/recipes', {
         data: { name, servings: 2, ...(category ? { category } : {}) },

@@ -108,6 +108,7 @@ Serilog with Console and Grafana Loki sinks.
 | `ConnectionStrings__DefaultConnection` | SQL Server connection string |
 | `SA_PASSWORD` | SQL Server SA password (used in docker-compose) |
 | `ASPNETCORE_ENVIRONMENT` | `Development`, `Production`, or `Docker` |
+| `DEV_SEED_DATA` | `true` (local `.env` only) seeds sample recipes, a meal plan and a second user `dev-anna` who shares her cookbook (`/?user=dev-anna&shareToken=dev-share-token`). Needs `DEV_AUTO_LOGIN`; each user is seeded once. Never set in CI or tests. |
 | `ASPNETCORE_URLS` | App listen URLs (e.g. `http://+:8080`) |
 | `WEB_PORT` | Host port exposed by docker-compose (default: `8080`) |
 | `COOKBOOK_URL` | Public URL of the app |
@@ -205,6 +206,6 @@ npm run codegen
 Feature files live in `e2e/features/`, step definitions in `e2e/steps/`.
 `playwright-bdd` generates Playwright test files into `e2e/.features-gen/` (gitignored) — rebuilt automatically on each `npm test`.
 
-Auth is handled automatically via `DEV_AUTO_LOGIN=devuser` (set in `.env`). Each scenario creates its own recipe data via the REST API and cleans it up after.
+Auth is handled automatically via `DEV_AUTO_LOGIN`, but E2E runs as its own user `e2e-user` (the dev-only `X-Dev-User` header, see `e2e/fixtures/user.ts`). `globalSetup` deletes all of `e2e-user`'s recipes before each run, so it never touches the `devuser` data you browse locally, and it refuses to run if the app signs it in as anyone else. Each scenario creates its own recipe data via the REST API and cleans it up after.
 
 **If a selector breaks**, run `npm run codegen` against the running app to find the correct locator — Vuetify's generated DOM can be verbose.
