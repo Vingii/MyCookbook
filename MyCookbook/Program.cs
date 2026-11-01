@@ -92,6 +92,14 @@ namespace MyCookbook
                     }
                 }
 
+                // Local development only: sample data so the app is not empty (see DevDataSeeder).
+                if (config["DEV_SEED_DATA"] == "true" && config["DEV_AUTO_LOGIN"] is { Length: > 0 } seedUser)
+                {
+                    using var scope = app.Services.CreateScope();
+                    var cookbookDbContext = scope.ServiceProvider.GetRequiredService<CookbookDatabaseContext>();
+                    DevDataSeeder.SeedAsync(cookbookDbContext, seedUser, DateOnly.FromDateTime(DateTime.Today)).GetAwaiter().GetResult();
+                }
+
                 if (!app.Environment.IsDevelopment())
                 {
                     app.UseExceptionHandler("/error");
