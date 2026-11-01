@@ -6,32 +6,46 @@ namespace MyCookbook.Services
 {
     public class ChangelogService
     {
-        private readonly string _changelogFilePath;
-        private List<ChangelogEntry> _allChangelogEntries;
+        public const string DefaultLanguage = "en";
+
+        // Translations live next to CHANGELOG.md as CHANGELOG.<lang>.md
+        private static readonly Dictionary<string, string> ChangelogFiles = new()
+        {
+            [DefaultLanguage] = "CHANGELOG.md",
+            ["cs"] = "CHANGELOG.cs.md",
+        };
+
+        private readonly string _contentRootPath;
+        private Dictionary<string, List<ChangelogEntry>>? _entriesByLanguage;
         private readonly ILogger<ChangelogService> _logger;
 
         public ChangelogService(IHostEnvironment env, ILogger<ChangelogService> logger)
         {
-            _changelogFilePath = Path.Combine(env.ContentRootPath, "CHANGELOG.md");
+            _contentRootPath = env.ContentRootPath;
             _logger = logger;
         }
 
         public async Task InitializeAsync()
         {
-            _allChangelogEntries = await LoadChangelogAsync();
+            var entriesByLanguage = new Dictionary<string, List<ChangelogEntry>>();
+            foreach (var (language, fileName) in ChangelogFiles)
+            {
+                entriesByLanguage[language] = await LoadChangelogAsync(Path.Combine(_contentRootPath, fileName));
+            }
+            _entriesByLanguage = entriesByLanguage;
         }
 
-        private async Task<List<ChangelogEntry>> LoadChangelogAsync()
+        private async Task<List<ChangelogEntry>> LoadChangelogAsync(string filePath)
         {
             var entries = new List<ChangelogEntry>();
 
-            if (!File.Exists(_changelogFilePath))
+            if (!File.Exists(filePath))
             {
-                _logger.LogError("CHANGELOG.md not found at {Path}", _changelogFilePath);
+                _logger.LogError("Changelog not found at {Path}", filePath);
                 return entries;
             }
 
-            var markdownContent = await File.ReadAllTextAsync(_changelogFilePath);
+            var markdownContent = await File.ReadAllTextAsync(filePath);
 
             // Regular expression to find each version block
             var versionRegex = new Regex(
@@ -64,33 +78,52 @@ namespace MyCookbook.Services
             return entries.OrderByDescending(e => e.ReleaseDate).ToList();
         }
 
-        public async Task<List<ChangelogEntry>> GetLatestChangelogEntries(int count)
+        /// <summary>
+        /// Returns all entries in the given language. The English changelog is authoritative:
+        /// any version missing from the translation falls back to its English entry.
+        /// </summary>
+        private async Task<List<ChangelogEntry>> GetEntries(string? language)
         {
-            if (_allChangelogEntries == null) await InitializeAsync();
-            return _allChangelogEntries?.Take(count).ToList() ?? new List<ChangelogEntry>();
+            if (_entriesByLanguage == null) await InitializeAsync();
+            var entriesByLanguage = _entriesByLanguage!;
+
+            var defaultEntries = entriesByLanguage[DefaultLanguage];
+            if (language == null || language == DefaultLanguage || !entriesByLanguage.TryGetValue(language, out var translated))
+            {
+                return defaultEntries;
+            }
+
+            var translatedByVersion = translated.ToDictionary(e => e.Version);
+            return defaultEntries
+                .Select(e => translatedByVersion.GetValueOrDefault(e.Version, e))
+                .ToList();
         }
 
-        public async Task<List<ChangelogEntry>> GetChangelogEntriesSinceVersion(string userLastSeenVersion)
+        public async Task<List<ChangelogEntry>> GetLatestChangelogEntries(int count, string language = DefaultLanguage)
         {
-            if (_allChangelogEntries == null) await InitializeAsync();
+            return (await GetEntries(language)).Take(count).ToList();
+        }
+
+        public async Task<List<ChangelogEntry>> GetChangelogEntriesSinceVersion(string userLastSeenVersion, string language = DefaultLanguage)
+        {
+            var entries = await GetEntries(language);
 
             // Find the index of the user's last seen version
-            var lastSeenEntry = _allChangelogEntries?.FirstOrDefault(e => e.Version == userLastSeenVersion);
+            var lastSeenEntry = entries.FirstOrDefault(e => e.Version == userLastSeenVersion);
             if (lastSeenEntry == null)
             {
                 // If userLastSeenVersion is not found, return all entries (or just the latest, depending on desired behavior)
-                return _allChangelogEntries ?? new List<ChangelogEntry>();
+                return entries;
             }
 
             // Get all entries that are newer than (come before in the sorted list) the user's last seen version
-            var index = _allChangelogEntries.IndexOf(lastSeenEntry);
-            return _allChangelogEntries.Take(index).ToList();
+            var index = entries.IndexOf(lastSeenEntry);
+            return entries.Take(index).ToList();
         }
 
-        public async Task<ChangelogEntry> GetChangelogEntryForVersion(string version)
+        public async Task<ChangelogEntry?> GetChangelogEntryForVersion(string version, string language = DefaultLanguage)
         {
-            if (_allChangelogEntries == null) await InitializeAsync();
-            return _allChangelogEntries?.FirstOrDefault(e => e.Version == version);
+            return (await GetEntries(language)).FirstOrDefault(e => e.Version == version);
         }
     }
 }

@@ -18,9 +18,9 @@ namespace MyCookbook.Api
             ?? "0.0.0";
 
         [HttpGet]
-        public async Task<IActionResult> GetEntries()
+        public async Task<IActionResult> GetEntries([FromQuery] string? lang = null)
         {
-            var entries = await changelogService.GetLatestChangelogEntries(20);
+            var entries = await changelogService.GetLatestChangelogEntries(20, lang ?? ChangelogService.DefaultLanguage);
             return Ok(entries.Select(e => new
             {
                 e.Version,
