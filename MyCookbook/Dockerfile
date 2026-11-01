@@ -21,12 +21,13 @@ COPY MyCookbook/ MyCookbook/
 COPY --from=frontend-build /src/MyCookbook/wwwroot /src/MyCookbook/wwwroot
 
 WORKDIR "/src/MyCookbook"
+# No --no-restore: packages live only in the cache mount, which is not part of any layer. When the
+# restore layer above comes from the CI layer cache, the mount is empty and publish must restore again.
 RUN --mount=type=cache,target=/root/.nuget/packages \
     dotnet publish "MyCookbook.csproj" \
     -c Release \
     -o /app/publish \
-    /p:UseAppHost=false \
-    --no-restore
+    /p:UseAppHost=false
 
 # --- STAGE 4: Final Runtime ---
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
