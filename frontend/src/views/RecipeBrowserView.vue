@@ -94,12 +94,15 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useRecipesStore } from '../stores/recipes'
 import { useUiStore } from '../stores/ui'
+import { useAuthStore } from '../stores/auth'
 import { useReadonly } from '../composables/useReadonly'
 import { recipesApi } from '../api/recipes'
+import { sharedApi } from '../api/shared'
 import RecipeTable from '../components/RecipeTable.vue'
 
 const store = useRecipesStore()
 const ui = useUiStore()
+const auth = useAuthStore()
 watchEffect(() => { document.title = ui.t.recipes })
 const router = useRouter()
 const { viewingUser, shareToken, readonly } = useReadonly()
@@ -131,6 +134,10 @@ const filteredRecipes = computed(() => {
 onMounted(() => {
   store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value })
   store.fetchIngredientNames()
+  // Someone else's cookbook opened through its share link: remember it on the "Shared" page (MC-71).
+  if (readonly.value && !auth.isGuest && shareToken.value && viewingUser.value) {
+    sharedApi.recordCookbook(viewingUser.value, shareToken.value).catch(() => {})
+  }
 })
 
 function applyFilters() {

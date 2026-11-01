@@ -41,6 +41,7 @@ namespace MyCookbook
 
                 builder.Services.AddTransient<CookbookDatabaseService>();
                 builder.Services.AddTransient<RecipeLinkService>();
+                builder.Services.AddTransient<SharedItemService>();
                 builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>

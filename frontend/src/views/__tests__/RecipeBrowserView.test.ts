@@ -7,6 +7,8 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import RecipeBrowserView from '../RecipeBrowserView.vue'
+import { sharedApi } from '../../api/shared'
+import { useAuthStore } from '../../stores/auth'
 
 const xs = ref(false)
 vi.mock('vuetify', async (importOriginal) => ({
@@ -21,14 +23,18 @@ vi.mock('../../api/recipes', () => ({
   },
 }))
 
+vi.mock('../../api/shared', () => ({
+  sharedApi: { recordCookbook: vi.fn() },
+}))
+
 const vuetify = createVuetify({ components, directives })
 
-async function mountView() {
+async function mountView(path = '/') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/', component: RecipeBrowserView }],
   })
-  router.push('/')
+  router.push(path)
   await router.isReady()
   const wrapper = mount(RecipeBrowserView, {
     global: { plugins: [vuetify, router], stubs: { RecipeTable: true } },
@@ -87,5 +93,41 @@ describe('RecipeBrowserView filters', () => {
 
     expect(badgeShown()).toBe(true)
     expect(badge().text()).toBe('2')
+  })
+})
+
+describe('RecipeBrowserView shared cookbooks (MC-71)', () => {
+  function signIn(username: string, isGuest = false) {
+    const auth = useAuthStore()
+    auth.username = username
+    auth.isAuthenticated = true
+    auth.isGuest = isGuest
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+    vi.mocked(sharedApi.recordCookbook).mockReset().mockResolvedValue({} as never)
+  })
+
+  it('records a cookbook opened through its share link', async () => {
+    signIn('adel')
+    await mountView('/?user=anna&shareToken=tok')
+
+    expect(sharedApi.recordCookbook).toHaveBeenCalledWith('anna', 'tok')
+  })
+
+  it('does not record your own cookbook', async () => {
+    signIn('adel')
+    await mountView('/')
+
+    expect(sharedApi.recordCookbook).not.toHaveBeenCalled()
+  })
+
+  it('does not record for guests', async () => {
+    signIn('guest-1', true)
+    await mountView('/?user=anna&shareToken=tok')
+
+    expect(sharedApi.recordCookbook).not.toHaveBeenCalled()
   })
 })

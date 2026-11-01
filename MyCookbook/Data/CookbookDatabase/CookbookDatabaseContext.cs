@@ -25,6 +25,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public virtual DbSet<Recipe> Recipes { get; set; }
         public virtual DbSet<Step> Steps { get; set; }
         public virtual DbSet<UserPreference> UserPreferences { get; set; }
+        public virtual DbSet<SharedItem> SharedItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -120,6 +121,21 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.Property(e => e.Value)
                     .IsRequired()
                     .HasMaxLength(450);
+            });
+
+            modelBuilder.Entity<SharedItem>(entity =>
+            {
+                entity.HasIndex(e => e.UserName, "IX_SharedItems_UserName");
+
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.Property(e => e.OwnerUserName)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.Property(e => e.ShareToken).HasMaxLength(450);
             });
 
             modelBuilder.Entity<Tag>(entity =>
