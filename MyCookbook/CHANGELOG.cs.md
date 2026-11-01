@@ -9,6 +9,7 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 ## [2.6.1] - 2026-11-01
 ### Opraveno
 - Stránka „Sdílené“ se někdy nenačetla.
+- Stránka „Sdílené“ zobrazovala místo jména toho, kdo recept sdílel, jeho ID.
 
 ## [2.6.0] - 2026-11-01
 ### Přidáno

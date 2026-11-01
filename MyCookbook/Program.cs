@@ -163,9 +163,10 @@ namespace MyCookbook
                     var displayName = context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
                     if (uid != null && displayName != null)
                     {
+                        // Root provider: the request's services may already be disposed when this runs.
                         _ = Task.Run(async () =>
                         {
-                            using var scope = context.RequestServices.CreateScope();
+                            using var scope = app.Services.CreateScope();
                             var db = scope.ServiceProvider.GetRequiredService<CookbookDatabaseService>();
                             await db.UpdateUserPreference("DisplayName", displayName, uid);
                         });
