@@ -115,6 +115,7 @@ Serilog with Console and Grafana Loki sinks.
 | `COOKBOOK_AUTHENTIK_URL` | Authentik SSO URL for header-based auth |
 | `Grafana__Key` / `Grafana__Login` / `Grafana__Url` | Grafana integration |
 | `YouTrack__BaseUrl` / `YouTrack__Token` / `YouTrack__ProjectKey` | YouTrack feedback integration |
+| `LiteLLM__BaseUrl` / `LiteLLM__ApiKey` / `LiteLLM__Model` | LiteLLM proxy (OpenAI-compatible) for the AI "New recipe from a link" import. The feature is hidden when `BaseUrl` or `Model` is unset. |
 | `Mailgun__ApiKey` / `Mailgun__FromEmail` / `Mailgun__MailDomain` | Email sending (dev only) |
 
 ## Git Commits

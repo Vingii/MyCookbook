@@ -4,12 +4,23 @@
       <v-col>
         <h1 class="text-h4">{{ ui.t.recipes }}</h1>
       </v-col>
-      <v-col cols="auto">
+      <v-col cols="auto" class="d-flex ga-2">
+        <v-btn
+          v-if="!readonly && importEnabled"
+          variant="outlined"
+          color="primary"
+          prepend-icon="mdi-link-variant"
+          @click="importOpen = true"
+        >
+          {{ ui.t.importFromLink }}
+        </v-btn>
         <v-btn v-if="!readonly" color="primary" prepend-icon="mdi-plus" @click="createRecipe">
           {{ ui.t.newRecipe }}
         </v-btn>
       </v-col>
     </v-row>
+
+    <RecipeImportDialog v-model="importOpen" @created="(guid) => router.push(`/recipe/${guid}`)" />
 
     <v-row class="mb-4" :dense="xs">
       <v-col cols="12" sm="6" md="3" class="d-flex align-center ga-2">
@@ -97,6 +108,8 @@ import { useUiStore } from '../stores/ui'
 import { useReadonly } from '../composables/useReadonly'
 import { recipesApi } from '../api/recipes'
 import RecipeTable from '../components/RecipeTable.vue'
+import RecipeImportDialog from '../components/RecipeImportDialog.vue'
+import { recipeImportApi } from '../api/recipeImport'
 
 const store = useRecipesStore()
 const ui = useUiStore()
@@ -107,6 +120,9 @@ const search = ref('')
 const category = ref<string | null>(null)
 const tag = ref<string | null>(null)
 const selectedIngredients = ref<string[]>([])
+// AI import from a link (MC-69) is offered only when the server has an AI configured.
+const importEnabled = ref(false)
+const importOpen = ref(false)
 const { xs } = useDisplay()
 const filtersOpen = ref(false)
 const activeFilterCount = computed(
@@ -131,6 +147,7 @@ const filteredRecipes = computed(() => {
 onMounted(() => {
   store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value })
   store.fetchIngredientNames()
+  if (!readonly.value) recipeImportApi.isEnabled().then((enabled) => { importEnabled.value = enabled }).catch(() => {})
 })
 
 function applyFilters() {
