@@ -77,6 +77,17 @@ describe('SharedRecipeView', () => {
     me.mockRejectedValue(new Error('401'))
   })
 
+  it('renders recipe links in steps as plain text', async () => {
+    getShared.mockResolvedValue({
+      ...recipe('Gyros'),
+      steps: [{ id: 1, order: 1, description: 'Serve with [[tzatzikem|Tzatziki]].', type: 'Active' }],
+    } as unknown as RecipeDto)
+    const wrapper = await mountView()
+    const steps = wrapper.findComponent({ name: 'StepList' })
+    expect(steps.props('plainLinks')).toBe(true)
+    expect(steps.props('links')).toBeUndefined()
+  })
+
   it('reloads the recipe when the browser restores the page from cache', async () => {
     getShared.mockResolvedValueOnce(recipe('Gyros')).mockResolvedValueOnce(recipe('Gyros v2'))
     const wrapper = await mountView()

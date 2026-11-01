@@ -37,7 +37,7 @@
       </v-col>
       <v-col cols="12" md="7">
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
-        <StepList :guid="guid" :steps="recipe.steps" :readonly="true" :highlight-words="highlightWords" :links="recipe.links" />
+        <StepList :guid="guid" :steps="recipe.steps" :readonly="true" :highlight-words="highlightWords" plain-links />
       </v-col>
     </v-row>
   </div>

@@ -184,8 +184,7 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
     {
         var recipe = await db.GetDetailedRecipeByIdAsync(guid.ToString());
         if (recipe == null) return NotFound();
-        // Forward links are part of the recipe's own text, so they are shared with it.
-        // Backlinks are deliberately omitted — they would expose recipes the owner did not share.
-        return recipe.ToDto(recipe.UserName, await recipeLinks.GetLinksAsync(recipe, recipe.UserName));
+        // No links or backlinks: they would open recipes the owner did not share.
+        return recipe.ToDto(recipe.UserName);
     }
 }

@@ -3,6 +3,7 @@ import {
   normalizeLinkText,
   parseLink,
   renderWithLinks,
+  renderLinksAsText,
   findLinkQuery,
   applyLinkSuggestion,
   suggestRecipeNames,
@@ -122,6 +123,19 @@ describe('renderWithLinks', () => {
     const text = 'Serve with [[Tzatziki]].'
     const first = renderWithLinks(text, [TZATZIKI], escape, href)
     expect(renderWithLinks(text, [TZATZIKI], escape, href)).toBe(first)
+  })
+})
+
+describe('renderLinksAsText', () => {
+  const upper = (s: string) => s.toUpperCase()
+
+  it('replaces links with their display text and renders no anchors', () => {
+    const html = renderLinksAsText('Serve with [[tzatzikem|Tzatziki]] and [[Pita]].', upper)
+    expect(html).toBe('SERVE WITH TZATZIKEM AND PITA.')
+  })
+
+  it('leaves an empty [[]] untouched', () => {
+    expect(renderLinksAsText('a [[]] b', (s) => s)).toBe('a [[]] b')
   })
 })
 

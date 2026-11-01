@@ -90,6 +90,18 @@ export function renderWithLinks(
   return parts.join('')
 }
 
+/**
+ * Renders text with every `[[wiki link]]` replaced by its display text, for places where links must
+ * not lead anywhere (a shared recipe must not open the owner's other recipes).
+ */
+export function renderLinksAsText(text: string, renderPlain: (part: string) => string): string {
+  LINK_REGEX.lastIndex = 0
+  return renderPlain(text.replace(LINK_REGEX, (whole, inner: string) => {
+    const { display, reference } = parseLink(inner)
+    return reference ? display : whole
+  }))
+}
+
 export interface LinkQuery {
   /** Index of the opening `[[`. */
   start: number
@@ -154,15 +166,12 @@ export function suggestRecipeNames(names: string[], query: string, limit = 8): s
 
 /**
  * Builds the href for a recipe link, preserving the context the current recipe is being viewed in:
- * the public share page keeps linking to public share pages, and read-only browsing of someone
- * else's cookbook keeps its `user` / `shareToken` query parameters.
+ * read-only browsing of someone else's cookbook keeps its `user` / `shareToken` query parameters.
  */
 export function useRecipeHref() {
   const route = useRoute()
 
   return (guid: string): string => {
-    if (route.path.startsWith('/recipe/shared/')) return `/recipe/shared/${guid}`
-
     const params = new URLSearchParams()
     if (route.query.user) params.set('user', String(route.query.user))
     if (route.query.shareToken) params.set('shareToken', String(route.query.shareToken))
