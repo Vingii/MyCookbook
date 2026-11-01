@@ -25,7 +25,7 @@ export const translations = {
     noRecipesFound: 'No recipes found.',
     // RecipeViewer
     clone: 'Clone',
-    cloneToMyRecipes: 'Clone to my recipes',
+    cloneToMyRecipes: 'Clone',
     markCooked: 'Mark Cooked',
     delete: 'Delete',
     category: 'Category',
@@ -115,7 +115,7 @@ export const translations = {
     noRecipesFound: 'Žádné recepty.',
     // RecipeViewer
     clone: 'Duplikovat',
-    cloneToMyRecipes: 'Duplikovat do mých receptů',
+    cloneToMyRecipes: 'Kopírovat',
     markCooked: 'Označit jako uvařeno',
     delete: 'Smazat',
     category: 'Kategorie',

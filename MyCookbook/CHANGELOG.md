@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.6.0] - 2026-11-01
 ### Added
 - Patch notes are now available in Czech.
-- Recipes shared with you have a "Clone to my recipes" button that saves a copy to your own recipes.
+- Recipes shared with you have a Clone button that saves a copy to your own recipes.
 
 ### Changed
 - On phones, the top bar's less-used buttons (theme, language, bug report, What's New, Settings, Logout) moved into a ⋮ menu, so none of them are cut off.

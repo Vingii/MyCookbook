@@ -64,25 +64,38 @@ describe('RecipeViewerView clone (MC-70)', () => {
     clone.mockReset()
   })
 
-  it('offers owner actions, not "clone to my recipes", on your own recipe', async () => {
+  it('offers owner actions on your own recipe', async () => {
     const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel' })
 
     expect(buttonTexts(wrapper)).toEqual(expect.arrayContaining(['Share', 'Clone', 'Delete']))
-    expect(buttonTexts(wrapper)).not.toContain('Clone to my recipes')
   })
 
-  it('offers only "clone to my recipes" on a recipe someone shared with you', async () => {
+  it('offers only Clone on a recipe someone shared with you', async () => {
     const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
 
-    expect(buttonTexts(wrapper)).toContain('Clone to my recipes')
+    expect(buttonTexts(wrapper)).toContain('Clone')
+    expect(buttonTexts(wrapper)).not.toContain('Share')
     expect(buttonTexts(wrapper)).not.toContain('Delete')
+  })
+
+  it('labels the shared-recipe clone "Kopírovat" in Czech', async () => {
+    localStorage.setItem('locale', 'cs')
+    setActivePinia(createPinia())
+    const shared = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
+    expect(buttonTexts(shared)).toContain('Kopírovat')
+    shared.unmount()
+
+    // Your own recipe keeps the existing label.
+    const own = await mountView(`/recipe/${GUID}`, { username: 'adel' })
+    expect(buttonTexts(own)).toContain('Duplikovat')
+    expect(buttonTexts(own)).not.toContain('Kopírovat')
   })
 
   it('opens your own copy after cloning a shared recipe', async () => {
     clone.mockResolvedValue({ ...gyros, guid: 'new-guid' })
     const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
 
-    await wrapper.findAll('button').find((b) => b.text() === 'Clone to my recipes')!.trigger('click')
+    await wrapper.findAll('button').find((b) => b.text() === 'Clone')!.trigger('click')
     await flushPromises()
 
     expect(clone).toHaveBeenCalledWith(GUID)
@@ -93,6 +106,6 @@ describe('RecipeViewerView clone (MC-70)', () => {
   it('offers no clone to guests, who have no cookbook', async () => {
     const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'guest-1', isGuest: true })
 
-    expect(buttonTexts(wrapper)).not.toContain('Clone to my recipes')
+    expect(buttonTexts(wrapper)).not.toContain('Clone')
   })
 })

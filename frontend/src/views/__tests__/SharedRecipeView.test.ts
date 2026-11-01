@@ -132,7 +132,7 @@ describe('SharedRecipeView', () => {
 
   describe('clone to my recipes (MC-70)', () => {
     const cloneButton = (wrapper: Awaited<ReturnType<typeof mountView>>) =>
-      wrapper.findAll('button').find((b) => b.text().includes('Clone to my recipes'))
+      wrapper.findAll('button').find((b) => b.text() === 'Clone')
 
     it('is hidden for anonymous visitors', async () => {
       getShared.mockResolvedValue(recipe('Gyros'))
