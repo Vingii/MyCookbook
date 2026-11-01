@@ -4,6 +4,9 @@
       <v-col>
         <h1 class="text-h4">{{ recipe.name }}</h1>
       </v-col>
+      <v-col v-if="canCloneToOwn" cols="auto">
+        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.cloneToMyRecipes }}</v-btn>
+      </v-col>
     </v-row>
 
     <div class="d-flex flex-wrap ga-6 mb-4 text-body-2">
@@ -46,10 +49,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useUiStore } from '../stores/ui'
+import { useAuthStore } from '../stores/auth'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
@@ -57,13 +61,19 @@ import StepList from '../components/StepList.vue'
 const route = useRoute()
 // Computed rather than captured: following a recipe link reuses this component instance.
 const guid = computed(() => route.params.guid as string)
+const router = useRouter()
 const ui = useUiStore()
+const auth = useAuthStore()
+// This page is public, so the router guard never loaded auth. Only signed-in, non-guest users
+// have a cookbook to clone into (MC-70).
+const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest)
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const highlightWords = ref(new Set<string>())
 
 onMounted(() => {
   loadRecipe()
+  auth.load()
   window.addEventListener('pageshow', onPageShow)
   document.addEventListener('visibilitychange', onVisibilityChange)
 })
@@ -92,6 +102,11 @@ async function refreshRecipe() {
   } catch {
     // Keep showing what we have.
   }
+}
+
+async function cloneRecipe() {
+  const cloned = await recipesApi.clone(guid.value)
+  router.push(`/recipe/${cloned.guid}`)
 }
 
 async function loadRecipe() {

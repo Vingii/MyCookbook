@@ -160,7 +160,9 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
     [Authorize(Policy = "NotGuest")]
     public async Task<ActionResult<RecipeDto>> Clone(Guid guid)
     {
-        var existing = await db.GetDetailedRecipeAsync(guid, CurrentUser);
+        // Any recipe can be cloned into your own cookbook by its guid. This grants nothing new:
+        // the guid alone already makes a recipe readable through the public GetShared endpoint.
+        var existing = await db.GetDetailedRecipeByIdAsync(guid.ToString());
         if (existing == null) return NotFound();
         var cloned = await db.CloneRecipeAsync(existing, CurrentUser);
         return CreatedAtAction(nameof(GetById), new { guid = cloned.Guid }, cloned.ToDto(CurrentUser));

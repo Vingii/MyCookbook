@@ -7,10 +7,14 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import SharedRecipeView from '../SharedRecipeView.vue'
 import { recipesApi } from '../../api/recipes'
+import { authApi } from '../../api/auth'
 import type { RecipeDto } from '../../api/types'
 
 vi.mock('../../api/recipes', () => ({
-  recipesApi: { getShared: vi.fn() },
+  recipesApi: { getShared: vi.fn(), clone: vi.fn() },
+}))
+vi.mock('../../api/auth', () => ({
+  authApi: { me: vi.fn() },
 }))
 vi.mock('../../composables/useIngredientHighlighter', () => ({
   getHighlightWords: vi.fn().mockResolvedValue(new Set()),
@@ -18,6 +22,8 @@ vi.mock('../../composables/useIngredientHighlighter', () => ({
 
 const vuetify = createVuetify({ components, directives })
 const getShared = vi.mocked(recipesApi.getShared)
+const clone = vi.mocked(recipesApi.clone)
+const me = vi.mocked(authApi.me)
 const GUID = '4aa97588-e66d-4c9e-8fe8-9ed70ea6ef7e'
 
 function recipe(name: string): RecipeDto {
@@ -27,7 +33,10 @@ function recipe(name: string): RecipeDto {
 async function mountView() {
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: '/recipe/shared/:guid', component: SharedRecipeView }],
+    routes: [
+      { path: '/recipe/shared/:guid', component: SharedRecipeView },
+      { path: '/recipe/:guid', component: { template: '<div />' } },
+    ],
   })
   router.push(`/recipe/shared/${GUID}`)
   await router.isReady()
@@ -35,7 +44,7 @@ async function mountView() {
     global: { plugins: [vuetify, router], stubs: { IngredientList: true, StepList: true } },
   })
   await flushPromises()
-  return wrapper
+  return Object.assign(wrapper, { router })
 }
 
 /** Fires visibilitychange with the given state (happy-dom does not report "visible" by default). */
@@ -57,6 +66,10 @@ describe('SharedRecipeView', () => {
     localStorage.clear()
     setActivePinia(createPinia())
     getShared.mockReset()
+    clone.mockReset()
+    me.mockReset()
+    // Anonymous by default: the shared page is public.
+    me.mockRejectedValue(new Error('401'))
   })
 
   it('reloads the recipe when the browser restores the page from cache', async () => {
@@ -115,5 +128,38 @@ describe('SharedRecipeView', () => {
     await flushPromises()
 
     expect(getShared).toHaveBeenCalledTimes(1)
+  })
+
+  describe('clone to my recipes (MC-70)', () => {
+    const cloneButton = (wrapper: Awaited<ReturnType<typeof mountView>>) =>
+      wrapper.findAll('button').find((b) => b.text() === 'Clone')
+
+    it('is hidden for anonymous visitors', async () => {
+      getShared.mockResolvedValue(recipe('Gyros'))
+      const wrapper = await mountView()
+
+      expect(cloneButton(wrapper)).toBeUndefined()
+    })
+
+    it('is hidden for guests, who have no cookbook', async () => {
+      me.mockResolvedValue({ username: 'guest-123', isAuthenticated: true, isGuest: true } as never)
+      getShared.mockResolvedValue(recipe('Gyros'))
+      const wrapper = await mountView()
+
+      expect(cloneButton(wrapper)).toBeUndefined()
+    })
+
+    it('clones into the signed-in user\'s cookbook and opens the copy', async () => {
+      me.mockResolvedValue({ username: 'adel', isAuthenticated: true, isGuest: false } as never)
+      getShared.mockResolvedValue(recipe('Gyros'))
+      clone.mockResolvedValue({ ...recipe('Gyros'), guid: 'new-guid' })
+      const wrapper = await mountView()
+
+      await cloneButton(wrapper)!.trigger('click')
+      await flushPromises()
+
+      expect(clone).toHaveBeenCalledWith(GUID)
+      await vi.waitFor(() => expect(wrapper.router.currentRoute.value.fullPath).toBe('/recipe/new-guid'))
+    })
   })
 })

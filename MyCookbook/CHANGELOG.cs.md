@@ -9,6 +9,7 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 ## [2.6.0] - 2026-11-01
 ### Přidáno
 - Seznam změn je nyní dostupný i v češtině.
+- Recepty, které s vámi někdo sdílí, mají tlačítko „Kopírovat“, které uloží kopii mezi vaše recepty.
 
 ### Změněno
 - Na telefonu jsou méně používaná tlačítka horní lišty (vzhled, jazyk, nahlášení chyby, Co je nového, Nastavení, Odhlásit) přesunuta do nabídky ⋮, takže už žádné není useknuté.

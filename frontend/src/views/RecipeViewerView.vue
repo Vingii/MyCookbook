@@ -29,6 +29,9 @@
         <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.clone }}</v-btn>
         <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">{{ ui.t.delete }}</v-btn>
       </v-col>
+      <v-col v-else-if="canCloneToOwn" cols="auto">
+        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.cloneToMyRecipes }}</v-btn>
+      </v-col>
     </v-row>
 
     <v-row v-if="!readonly && editingMeta" class="mb-4" align="center">
@@ -162,6 +165,7 @@ import { recipesApi } from '../api/recipes'
 import { useReadonly } from '../composables/useReadonly'
 import { useUiStore } from '../stores/ui'
 import { useRecipesStore } from '../stores/recipes'
+import { useAuthStore } from '../stores/auth'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useRecipeHref } from '../composables/useRecipeLinks'
 import type { RecipeDto } from '../api/types'
@@ -176,6 +180,9 @@ const recipeHref = useRecipeHref()
 const { viewingUser, shareToken, readonly } = useReadonly()
 const ui = useUiStore()
 const store = useRecipesStore()
+const auth = useAuthStore()
+// Someone else's recipe can be cloned into your own cookbook, but guests have no cookbook (MC-70).
+const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest)
 const recipe = ref<RecipeDto | null>(null)
 watch(recipe, (r) => { document.title = r?.name ?? 'MyCookbook' }, { immediate: true })
 const loading = ref(true)
