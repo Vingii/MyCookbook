@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-11-01
+### Changed
+- On phones, the top bar's less-used buttons (theme, language, bug report, What's New, Settings, Logout) moved into a ⋮ menu, so none of them are cut off.
+- On phones, the recipe list shows only the search box. The other filters open with the filter button next to it, which shows how many are active.
+
 ## [2.6.0] - 2026-11-01
 ### Added
 - Patch notes are now available in Czech.
