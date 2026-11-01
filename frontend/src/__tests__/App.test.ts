@@ -9,10 +9,10 @@ import * as directives from 'vuetify/directives'
 import App from '../App.vue'
 import { useUiStore } from '../stores/ui'
 
-const xs = ref(false)
+const width = ref(1024)
 vi.mock('vuetify', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vuetify')>()),
-  useDisplay: () => ({ xs }),
+  useDisplay: () => ({ width }),
 }))
 
 vi.mock('../api/changelog', () => ({
@@ -55,7 +55,7 @@ describe('App navbar', () => {
   })
 
   it('shows every action directly in the bar on wider screens', async () => {
-    xs.value = false
+    width.value = 700
     const wrapper = await mountApp()
 
     expect(wrapper.find('.menu-stub').exists()).toBe(false)
@@ -64,8 +64,8 @@ describe('App navbar', () => {
     expect(wrapper.find('header').text()).toContain('EN')
   })
 
-  it('moves secondary actions into an overflow menu on phones', async () => {
-    xs.value = true
+  it('moves secondary actions into an overflow menu on narrow screens', async () => {
+    width.value = 699
     const wrapper = await mountApp()
 
     const menu = wrapper.find('.menu-stub')
@@ -76,10 +76,11 @@ describe('App navbar', () => {
     }
     // Primary navigation stays in the bar.
     expect(wrapper.find('header').text()).toContain('Planner')
+    expect(wrapper.find('header').text()).toContain('Shared')
   })
 
   it('toggles theme and language from the phone menu', async () => {
-    xs.value = true
+    width.value = 360
     const ui = useUiStore()
     const wrapper = await mountApp()
 

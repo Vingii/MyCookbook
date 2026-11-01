@@ -51,6 +51,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { recipesApi } from '../api/recipes'
+import { sharedApi } from '../api/shared'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
@@ -71,9 +72,9 @@ const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const highlightWords = ref(new Set<string>())
 
-onMounted(() => {
-  loadRecipe()
-  auth.load()
+onMounted(async () => {
+  await Promise.all([loadRecipe(), auth.load()])
+  recordVisit()
   window.addEventListener('pageshow', onPageShow)
   document.addEventListener('visibilitychange', onVisibilityChange)
 })
@@ -81,7 +82,15 @@ onUnmounted(() => {
   window.removeEventListener('pageshow', onPageShow)
   document.removeEventListener('visibilitychange', onVisibilityChange)
 })
-watch(guid, loadRecipe)
+watch(guid, async () => {
+  await loadRecipe()
+  recordVisit()
+})
+
+/** Remembers this recipe on the signed-in user's "Shared" page (MC-71). The server ignores your own recipes. */
+function recordVisit() {
+  if (recipe.value && canCloneToOwn.value) sharedApi.recordRecipe(guid.value).catch(() => {})
+}
 
 // In-app browsers (Messenger, WhatsApp) often restore a link opened earlier instead of loading it again,
 // which showed an outdated version of the recipe (MC-72). Refresh whenever the page is shown again.

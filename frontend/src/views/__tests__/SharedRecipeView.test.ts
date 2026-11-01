@@ -8,10 +8,14 @@ import * as directives from 'vuetify/directives'
 import SharedRecipeView from '../SharedRecipeView.vue'
 import { recipesApi } from '../../api/recipes'
 import { authApi } from '../../api/auth'
+import { sharedApi } from '../../api/shared'
 import type { RecipeDto } from '../../api/types'
 
 vi.mock('../../api/recipes', () => ({
   recipesApi: { getShared: vi.fn(), clone: vi.fn() },
+}))
+vi.mock('../../api/shared', () => ({
+  sharedApi: { recordRecipe: vi.fn() },
 }))
 vi.mock('../../api/auth', () => ({
   authApi: { me: vi.fn() },
@@ -68,6 +72,7 @@ describe('SharedRecipeView', () => {
     getShared.mockReset()
     clone.mockReset()
     me.mockReset()
+    vi.mocked(sharedApi.recordRecipe).mockReset().mockResolvedValue({} as never)
     // Anonymous by default: the shared page is public.
     me.mockRejectedValue(new Error('401'))
   })
@@ -160,6 +165,34 @@ describe('SharedRecipeView', () => {
 
       expect(clone).toHaveBeenCalledWith(GUID)
       await vi.waitFor(() => expect(wrapper.router.currentRoute.value.fullPath).toBe('/recipe/new-guid'))
+    })
+  })
+
+  describe('remembering shared recipes (MC-71)', () => {
+    it('records the recipe for signed-in users', async () => {
+      me.mockResolvedValue({ username: 'adel', isAuthenticated: true, isGuest: false } as never)
+      getShared.mockResolvedValue(recipe('Gyros'))
+      await mountView()
+
+      expect(sharedApi.recordRecipe).toHaveBeenCalledWith(GUID)
+    })
+
+    it('does not record for anonymous visitors or guests', async () => {
+      getShared.mockResolvedValue(recipe('Gyros'))
+      await mountView()
+      me.mockResolvedValue({ username: 'guest-1', isAuthenticated: true, isGuest: true } as never)
+      setActivePinia(createPinia())
+      await mountView()
+
+      expect(sharedApi.recordRecipe).not.toHaveBeenCalled()
+    })
+
+    it('does not record a recipe that failed to load', async () => {
+      me.mockResolvedValue({ username: 'adel', isAuthenticated: true, isGuest: false } as never)
+      getShared.mockRejectedValue(new Error('404'))
+      await mountView()
+
+      expect(sharedApi.recordRecipe).not.toHaveBeenCalled()
     })
   })
 })

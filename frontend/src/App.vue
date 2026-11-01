@@ -3,9 +3,10 @@
     <v-app-bar color="primary" flat>
       <v-btn variant="text" :to="'/'" class="text-h6 font-weight-bold">MyCookbook</v-btn>
       <v-btn variant="text" :to="'/planner'">{{ ui.t.navPlanner }}</v-btn>
+      <v-btn variant="text" :to="'/shared'">{{ ui.t.navShared }}</v-btn>
       <v-spacer />
-      <!-- The full bar needs ~580px, so phones get the secondary actions in an overflow menu. -->
-      <v-menu v-if="xs" location="bottom end">
+      <!-- The full bar needs ~660px, so narrow screens get the secondary actions in an overflow menu. -->
+      <v-menu v-if="compactBar" location="bottom end">
         <template #activator="{ props: menuProps }">
           <v-btn v-bind="menuProps" icon="mdi-dots-vertical" variant="text" :aria-label="ui.t.navMenu" />
         </template>
@@ -45,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import { useUiStore } from './stores/ui'
 import { changelogApi } from './api/changelog'
@@ -53,7 +54,9 @@ import FeedbackDialog from './components/FeedbackDialog.vue'
 import ChangelogDialog from './components/ChangelogDialog.vue'
 
 const ui = useUiStore()
-const { xs } = useDisplay()
+const { width } = useDisplay()
+// Measured: the full bar is ~660px wide in Czech (the longest labels), so collapse a little above that.
+const compactBar = computed(() => width.value < 700)
 const feedbackOpen = ref(false)
 const changelogOpen = ref(false)
 const changelogSinceVersion = ref<string | null>(null)

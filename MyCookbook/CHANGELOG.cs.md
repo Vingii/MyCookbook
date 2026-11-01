@@ -10,6 +10,7 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 ### Přidáno
 - Seznam změn je nyní dostupný i v češtině.
 - Recepty, které s vámi někdo sdílí, mají tlačítko „Kopírovat“, které uloží kopii mezi vaše recepty.
+- Nová stránka „Sdílené“: recepty, které s vámi ostatní sdílí, se tu po otevření uloží, takže je snadno najdete znovu. Můžete v nich hledat, důležité si připnout a ostatní odebrat.
 
 ### Změněno
 - Na telefonu jsou méně používaná tlačítka horní lišty (vzhled, jazyk, nahlášení chyby, Co je nového, Nastavení, Odhlásit) přesunuta do nabídky ⋮, takže už žádné není useknuté.

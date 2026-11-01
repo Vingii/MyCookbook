@@ -146,6 +146,40 @@ namespace MyCookbook.Migrations
                     b.ToTable("Recipes");
                 });
 
+            modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.SharedItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("LastOpened")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OwnerUserName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<bool>("Pinned")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("RecipeGuid")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "UserName" }, "IX_SharedItems_UserName");
+
+                    b.ToTable("SharedItems");
+                });
+
             modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.Step", b =>
                 {
                     b.Property<int>("Id")
