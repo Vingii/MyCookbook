@@ -772,6 +772,18 @@ namespace MyCookbook.Data
                         await context.SaveChangesAsync();
                     }
 
+                    // Restoring your own backup keeps the Guids, so existing share links keep working. A Guid
+                    // that belongs to another user (an import of their export) or repeats in the file gets a new one.
+                    var importedGuids = importedRecipes.Select(r => r.Guid).ToList();
+                    var takenGuids = (await context.Recipes
+                        .Where(r => importedGuids.Contains(r.Guid))
+                        .Select(r => r.Guid)
+                        .ToListAsync()).ToHashSet();
+                    foreach (var recipe in importedRecipes)
+                    {
+                        if (recipe.Guid == Guid.Empty || !takenGuids.Add(recipe.Guid)) recipe.Guid = Guid.NewGuid();
+                    }
+
                     var oldRecipeIdToNewRecipeIdMap = new Dictionary<int, int>();
 
                     foreach (var recipe in importedRecipes)
