@@ -300,15 +300,18 @@ namespace MyCookbook.Data
             recipe = await GetDetailedRecipeAsync(recipe.Name, recipe.UserName) ?? recipe;
             var newRecipe = recipe.Clone();
             newRecipe.UserName = user;
+            // Another user's cooking history does not carry over to your copy.
+            if (recipe.UserName != user) newRecipe.LastCooked = null;
             var name = newRecipe.Name;
             (name, int highestIndex) = await GetHighestRecipeNameIndex(name, user);
             newRecipe.Name = highestIndex >= 0 ? $"{name} ({highestIndex + 1})" : name;
             context.Recipes.Add(newRecipe);
             await context.SaveChangesAsync();
 
-            newRecipe.Ingredients = recipe.Ingredients.Select(x => x.Clone(recipe)).ToList();
-            newRecipe.Steps = recipe.Steps.Select(x => x.Clone(recipe)).ToList();
-            newRecipe.Tags = recipe.Tags.Select(x => x.Clone(recipe)).ToList();
+            // Children must belong to the new recipe and its owner, or a cross-user clone shows up empty.
+            newRecipe.Ingredients = recipe.Ingredients.Select(x => x.Clone(newRecipe)).ToList();
+            newRecipe.Steps = recipe.Steps.Select(x => x.Clone(newRecipe)).ToList();
+            newRecipe.Tags = recipe.Tags.Select(x => x.Clone(newRecipe)).ToList();
 
             await context.SaveChangesAsync();
 
