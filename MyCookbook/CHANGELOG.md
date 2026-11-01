@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.6.1] - 2026-11-01
 ### Fixed
 - The Shared page sometimes failed to load.
+- The Shared page showed an ID instead of the name of the person who shared a recipe.
 
 ## [2.6.0] - 2026-11-01
 ### Added
