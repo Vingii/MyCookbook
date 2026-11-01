@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { recipesApi } from '../api/recipes'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
@@ -62,8 +62,37 @@ const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const highlightWords = ref(new Set<string>())
 
-onMounted(loadRecipe)
+onMounted(() => {
+  loadRecipe()
+  window.addEventListener('pageshow', onPageShow)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+onUnmounted(() => {
+  window.removeEventListener('pageshow', onPageShow)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 watch(guid, loadRecipe)
+
+// In-app browsers (Messenger, WhatsApp) often restore a link opened earlier instead of loading it again,
+// which showed an outdated version of the recipe (MC-72). Refresh whenever the page is shown again.
+function onPageShow(e: PageTransitionEvent) {
+  if (e.persisted) refreshRecipe()
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') refreshRecipe()
+}
+
+/** Like loadRecipe, but keeps the current recipe on screen if the refresh fails (e.g. briefly offline). */
+async function refreshRecipe() {
+  try {
+    const fresh = await recipesApi.getShared(guid.value)
+    highlightWords.value = await getHighlightWords(fresh.ingredients.map((i) => i.name))
+    recipe.value = fresh
+  } catch {
+    // Keep showing what we have.
+  }
+}
 
 async function loadRecipe() {
   loading.value = true

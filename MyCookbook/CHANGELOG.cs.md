@@ -14,6 +14,9 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 - Na telefonu jsou méně používaná tlačítka horní lišty (vzhled, jazyk, nahlášení chyby, Co je nového, Nastavení, Odhlásit) přesunuta do nabídky ⋮, takže už žádné není useknuté.
 - Na telefonu zobrazuje seznam receptů jen pole pro hledání. Ostatní filtry se otevřou tlačítkem filtru vedle něj, které ukazuje počet aktivních filtrů.
 
+### Opraveno
+- Sdílený odkaz na recept někdy zobrazoval starší verzi receptu.
+
 ## [2.5.0] - 2026-09-20
 ### Přidáno
 - Recepty mohou odkazovat jeden na druhý. Napište do kroku `[[Tzatziki]]` a vznikne z toho odkaz na tento recept.
