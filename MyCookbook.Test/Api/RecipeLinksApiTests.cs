@@ -148,14 +148,14 @@ public class RecipeLinksApiTests : IDisposable
     }
 
     [Fact]
-    public async Task GetShared_ResolvesLinksButOmitsBacklinks()
+    public async Task GetShared_OmitsLinksAndBacklinks()
     {
         await SeedLinkedPairAsync();
 
         var gyros = await _client.GetFromJsonAsync<RecipeDto>($"/api/recipes/shared/{_gyrosGuid}");
         var tzatziki = await _client.GetFromJsonAsync<RecipeDto>($"/api/recipes/shared/{_tzatzikiGuid}");
 
-        Assert.Equal(_tzatzikiGuid, Assert.Single(gyros!.Links).Guid);
+        Assert.Empty(gyros!.Links);
         Assert.Empty(tzatziki!.UsedIn);
     }
 

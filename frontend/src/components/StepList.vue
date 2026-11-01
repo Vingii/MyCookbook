@@ -84,7 +84,7 @@ import { recipesApi } from '../api/recipes'
 import { useUiStore } from '../stores/ui'
 import { useRecipesStore } from '../stores/recipes'
 import { highlightText } from '../composables/useIngredientHighlighter'
-import { renderWithLinks, useRecipeHref } from '../composables/useRecipeLinks'
+import { renderWithLinks, renderLinksAsText, useRecipeHref } from '../composables/useRecipeLinks'
 import type { StepDto, RecipeLinkDto } from '../api/types'
 import StepTextarea from './StepTextarea.vue'
 
@@ -94,6 +94,8 @@ const props = defineProps<{
   readonly?: boolean
   highlightWords?: Set<string>
   links?: RecipeLinkDto[]
+  /** Show `[[links]]` as plain text (shared recipes must not open the owner's other recipes). */
+  plainLinks?: boolean
 }>()
 const emit = defineEmits<{ refresh: [] }>()
 
@@ -196,10 +198,12 @@ function setDescription(id: number, v: string) {
 }
 
 function renderDescription(text: string): string {
+  const renderPlain = (part: string) => highlightText(part, props.highlightWords ?? new Set())
+  if (props.plainLinks) return renderLinksAsText(text, renderPlain)
   return renderWithLinks(
     text,
     props.links ?? [],
-    (part) => highlightText(part, props.highlightWords ?? new Set()),
+    renderPlain,
     recipeHref,
   )
 }
