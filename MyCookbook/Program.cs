@@ -102,12 +102,35 @@ namespace MyCookbook
 
                 app.UseRouting();
 
-                var provider = new FileExtensionContentTypeProvider();
-                provider.Mappings[".jsonl"] = "application/jsonlines+json"; 
-                app.UseStaticFiles(new StaticFileOptions
+                // API data changes on every edit and is per-user, so no browser or proxy may reuse a response.
+                // Without this, shared recipe links could show an outdated version (MC-72).
+                app.Use(async (context, next) =>
                 {
-                    ContentTypeProvider = provider
+                    if (context.Request.Path.StartsWithSegments("/api"))
+                    {
+                        context.Response.OnStarting(() =>
+                        {
+                            context.Response.Headers.CacheControl = "no-store";
+                            return Task.CompletedTask;
+                        });
+                    }
+                    await next();
                 });
+
+                var provider = new FileExtensionContentTypeProvider();
+                provider.Mappings[".jsonl"] = "application/jsonlines+json";
+                var staticFileOptions = new StaticFileOptions
+                {
+                    ContentTypeProvider = provider,
+                    // index.html points at the current hashed bundles, so it must be revalidated after every deploy.
+                    // The bundles themselves are content-hashed and stay cacheable.
+                    OnPrepareResponse = ctx =>
+                    {
+                        if (ctx.File.Name == "index.html")
+                            ctx.Context.Response.Headers.CacheControl = "no-cache";
+                    }
+                };
+                app.UseStaticFiles(staticFileOptions);
 
                 app.UseMiddleware<TokenQueryParamMiddleware>();
                 app.UseAuthentication();
@@ -132,7 +155,7 @@ namespace MyCookbook
 
                 app.MapControllers();
                 app.MapMethods("/", [HttpMethods.Head], () => Results.StatusCode(200));
-                app.MapFallbackToFile("index.html");
+                app.MapFallbackToFile("index.html", staticFileOptions);
 
                 app.Run();
             }

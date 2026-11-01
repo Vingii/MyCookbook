@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - On phones, the top bar's less-used buttons (theme, language, bug report, What's New, Settings, Logout) moved into a ⋮ menu, so none of them are cut off.
 - On phones, the recipe list shows only the search box. The other filters open with the filter button next to it, which shows how many are active.
 
+### Fixed
+- Shared recipe links sometimes showed an older version of the recipe.
+
 ## [2.5.0] - 2026-09-20
 ### Added
 - Recipes can link to each other. Write `[[Tzatziki]]` in a step and it becomes a link to that recipe.
