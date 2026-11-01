@@ -1,7 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MyCookbook.Api.Dto;
@@ -10,16 +8,16 @@ using MyCookbook.Test.Common;
 
 namespace MyCookbook.Test.Api;
 
-// MC-71: history, pinning and lookup of recipes and cookbooks shared with you.
+// MC-71: history, pinning and lookup of recipes shared with you.
 // Authenticates as "devuser" — see the note on RecipesControllerTests.
 public class SharedApiTests : IDisposable
 {
     private readonly TestingWebAppFactory<Program> _factory;
     private readonly HttpClient _client;
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 
     private readonly Guid _gyros = Guid.NewGuid();
     private readonly Guid _tzatziki = Guid.NewGuid();
+    private readonly Guid _hummus = Guid.NewGuid();
     private readonly Guid _ownRecipe = Guid.NewGuid();
 
     public SharedApiTests()
@@ -39,25 +37,22 @@ public class SharedApiTests : IDisposable
         await context.SaveChangesAsync();
     }
 
-    /// <summary>"anna" (display name "Anna Nováková") owns Gyros and Tzatziki and shares her cookbook with token "anna-token".</summary>
+    /// <summary>"anna" (display name "Anna Nováková") owns Gyros, Tzatziki and Hummus.</summary>
     private Task SeedAsync() => WithContextAsync(ctx =>
     {
         ctx.Recipes.Add(new Recipe { Guid = _gyros, Name = "Gyros", UserName = "anna" });
         ctx.Recipes.Add(new Recipe { Guid = _tzatziki, Name = "Tzatziki", UserName = "anna" });
+        ctx.Recipes.Add(new Recipe { Guid = _hummus, Name = "Hummus", UserName = "anna" });
         ctx.Recipes.Add(new Recipe { Guid = _ownRecipe, Name = "My soup", UserName = "devuser" });
         ctx.UserPreferences.Add(new UserPreference { UserName = "anna", Key = "DisplayName", Value = "Anna Nováková" });
-        ctx.UserPreferences.Add(new UserPreference { UserName = "anna", Key = "ShareToken", Value = "anna-token" });
         return Task.CompletedTask;
     });
 
     private async Task<List<SharedItemDto>> ListAsync() =>
-        (await _client.GetFromJsonAsync<List<SharedItemDto>>("/api/shared", Json))!;
+        (await _client.GetFromJsonAsync<List<SharedItemDto>>("/api/shared"))!;
 
     private Task<HttpResponseMessage> OpenRecipeAsync(Guid guid) =>
         _client.PostAsync($"/api/shared/recipes/{guid}", null);
-
-    private Task<HttpResponseMessage> OpenCookbookAsync(string user, string token) =>
-        _client.PostAsJsonAsync("/api/shared/cookbooks", new { user, shareToken = token });
 
     [Fact]
     public async Task OpeningSharedRecipe_AddsItToHistory()
@@ -68,10 +63,8 @@ public class SharedApiTests : IDisposable
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         var item = Assert.Single(await ListAsync());
-        Assert.Equal(SharedItemKind.Recipe, item.Kind);
         Assert.Equal(_gyros, item.RecipeGuid);
         Assert.Equal("Gyros", item.RecipeName);
-        Assert.Equal("anna", item.Owner);
         Assert.Equal("Anna Nováková", item.OwnerName);
         Assert.True(item.Available);
         Assert.False(item.Pinned);
@@ -135,64 +128,6 @@ public class SharedApiTests : IDisposable
         Assert.Equal("Chicken gyros", Assert.Single(await ListAsync()).RecipeName);
     }
 
-    [Theory]
-    [InlineData("anna")]
-    [InlineData("Anna Nováková")] // share links may carry the display name
-    public async Task OpeningSharedCookbook_AddsItToHistory(string userParam)
-    {
-        await SeedAsync();
-
-        var response = await OpenCookbookAsync(userParam, "anna-token");
-
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        var item = Assert.Single(await ListAsync());
-        Assert.Equal(SharedItemKind.Cookbook, item.Kind);
-        Assert.Equal("anna", item.Owner);
-        Assert.Equal("Anna Nováková", item.OwnerName);
-        Assert.Equal("anna-token", item.ShareToken);
-        Assert.Null(item.RecipeGuid);
-        Assert.True(item.Available);
-    }
-
-    [Fact]
-    public async Task OpeningCookbookWithWrongToken_IsForbiddenAndNotRecorded()
-    {
-        await SeedAsync();
-
-        var response = await OpenCookbookAsync("anna", "guessed-token");
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Empty(await ListAsync());
-    }
-
-    [Fact]
-    public async Task OpeningOwnCookbook_IsNotRecorded()
-    {
-        await SeedAsync();
-
-        var response = await OpenCookbookAsync("devuser", "anything");
-
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        Assert.Empty(await ListAsync());
-    }
-
-    [Fact]
-    public async Task RevokedCookbook_BecomesUnavailable_UntilReopenedWithNewLink()
-    {
-        await SeedAsync();
-        await OpenCookbookAsync("anna", "anna-token");
-
-        await WithContextAsync(async ctx =>
-            (await ctx.UserPreferences.SingleAsync(p => p.UserName == "anna" && p.Key == "ShareToken")).Value = "new-token");
-        Assert.False(Assert.Single(await ListAsync()).Available);
-
-        await OpenCookbookAsync("anna", "new-token");
-
-        var item = Assert.Single(await ListAsync());
-        Assert.True(item.Available);
-        Assert.Equal("new-token", item.ShareToken);
-    }
-
     [Fact]
     public async Task History_IsPinnedFirstThenMostRecent()
     {
@@ -201,15 +136,15 @@ public class SharedApiTests : IDisposable
         await Task.Delay(20);
         await OpenRecipeAsync(_tzatziki);
         await Task.Delay(20);
-        await OpenCookbookAsync("anna", "anna-token");
-        Assert.Equal([null, _tzatziki, _gyros], (await ListAsync()).Select(i => i.RecipeGuid));
+        await OpenRecipeAsync(_hummus);
+        Assert.Equal([_hummus, _tzatziki, _gyros], (await ListAsync()).Select(i => i.RecipeGuid));
 
         var gyrosId = (await ListAsync()).Single(i => i.RecipeGuid == _gyros).Id;
         var pin = await _client.PutAsJsonAsync($"/api/shared/{gyrosId}/pin", new { pinned = true });
 
         Assert.Equal(HttpStatusCode.NoContent, pin.StatusCode);
         var items = await ListAsync();
-        Assert.Equal([_gyros, null, _tzatziki], items.Select(i => i.RecipeGuid));
+        Assert.Equal([_gyros, _hummus, _tzatziki], items.Select(i => i.RecipeGuid));
         Assert.True(items[0].Pinned);
 
         await _client.PutAsJsonAsync($"/api/shared/{gyrosId}/pin", new { pinned = false });
@@ -235,7 +170,7 @@ public class SharedApiTests : IDisposable
         await SeedAsync();
         var othersItem = new SharedItem
         {
-            UserName = "anna", Kind = SharedItemKind.Recipe, OwnerUserName = "devuser",
+            UserName = "anna", OwnerUserName = "devuser",
             RecipeGuid = _ownRecipe, LastOpened = DateTime.UtcNow,
         };
         await WithContextAsync(ctx => { ctx.SharedItems.Add(othersItem); return Task.CompletedTask; });

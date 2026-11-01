@@ -17,14 +17,14 @@ const getAll = vi.mocked(sharedApi.getAll)
 
 function item(overrides: Partial<SharedItemDto>): SharedItemDto {
   return {
-    id: 1, kind: 'Recipe', owner: 'anna', ownerName: 'Anna', recipeGuid: 'g1', recipeName: 'Gyros',
-    shareToken: null, lastOpened: '2026-10-30T10:00:00Z', pinned: false, available: true, ...overrides,
+    id: 1, ownerName: 'Anna', recipeGuid: 'g1', recipeName: 'Gyros',
+    lastOpened: '2026-10-30T10:00:00Z', pinned: false, available: true, ...overrides,
   }
 }
 
 const gyros = item({ id: 1, recipeGuid: 'g1', recipeName: 'Gyros', lastOpened: '2026-10-31T10:00:00Z' })
 const kure = item({ id: 2, recipeGuid: 'g2', recipeName: 'Kuře na paprice', ownerName: 'Petr', lastOpened: '2026-10-30T10:00:00Z' })
-const cookbook = item({ id: 3, kind: 'Cookbook', recipeGuid: null, recipeName: null, shareToken: 'tok', lastOpened: '2026-10-29T10:00:00Z' })
+const hummus = item({ id: 3, recipeGuid: 'g3', recipeName: 'Hummus', lastOpened: '2026-10-29T10:00:00Z' })
 
 async function mountView() {
   const router = createRouter({
@@ -55,41 +55,39 @@ describe('SharedView (MC-71)', () => {
     getAll.mockResolvedValue([])
     const wrapper = await mountView()
 
-    expect(wrapper.text()).toContain('will appear here after you open them')
+    expect(wrapper.text()).toContain('Recipes others share with you will appear here once you open them.')
   })
 
-  it('lists recipes and cookbooks with links to open them', async () => {
-    getAll.mockResolvedValue([gyros, cookbook])
+  it('lists shared recipes with their owner and links to open them', async () => {
+    getAll.mockResolvedValue([gyros, kure])
     const wrapper = await mountView()
 
-    expect(titles(wrapper)).toEqual(['Gyros', 'Recipes by Anna'])
+    expect(titles(wrapper)).toEqual(['Gyros', 'Kuře na paprice'])
+    expect(wrapper.text()).toContain('From Anna')
+    expect(wrapper.text()).toContain('From Petr')
     const links = wrapper.findAll('a.v-list-item').map((a) => a.attributes('href'))
-    expect(links).toEqual(['/recipe/shared/g1', '/?user=anna&shareToken=tok'])
+    expect(links).toEqual(['/recipe/shared/g1', '/recipe/shared/g2'])
   })
 
-  it('shows unavailable items without a link', async () => {
-    getAll.mockResolvedValue([
-      item({ id: 5, recipeName: null, available: false }),
-      item({ id: 6, kind: 'Cookbook', recipeGuid: null, recipeName: null, shareToken: 'old', available: false }),
-    ])
+  it('shows deleted recipes as unavailable, without a link', async () => {
+    getAll.mockResolvedValue([item({ id: 5, recipeName: null, available: false }), gyros])
     const wrapper = await mountView()
 
-    expect(wrapper.findAll('a.v-list-item')).toHaveLength(0)
-    expect(titles(wrapper)).toEqual(['No longer available', 'Recipes by Anna'])
-    expect(wrapper.text()).toContain('No longer available')
+    expect(titles(wrapper)).toEqual(['No longer available', 'Gyros'])
+    expect(wrapper.findAll('a.v-list-item').map((a) => a.attributes('href'))).toEqual(['/recipe/shared/g1'])
   })
 
   it('separates pinned items from recently opened ones', async () => {
-    getAll.mockResolvedValue([{ ...kure, pinned: true }, gyros, cookbook])
+    getAll.mockResolvedValue([{ ...kure, pinned: true }, gyros, hummus])
     const wrapper = await mountView()
 
     const headings = wrapper.findAll('h2').map((h) => h.text())
     expect(headings).toEqual(['Pinned', 'Recently opened'])
-    expect(titles(wrapper)).toEqual(['Kuře na paprice', 'Gyros', 'Recipes by Anna'])
+    expect(titles(wrapper)).toEqual(['Kuře na paprice', 'Gyros', 'Hummus'])
   })
 
   it('searches by recipe and owner name, ignoring case and diacritics', async () => {
-    getAll.mockResolvedValue([gyros, kure, cookbook])
+    getAll.mockResolvedValue([gyros, kure, hummus])
     const wrapper = await mountView()
     const input = wrapper.find('input')
 

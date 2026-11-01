@@ -154,9 +154,6 @@ namespace MyCookbook.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Kind")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("LastOpened")
                         .HasColumnType("timestamp with time zone");
 
@@ -168,12 +165,8 @@ namespace MyCookbook.Migrations
                     b.Property<bool>("Pinned")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("RecipeGuid")
+                    b.Property<Guid>("RecipeGuid")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ShareToken")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
 
                     b.Property<string>("UserName")
                         .IsRequired()

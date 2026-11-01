@@ -7,7 +7,7 @@ using static MyCookbook.Services.SharedItemService;
 namespace MyCookbook.Api;
 
 /// <summary>
-/// History of recipes and cookbooks shared with the current user (MC-71). Guests have no history.
+/// History of recipes shared with the current user (MC-71). Guests have no history.
 /// </summary>
 [ApiController]
 [Route("api/shared")]
@@ -20,15 +20,10 @@ public class SharedController(SharedItemService shared) : ControllerBase
     public async Task<ActionResult<List<SharedItemDto>>> GetAll() =>
         await shared.GetAllAsync(CurrentUser);
 
-    /// <summary>Called after opening a single-recipe share link. Your own recipes are ignored.</summary>
+    /// <summary>Called after opening a shared recipe link. Your own recipes are ignored.</summary>
     [HttpPost("recipes/{guid:guid}")]
     public async Task<IActionResult> RecordRecipe(Guid guid) =>
         ToResult(await shared.RecordRecipeAsync(CurrentUser, guid));
-
-    /// <summary>Called after opening a cookbook share link. The token must still be valid.</summary>
-    [HttpPost("cookbooks")]
-    public async Task<IActionResult> RecordCookbook([FromBody] RecordSharedCookbookRequest request) =>
-        ToResult(await shared.RecordCookbookAsync(CurrentUser, request.User, request.ShareToken));
 
     [HttpPut("{id:int}/pin")]
     public async Task<IActionResult> SetPinned(int id, [FromBody] SetPinnedRequest request) =>
@@ -41,7 +36,6 @@ public class SharedController(SharedItemService shared) : ControllerBase
     private IActionResult ToResult(RecordResult result) => result switch
     {
         RecordResult.NotFound => NotFound(),
-        RecordResult.Forbidden => Forbid(),
         _ => NoContent(),
     };
 }

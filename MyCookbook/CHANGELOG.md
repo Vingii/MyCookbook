@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Patch notes are now available in Czech.
 - Recipes shared with you have a Clone button that saves a copy to your own recipes.
-- New "Shared" page: recipes and cookbooks others share with you are listed there after you open them, so you can find them again. Search them, pin the ones you want to keep, and remove the rest.
+- New "Shared" page: recipes others share with you are listed there after you open them, so you can find them again. Search them, pin the ones you want to keep, and remove the rest.
 
 ### Changed
 - On phones, the top bar's less-used buttons (theme, language, bug report, What's New, Settings, Logout) moved into a ⋮ menu, so none of them are cut off.
@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Shared recipe links sometimes showed an older version of the recipe.
-- Links to a shared cookbook (from Settings) opened an empty page.
 
 ## [2.5.0] - 2026-09-20
 ### Added

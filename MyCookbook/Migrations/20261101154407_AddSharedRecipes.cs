@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MyCookbook.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSharedItems : Migration
+    public partial class AddSharedRecipes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,10 +19,8 @@ namespace MyCookbook.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserName = table.Column<string>(type: "character varying(450)", maxLength: 450, nullable: false),
-                    Kind = table.Column<int>(type: "integer", nullable: false),
                     OwnerUserName = table.Column<string>(type: "character varying(450)", maxLength: 450, nullable: false),
-                    RecipeGuid = table.Column<Guid>(type: "uuid", nullable: true),
-                    ShareToken = table.Column<string>(type: "character varying(450)", maxLength: 450, nullable: true),
+                    RecipeGuid = table.Column<Guid>(type: "uuid", nullable: false),
                     LastOpened = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Pinned = table.Column<bool>(type: "boolean", nullable: false)
                 },

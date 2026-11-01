@@ -1,21 +1,15 @@
 import client from './client'
 
-export type SharedItemKind = 'Recipe' | 'Cookbook'
-
-/** A recipe or cookbook someone shared with the current user (MC-71). */
+/** A recipe someone shared with the current user (MC-71). */
 export interface SharedItemDto {
   id: number
-  kind: SharedItemKind
-  /** Owner's user id, for building ?user= links. */
-  owner: string
   ownerName: string
-  recipeGuid: string | null
+  recipeGuid: string
   /** Null when the recipe no longer exists. */
   recipeName: string | null
-  shareToken: string | null
   lastOpened: string
   pinned: boolean
-  /** False once the recipe is deleted or the cookbook link revoked. */
+  /** False once the owner deleted the recipe. */
   available: boolean
 }
 
@@ -23,8 +17,6 @@ export const sharedApi = {
   getAll: () => client.get<SharedItemDto[]>('/shared').then((r) => r.data),
 
   recordRecipe: (guid: string) => client.post(`/shared/recipes/${guid}`),
-
-  recordCookbook: (user: string, shareToken: string) => client.post('/shared/cookbooks', { user, shareToken }),
 
   setPinned: (id: number, pinned: boolean) => client.put(`/shared/${id}/pin`, { pinned }),
 

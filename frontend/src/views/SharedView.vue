@@ -30,11 +30,11 @@
             <v-list-item
               v-for="item in section.items"
               :key="item.id"
-              :to="item.available ? linkTo(item) : undefined"
+              :to="item.available ? `/recipe/shared/${item.recipeGuid}` : undefined"
               :class="{ 'text-disabled': !item.available }"
-              :prepend-icon="item.kind === 'Cookbook' ? 'mdi-book-open-variant' : 'mdi-silverware-fork-knife'"
+              prepend-icon="mdi-silverware-fork-knife"
             >
-              <v-list-item-title>{{ title(item) }}</v-list-item-title>
+              <v-list-item-title>{{ item.recipeName ?? ui.t.sharedUnavailable }}</v-list-item-title>
               <v-list-item-subtitle>
                 {{ subtitle(item) }}
               </v-list-item-subtitle>
@@ -103,22 +103,9 @@ const sections = computed(() => [
   { title: ui.t.sharedRecent, items: recent.value },
 ])
 
-function linkTo(item: SharedItemDto) {
-  return item.kind === 'Cookbook'
-    ? { path: '/', query: { user: item.owner, shareToken: item.shareToken ?? undefined } }
-    : `/recipe/shared/${item.recipeGuid}`
-}
-
-function title(item: SharedItemDto) {
-  if (item.kind === 'Cookbook') return `${ui.t.sharedCookbookOf} ${item.ownerName}`
-  return item.recipeName ?? ui.t.sharedUnavailable
-}
-
 function subtitle(item: SharedItemDto) {
   const opened = `${ui.t.sharedOpened} ${new Date(item.lastOpened).toLocaleDateString(ui.locale === 'cs' ? 'cs-CZ' : 'en-US')}`
-  const parts = item.kind === 'Recipe' ? [`${ui.t.sharedRecipeFrom} ${item.ownerName}`, opened] : [opened]
-  if (!item.available && item.kind === 'Cookbook') parts.push(ui.t.sharedUnavailable)
-  return parts.join(' · ')
+  return `${ui.t.sharedRecipeFrom} ${item.ownerName} · ${opened}`
 }
 
 async function togglePin(item: SharedItemDto) {

@@ -134,8 +134,6 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.Property(e => e.OwnerUserName)
                     .IsRequired()
                     .HasMaxLength(450);
-
-                entity.Property(e => e.ShareToken).HasMaxLength(450);
             });
 
             modelBuilder.Entity<Tag>(entity =>
