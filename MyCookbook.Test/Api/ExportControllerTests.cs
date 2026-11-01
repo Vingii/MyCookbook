@@ -94,4 +94,39 @@ public class ExportControllerTests : IDisposable
         Assert.Equal("Pasta Carbonara", restored![0].Name);
         Assert.Equal(2, restored[0].Ingredients.Count);
     }
+
+    private async Task ImportAsync(string json)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(json)) { Headers = { ContentType = new("application/json") } }, "file", "export.json");
+        (await _client.PostAsync("/api/import", content)).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Import_OwnBackup_KeepsRecipeGuids()
+    {
+        var guid = Guid.NewGuid();
+        await SeedAsync(ctx => ctx.Recipes.Add(new Recipe { Guid = guid, Name = "Gyros", UserName = "devuser" }));
+        var exportJson = await _client.GetStringAsync("/api/export");
+
+        await ImportAsync(exportJson);
+
+        var restored = Assert.Single((await _client.GetFromJsonAsync<List<RecipeDto>>("/api/recipes"))!);
+        Assert.Equal(guid, restored.Guid);
+    }
+
+    // A Guid identifies one recipe of one user; importing someone else's export must not copy theirs.
+    [Fact]
+    public async Task Import_GuidOfAnotherUsersRecipe_GetsNewGuid()
+    {
+        var annasGuid = Guid.NewGuid();
+        await SeedAsync(ctx => ctx.Recipes.Add(new Recipe { Guid = annasGuid, Name = "Gyros", UserName = "anna" }));
+
+        await ImportAsync($$"""[{"Guid":"{{annasGuid}}","Name":"Gyros"},{"Guid":"{{annasGuid}}","Name":"Tzatziki"}]""");
+
+        var imported = (await _client.GetFromJsonAsync<List<RecipeDto>>("/api/recipes"))!;
+        Assert.Equal(2, imported.Count);
+        Assert.DoesNotContain(imported, r => r.Guid == annasGuid);
+        Assert.NotEqual(imported[0].Guid, imported[1].Guid);
+    }
 }

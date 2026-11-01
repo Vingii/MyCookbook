@@ -54,6 +54,10 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.HasIndex(e => new { e.UserName, e.Name }, "UQ_UserName_Name")
                     .IsUnique();
 
+                // A Guid identifies one recipe of one user (share links, the Shared page).
+                entity.HasIndex(e => e.Guid, "UQ_Recipes_Guid")
+                    .IsUnique();
+
                 entity.Property(e => e.Category).HasMaxLength(50);
 
                 entity.Property(e => e.LastCooked).HasColumnType("date");

@@ -140,6 +140,9 @@ namespace MyCookbook.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex(new[] { "Guid" }, "UQ_Recipes_Guid")
+                        .IsUnique();
+
                     b.HasIndex(new[] { "UserName", "Name" }, "UQ_UserName_Name")
                         .IsUnique();
 

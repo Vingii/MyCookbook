@@ -6,6 +6,10 @@ a projekt dodržuje [sémantické verzování](https://semver.org/lang/cs/).
 
 Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zobrazí v angličtině.
 
+## [2.6.1] - 2026-11-01
+### Opraveno
+- Stránka „Sdílené“ se někdy nenačetla.
+
 ## [2.6.0] - 2026-11-01
 ### Přidáno
 - Seznam změn je nyní dostupný i v češtině.
