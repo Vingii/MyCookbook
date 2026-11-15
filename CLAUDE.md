@@ -132,7 +132,7 @@ Version is set in `MyCookbook/MyCookbook.csproj` as `<Version>`. The project fol
 
 ## Releasing
 
-Merging to `main` does **not** publish anything. CI (`.github/workflows/build-and-publish.yml`) runs on every PR and on pushes to `main` (build, unit tests, E2E) and publishes only for:
+Merging to `main` does **not** publish anything. CI (`.github/workflows/build-and-publish.yml`) builds and runs the unit tests on every PR and on pushes to `main`; E2E runs only on pushes to `main` and on release tags. It publishes only for:
 
 - **A `vX.Y.Z` tag**: pushes `vingii/mycookbook:X.Y.Z` and `:latest` to Docker Hub and creates a GitHub Release with that version's section of `CHANGELOG.md` as notes. The run fails if the tag doesn't match `<Version>` in `MyCookbook.csproj`.
 - **A push to `beta`**: pushes `vingii/mycookbook:beta`.

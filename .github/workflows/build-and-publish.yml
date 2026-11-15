@@ -1,6 +1,6 @@
 name: Build, Test, and Publish
 
-# Pushes to main and pull requests (to any branch) only build and test. A release is published by pushing a
+# Pushes to main and pull requests (to any branch) only build and test. E2E runs only on main and release tags. A release is published by pushing a
 # vX.Y.Z tag that matches <Version> in MyCookbook.csproj (see "Releasing" in CLAUDE.md).
 # Pushes to beta publish the :beta image.
 on:
@@ -32,6 +32,10 @@ jobs:
         run: |
           VERSION=$(grep -oP '(?<=<Version>).*?(?=</Version>)' MyCookbook/MyCookbook.csproj)
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          # E2E only on main and on release tags (a release is still E2E-tested before it is published).
+          if [ "${{ github.event_name }}" = "push" ] && { [ "${{ github.ref }}" = "refs/heads/main" ] || [[ "${{ github.ref }}" == refs/tags/v* ]]; }; then
+            echo "e2e=true" >> $GITHUB_OUTPUT
+          fi
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             if [ "${{ github.ref_name }}" != "v${VERSION}" ]; then
               echo "::error::Tag ${{ github.ref_name }} does not match <Version>${VERSION}</Version> in MyCookbook.csproj"
@@ -77,6 +81,7 @@ jobs:
           npm test
 
       - name: Set up E2E Node.js
+        if: steps.prep.outputs.e2e == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -84,6 +89,7 @@ jobs:
           cache-dependency-path: e2e/package-lock.json
 
       - name: Cache Playwright browsers
+        if: steps.prep.outputs.e2e == 'true'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -91,6 +97,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('e2e/package-lock.json') }}
 
       - name: Install E2E deps
+        if: steps.prep.outputs.e2e == 'true'
         working-directory: e2e
         run: |
           npm ci
@@ -104,6 +111,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image for E2E
+        if: steps.prep.outputs.e2e == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -115,6 +123,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Start stack for E2E
+        if: steps.prep.outputs.e2e == 'true'
         run: |
           echo "SA_PASSWORD=E2eTestPassword1!" > .env
           echo "ASPNETCORE_ENVIRONMENT=Development" >> .env
@@ -126,11 +135,12 @@ jobs:
           timeout 90 bash -c 'until curl -sf http://localhost:8080/api/auth/me; do sleep 3; done'
 
       - name: Run E2E tests
+        if: steps.prep.outputs.e2e == 'true'
         working-directory: e2e
         run: npm test
 
       - name: Upload Playwright report
-        if: always()
+        if: always() && steps.prep.outputs.e2e == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
