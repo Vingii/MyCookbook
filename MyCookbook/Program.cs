@@ -57,6 +57,8 @@ namespace MyCookbook
                     // Never follow a redirect away from the validated webhook URL.
                     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
                 builder.Services.AddTransient<HomeAssistantService>();
+                builder.Services.AddMemoryCache();
+                builder.Services.AddTransient<PlanSuggestionService>();
                 builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>

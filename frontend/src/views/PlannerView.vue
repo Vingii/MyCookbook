@@ -15,8 +15,7 @@
         v-if="!readonly"
         :days="suggestionDays"
         :plans-key="plansKey"
-        :today="todayIso"
-        @add="addSuggestion"
+        @add="({ suggestion, date }) => addSuggestion(suggestion, date)"
         @drag-start="onSuggestionDragStart"
         @drag-end="onDragEnd"
     />
@@ -236,14 +235,21 @@ const weeks = computed(() => {
 
 const todayIso = computed(() => days.value.find((d) => d.isToday)?.date ?? days.value[0]!.date)
 
+/** Suggestions are for the next two weeks: today and the 13 days after it. */
 const suggestionDays = computed(() =>
-  days.value.map((d) => ({ date: d.date, label: d.label, planned: getPlansForDate(d.date).length > 0 })),
+  days.value
+    .filter((d) => d.date >= todayIso.value)
+    .slice(0, 14)
+    .map((d) => ({ date: d.date, label: d.label, planned: getPlansForDate(d.date).length > 0 })),
 )
 
 const plansKey = computed(() => plannerStore.planned.map((p) => `${p.id}:${p.date}:${p.fromFridge}`).join(','))
 
-async function addSuggestion({ recipeGuid, date }: { recipeGuid: string; date: string }) {
-  await plannerApi.create({ recipeGuid, date, fromFridge: false })
+/** Plans the suggested recipe on that day, together with the side dishes that usually come with it. */
+async function addSuggestion(suggestion: PlanSuggestionDto, date: string) {
+  for (const guid of [suggestion.recipeGuid, ...suggestion.companions.map((c) => c.recipeGuid)]) {
+    await plannerApi.create({ recipeGuid: guid, date, fromFridge: false })
+  }
   fetchPlans()
 }
 
@@ -330,7 +336,7 @@ async function onDrop(date: string) {
   dragOverDate.value = null
   if (suggestion && !readonly.value) {
     draggingSuggestion.value = null
-    await addSuggestion({ recipeGuid: suggestion.recipeGuid, date })
+    await addSuggestion(suggestion, date)
     return
   }
   if (!plan || plan.date === date) return

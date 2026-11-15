@@ -6,30 +6,16 @@
         {{ ui.t.suggestions }}
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <div class="d-flex align-center flex-wrap ga-3 mb-2">
-          <v-select
-            v-model="selectedDate"
-            :items="days"
-            item-title="label"
-            item-value="date"
-            :label="ui.t.suggestionsFor"
-            variant="outlined"
-            density="compact"
-            hide-details
-            style="max-width: 280px"
-            data-test="suggestions-day"
-          />
-          <span class="text-caption text-medium-emphasis">{{ ui.t.suggestionsHint }}</span>
-        </div>
+        <p class="text-caption text-medium-emphasis mb-2">{{ ui.t.suggestionsHint }}</p>
 
-        <div v-if="loading" class="d-flex justify-center py-4">
+        <div v-if="loading && suggestions.length === 0" class="d-flex justify-center py-4">
           <v-progress-circular indeterminate color="primary" size="28" />
         </div>
         <p v-else-if="suggestions.length === 0" class="text-medium-emphasis py-2" data-test="suggestions-empty">
           {{ ui.t.suggestionsEmpty }}
         </p>
         <v-row v-else dense>
-          <v-col v-for="s in suggestions" :key="s.recipeGuid" cols="12" sm="6" md="4">
+          <v-col v-for="s in suggestions" :key="s.recipeGuid" cols="12" sm="6" md="4" lg="3">
             <v-card
               variant="tonal"
               class="suggestion fill-height"
@@ -44,17 +30,34 @@
                   <router-link :to="`/recipe/${s.recipeGuid}`" class="text-body-2 font-weight-medium text-decoration-none">
                     {{ s.recipeName }}
                   </router-link>
+                  <div v-if="s.companions.length" class="text-body-2" data-test="suggestion-companions">
+                    + {{ s.companions.map((c) => c.recipeName).join(', ') }}
+                  </div>
                   <div v-if="s.category" class="text-caption text-medium-emphasis">{{ s.category }}</div>
                 </div>
-                <v-btn
-                  icon="mdi-plus"
-                  size="small"
-                  variant="text"
-                  :title="ui.t.add"
-                  :aria-label="ui.t.add"
-                  data-test="suggestion-add"
-                  @click="emit('add', { recipeGuid: s.recipeGuid, date: selectedDate })"
-                />
+                <v-menu location="bottom end">
+                  <template #activator="{ props: menu }">
+                    <v-btn
+                      v-bind="menu"
+                      icon="mdi-plus"
+                      size="small"
+                      variant="text"
+                      :title="ui.t.addToPlanner"
+                      :aria-label="ui.t.addToPlanner"
+                      data-test="suggestion-add"
+                    />
+                  </template>
+                  <v-list density="compact" data-test="suggestion-days">
+                    <v-list-item
+                      v-for="day in days"
+                      :key="day.date"
+                      :title="day.label"
+                      :class="{ 'text-medium-emphasis': day.planned }"
+                      data-test="suggestion-day"
+                      @click="emit('add', { suggestion: s, date: day.date })"
+                    />
+                  </v-list>
+                </v-menu>
               </div>
             </v-card>
           </v-col>
@@ -71,14 +74,13 @@ import type { PlanSuggestionDto } from '../api/types'
 import { useUiStore } from '../stores/ui'
 
 const props = defineProps<{
-  /** Days shown in the planner; `planned` marks days that already have something. */
+  /** Days a suggestion can be added to (today and the next 13 days); `planned` marks days with plans. */
   days: { date: string; label: string; planned: boolean }[]
   /** Changes whenever the plans change, so the suggestions are refreshed. */
   plansKey: string
-  today: string
 }>()
 const emit = defineEmits<{
-  add: [value: { recipeGuid: string; date: string }]
+  add: [value: { suggestion: PlanSuggestionDto; date: string }]
   dragStart: [suggestion: PlanSuggestionDto]
   dragEnd: []
 }>()
@@ -86,11 +88,12 @@ const emit = defineEmits<{
 const ui = useUiStore()
 const STORAGE_KEY = 'planner.suggestionsOpen'
 
+/** Collapsed unless the user left it open last time. */
 function readOpen() {
   try {
-    return localStorage.getItem(STORAGE_KEY) !== 'false'
+    return localStorage.getItem(STORAGE_KEY) === 'true'
   } catch {
-    return true
+    return false
   }
 }
 
@@ -99,26 +102,18 @@ watch(openPanel, (v) => {
   try { localStorage.setItem(STORAGE_KEY, String(v === 'open')) } catch { /* not persisted */ }
 })
 
-const selectedDate = ref('')
-/** True once the user picks a day themselves; until then we follow the first empty day. */
-let userPicked = false
-/** Set while we change the day ourselves, so the watcher doesn't count it as the user's choice. */
-let settingDay = false
 const suggestions = ref<PlanSuggestionDto[]>([])
 const loading = ref(false)
+/** The plans the current suggestions were loaded for. */
+let loadedFor: string | null = null
 let requestId = 0
 
-function firstEmptyDay() {
-  const upcoming = props.days.filter((d) => d.date >= props.today)
-  return (upcoming.find((d) => !d.planned) ?? upcoming[0] ?? props.days[0])?.date ?? ''
-}
-
 async function load() {
-  if (!selectedDate.value) return
   const id = ++requestId
+  loadedFor = props.plansKey
   loading.value = true
   try {
-    const result = await plannerApi.getSuggestions(selectedDate.value)
+    const result = await plannerApi.getSuggestions()
     if (id === requestId) suggestions.value = result
   } catch {
     if (id === requestId) suggestions.value = []
@@ -127,27 +122,15 @@ async function load() {
   }
 }
 
-watch(selectedDate, (_value, old) => {
-  if (old && !settingDay) userPicked = true
-  settingDay = false
-  load()
-})
-
-watch(() => [props.plansKey, props.days.map((d) => d.date).join()], () => {
-  const next = userPicked ? selectedDate.value : firstEmptyDay()
-  if (next !== selectedDate.value) {
-    settingDay = true
-    selectedDate.value = next
-  } else {
-    load()
-  }
+// Nothing is loaded while collapsed; opening it, or changing plans while open, (re)loads.
+watch([openPanel, () => props.plansKey], () => {
+  if (openPanel.value === 'open' && loadedFor !== props.plansKey) load()
 }, { immediate: true })
 
 function onDragStart(event: DragEvent, s: PlanSuggestionDto) {
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy'
   emit('dragStart', s)
 }
-
 </script>
 
 <style scoped>

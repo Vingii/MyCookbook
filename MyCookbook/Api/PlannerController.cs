@@ -64,25 +64,30 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
         return IngredientSummaryBuilder.Build(recipes);
     }
 
-    /// <summary>Recipes suggested for <paramref name="date"/>, best first (see <see cref="PlanRecommender"/>).</summary>
+    /// <summary>
+    /// Recipes to plan between <paramref name="from"/> and <paramref name="to"/> (default: today and the next
+    /// 13 days), best first. See <see cref="PlanRecommender"/>.
+    /// </summary>
     [HttpGet("suggestions")]
     public async Task<ActionResult<List<PlanSuggestionDto>>> GetSuggestions(
-        [FromQuery] string? date,
-        [FromQuery] int count = 6,
+        [FromServices] PlanSuggestionService suggestions,
+        [FromQuery] string? from = null,
+        [FromQuery] string? to = null,
+        [FromQuery] int count = 10,
         [FromQuery] string? user = null,
         [FromQuery] string? shareToken = null)
     {
-        if (!DateOnly.TryParse(date, out var day)) return BadRequest("Invalid date format");
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var fromDate = today;
+        if (from != null && !DateOnly.TryParse(from, out fromDate)) return BadRequest("Invalid date format");
+        var toDate = fromDate.AddDays(PlanSuggestionService.DefaultDays - 1);
+        if (to != null && !DateOnly.TryParse(to, out toDate)) return BadRequest("Invalid date format");
+        if (toDate < fromDate || toDate.DayNumber - fromDate.DayNumber > 62) return BadRequest("Invalid date range");
+
         var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
 
-        var recipes = await db.GetRecipesAsync(targetUser);
-        var plans = (await db.GetPlannedRecipesAsync(targetUser))
-            .SelectMany(kv => kv.Value)
-            .Select(p => new PlanRecommender.Plan(p.RecipeId, p.Date, p.FromFridge))
-            .ToList();
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        return PlanRecommender.Recommend(recipes, plans, targetUser, day, today, Math.Clamp(count, 1, 20));
+        return await suggestions.SuggestAsync(targetUser, fromDate, toDate, today, Math.Clamp(count, 1, 20));
     }
 
     [HttpPost]

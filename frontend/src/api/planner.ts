@@ -8,8 +8,9 @@ export const plannerApi = {
   getIngredients: (from: string, to: string, user?: string, shareToken?: string) =>
     client.get<IngredientSummaryDto[]>('/planner/ingredients', { params: { from, to, user, shareToken } }).then((r) => r.data),
 
-  getSuggestions: (date: string, count = 6) =>
-    client.get<PlanSuggestionDto[]>('/planner/suggestions', { params: { date, count } }).then((r) => r.data),
+  /** Suggestions for the next two weeks (the server's default period). */
+  getSuggestions: (count = 10) =>
+    client.get<PlanSuggestionDto[]>('/planner/suggestions', { params: { count } }).then((r) => r.data),
 
   create: (req: CreatePlannedRecipeRequest) =>
     client.post<PlannedRecipeDto>('/planner', req).then((r) => r.data),

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Shopping list on the Planner page: see the ingredients of all recipes you plan to cook next week (or any days you pick), combined and with amounts added up. Tick off what you already have and copy the rest.
 - Send the shopping list to a Home Assistant to-do list. Set it up in Settings → Home Assistant.
-- Suggestions on the Planner page: recipes to plan for a day. They start with recipes you haven't cooked for a while and your favorites, and learn your habits from your plans, such as soup on Sundays or quick dishes on weekdays. Drag a suggestion onto a day or add it with +.
+- Suggestions on the Planner page: recipes to plan in the next two weeks. They start with recipes you haven't cooked for a while and your favorites, and learn your habits from your plans, such as soup on Sundays, quick dishes on weekdays or salads in summer. Side dishes you usually cook with a recipe are added along with it. Drag a suggestion onto a day or add it with +.
 
 ### Changed
 - API tokens (for example for Home Assistant) are now read-only: they can view recipes and plans and send the shopping list, but can't change or delete anything.

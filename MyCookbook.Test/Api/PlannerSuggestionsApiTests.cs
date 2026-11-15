@@ -40,7 +40,7 @@ public class PlannerSuggestionsApiTests : IDisposable
     {
         await SeedAsync("devuser");
 
-        var result = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions?date=2030-01-05");
+        var result = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions?from=2030-01-05&to=2030-01-05");
 
         Assert.Equal(["Guláš", "Soup"], result!.Select(s => s.RecipeName).OrderBy(n => n));
         Assert.All(result, s => Assert.Contains(s.Reasons, r => r.Code == "neverCooked"));
@@ -50,14 +50,14 @@ public class PlannerSuggestionsApiTests : IDisposable
     public async Task Get_RespectsCount()
     {
         await SeedAsync("devuser");
-        var result = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions?date=2030-02-01&count=2");
+        var result = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions?from=2030-02-01&count=2");
         Assert.Equal(2, result!.Count);
     }
 
     [Fact]
     public async Task Get_InvalidDate_ReturnsBadRequest()
     {
-        var response = await _client.GetAsync("/api/planner/suggestions?date=nope");
+        var response = await _client.GetAsync("/api/planner/suggestions?from=nope");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -65,7 +65,32 @@ public class PlannerSuggestionsApiTests : IDisposable
     public async Task Get_OtherUserWithoutShareToken_IsForbidden()
     {
         await SeedAsync("anna");
-        var response = await _client.GetAsync("/api/planner/suggestions?date=2030-01-05&user=anna");
+        var response = await _client.GetAsync("/api/planner/suggestions?user=anna");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_AfterPlanningASuggestion_ItIsNoLongerSuggested()
+    {
+        await SeedAsync("devuser");
+        var first = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions");
+        var top = first![0];
+
+        var today = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd");
+        var created = await _client.PostAsJsonAsync("/api/planner", new { recipeGuid = top.RecipeGuid, date = today, fromFridge = false });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var second = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions");
+
+        Assert.DoesNotContain(second!, s => s.RecipeGuid == top.RecipeGuid);
+    }
+
+    [Theory]
+    [InlineData("from=2030-01-10&to=2030-01-05")]
+    [InlineData("from=2030-01-01&to=2030-06-01")]
+    [InlineData("to=nope")]
+    public async Task Get_InvalidRange_ReturnsBadRequest(string query)
+    {
+        var response = await _client.GetAsync($"/api/planner/suggestions?{query}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

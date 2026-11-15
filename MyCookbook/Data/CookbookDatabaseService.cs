@@ -169,6 +169,30 @@ namespace MyCookbook.Data
             return planned.Select(x => x.Recipe).Where(r => r != null).ToList();
         }
 
+        /// <summary>Recipes with only what plan suggestions need: tags and favorites, no ingredients or steps.</summary>
+        public async Task<List<Recipe>> GetRecipesForSuggestionsAsync(string user)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            await using var context = await GetContext();
+            return await context.Recipes
+                .Where(x => x.UserName == user)
+                .Include(x => x.FavoriteRecipes)
+                .Include(x => x.Tags)
+                .AsNoTracking().AsSplitQuery().ToListAsync();
+        }
+
+        /// <summary>The user's plans from <paramref name="since"/> on (including future ones), without recipes.</summary>
+        public async Task<List<(int RecipeId, DateOnly Date, bool FromFridge)>> GetPlansForSuggestionsAsync(string user, DateOnly since)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            await using var context = await GetContext();
+            var rows = await context.PlannedRecipes
+                .Where(x => x.UserName == user && x.Date >= since)
+                .Select(x => new { x.RecipeId, x.Date, x.FromFridge })
+                .AsNoTracking().ToListAsync();
+            return rows.Select(x => (x.RecipeId, x.Date, x.FromFridge)).ToList();
+        }
+
         public async Task<Recipe> CreateRecipeAsync(Recipe recipe, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
