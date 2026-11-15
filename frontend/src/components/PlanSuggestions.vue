@@ -1,6 +1,6 @@
 <template>
   <v-expansion-panels v-model="openPanel" class="mb-4" data-test="suggestions">
-    <v-expansion-panel value="open">
+    <v-expansion-panel value="open" class="suggestions-panel" elevation="0">
       <v-expansion-panel-title>
         <v-icon icon="mdi-lightbulb-on-outline" size="small" class="mr-2" />
         {{ ui.t.suggestions }}
@@ -27,7 +27,7 @@
               <div class="d-flex align-start pa-2 ga-1">
                 <v-icon icon="mdi-drag" size="x-small" class="drag-handle mt-1 text-medium-emphasis" />
                 <div class="flex-grow-1 min-width-0">
-                  <router-link :to="`/recipe/${s.recipeGuid}`" class="text-body-2 font-weight-medium text-decoration-none">
+                  <router-link :to="`/recipe/${s.recipeGuid}`" class="suggestion-link text-body-2 font-weight-medium text-decoration-none">
                     {{ s.recipeName }}
                   </router-link>
                   <div v-if="s.companions.length" class="text-body-2" data-test="suggestion-companions">
@@ -134,6 +134,14 @@ function onDragStart(event: DragEvent, s: PlanSuggestionDto) {
 </script>
 
 <style scoped>
+.suggestions-panel {
+  border: 1px solid rgba(var(--v-border-color), 0.35);
+}
+/* Same color whether or not the recipe was opened before (no :visited purple). */
+.suggestion-link,
+.suggestion-link:visited {
+  color: rgb(var(--v-theme-primary));
+}
 .suggestion {
   cursor: grab;
 }
