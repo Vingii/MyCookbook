@@ -64,6 +64,27 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
         return IngredientSummaryBuilder.Build(recipes);
     }
 
+    /// <summary>Recipes suggested for <paramref name="date"/>, best first (see <see cref="PlanRecommender"/>).</summary>
+    [HttpGet("suggestions")]
+    public async Task<ActionResult<List<PlanSuggestionDto>>> GetSuggestions(
+        [FromQuery] string? date,
+        [FromQuery] int count = 6,
+        [FromQuery] string? user = null,
+        [FromQuery] string? shareToken = null)
+    {
+        if (!DateOnly.TryParse(date, out var day)) return BadRequest("Invalid date format");
+        var targetUser = await ResolveUser(user);
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+
+        var recipes = await db.GetRecipesAsync(targetUser);
+        var plans = (await db.GetPlannedRecipesAsync(targetUser))
+            .SelectMany(kv => kv.Value)
+            .Select(p => new PlanRecommender.Plan(p.RecipeId, p.Date, p.FromFridge))
+            .ToList();
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        return PlanRecommender.Recommend(recipes, plans, targetUser, day, today, Math.Clamp(count, 1, 20));
+    }
+
     [HttpPost]
     [Authorize(Policy = "NotGuest")]
     public async Task<ActionResult<PlannedRecipeDto>> Create([FromBody] CreatePlannedRecipeRequest req)

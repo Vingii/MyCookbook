@@ -11,6 +11,16 @@
       >{{ ui.t.shoppingList }}</v-btn>
     </div>
 
+    <PlanSuggestions
+        v-if="!readonly"
+        :days="suggestionDays"
+        :plans-key="plansKey"
+        :today="todayIso"
+        @add="addSuggestion"
+        @drag-start="onSuggestionDragStart"
+        @drag-end="onDragEnd"
+    />
+
     <IngredientSummaryDialog
         v-model="shoppingListOpen"
         :user="viewingUser || undefined"
@@ -150,8 +160,9 @@ import { useUiStore } from '../stores/ui'
 import { useReadonly } from '../composables/useReadonly'
 import { plannerApi } from '../api/planner'
 import { recipesApi } from '../api/recipes'
-import type { RecipeDto, PlannedRecipeDto } from '../api/types'
+import type { RecipeDto, PlannedRecipeDto, PlanSuggestionDto } from '../api/types'
 import IngredientSummaryDialog from '../components/IngredientSummaryDialog.vue'
+import PlanSuggestions from '../components/PlanSuggestions.vue'
 
 const plannerStore = usePlannerStore()
 const recipesStore = useRecipesStore()
@@ -223,6 +234,19 @@ const weeks = computed(() => {
   return result
 })
 
+const todayIso = computed(() => days.value.find((d) => d.isToday)?.date ?? days.value[0]!.date)
+
+const suggestionDays = computed(() =>
+  days.value.map((d) => ({ date: d.date, label: d.label, planned: getPlansForDate(d.date).length > 0 })),
+)
+
+const plansKey = computed(() => plannerStore.planned.map((p) => `${p.id}:${p.date}:${p.fromFridge}`).join(','))
+
+async function addSuggestion({ recipeGuid, date }: { recipeGuid: string; date: string }) {
+  await plannerApi.create({ recipeGuid, date, fromFridge: false })
+  fetchPlans()
+}
+
 function fetchPlans() {
   const from = days.value[0]!.date
   const to = days.value[20]!.date
@@ -273,6 +297,11 @@ async function cloneToNextDay(plan: PlannedRecipeDto) {
 const draggingId = ref<number | null>(null)
 const draggingPlan = ref<PlannedRecipeDto | null>(null)
 const dragOverDate = ref<string | null>(null)
+const draggingSuggestion = ref<PlanSuggestionDto | null>(null)
+
+function onSuggestionDragStart(suggestion: PlanSuggestionDto) {
+  draggingSuggestion.value = suggestion
+}
 
 function onDragStart(event: DragEvent, plan: PlannedRecipeDto) {
   draggingId.value = plan.id
@@ -283,6 +312,7 @@ function onDragStart(event: DragEvent, plan: PlannedRecipeDto) {
 function onDragEnd() {
   draggingId.value = null
   draggingPlan.value = null
+  draggingSuggestion.value = null
   dragOverDate.value = null
 }
 
@@ -296,7 +326,13 @@ function onDragLeave(date: string) {
 
 async function onDrop(date: string) {
   const plan = draggingPlan.value
+  const suggestion = draggingSuggestion.value
   dragOverDate.value = null
+  if (suggestion && !readonly.value) {
+    draggingSuggestion.value = null
+    await addSuggestion({ recipeGuid: suggestion.recipeGuid, date })
+    return
+  }
   if (!plan || plan.date === date) return
   await plannerApi.update(plan.id, { date, fromFridge: plan.fromFridge })
   fetchPlans()

@@ -1,5 +1,5 @@
 import client from './client'
-import type { PlannedRecipeDto, IngredientSummaryDto, CreatePlannedRecipeRequest, UpdatePlannedRecipeRequest } from './types'
+import type { PlannedRecipeDto, IngredientSummaryDto, PlanSuggestionDto, CreatePlannedRecipeRequest, UpdatePlannedRecipeRequest } from './types'
 
 export const plannerApi = {
   getAll: (from?: string, to?: string, user?: string, shareToken?: string) =>
@@ -7,6 +7,9 @@ export const plannerApi = {
 
   getIngredients: (from: string, to: string, user?: string, shareToken?: string) =>
     client.get<IngredientSummaryDto[]>('/planner/ingredients', { params: { from, to, user, shareToken } }).then((r) => r.data),
+
+  getSuggestions: (date: string, count = 6) =>
+    client.get<PlanSuggestionDto[]>('/planner/suggestions', { params: { date, count } }).then((r) => r.data),
 
   create: (req: CreatePlannedRecipeRequest) =>
     client.post<PlannedRecipeDto>('/planner', req).then((r) => r.data),

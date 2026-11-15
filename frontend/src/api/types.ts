@@ -52,6 +52,14 @@ export interface PlannedRecipeDto {
   fromFridge: boolean
 }
 
+/** A recipe suggested for a planner day (GET /api/planner/suggestions). */
+export interface PlanSuggestionDto {
+  recipeGuid: string
+  recipeName: string
+  category: string
+  score: number
+}
+
 /** One line of the planner shopping list (GET /api/planner/ingredients). */
 export interface IngredientSummaryDto {
   name: string

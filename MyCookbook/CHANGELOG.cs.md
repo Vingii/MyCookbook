@@ -10,6 +10,7 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 ### Přidáno
 - Nákupní seznam v Plánovači: suroviny všech receptů, které chcete vařit příští týden (nebo ve vybrané dny), sloučené a se sečteným množstvím. Odškrtněte, co už máte doma, a zbytek si zkopírujte.
 - Nákupní seznam můžete poslat do seznamu úkolů v Home Assistantu. Nastavíte to v Nastavení → Home Assistant.
+- Návrhy v Plánovači: recepty, které se hodí na vybraný den. Nejdřív nabízí recepty, které jste dlouho nevařili, a oblíbené, a z vašich plánů se učí vaše zvyky, třeba polévku v neděli nebo rychlá jídla ve všední dny. Návrh přetáhněte na den nebo ho přidejte tlačítkem +.
 
 ### Změněno
 - API tokeny (například pro Home Assistant) jsou nyní jen pro čtení: zobrazí recepty a plány a pošlou nákupní seznam, ale nic nezmění ani nesmažou.
