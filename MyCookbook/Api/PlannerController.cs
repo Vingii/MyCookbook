@@ -64,6 +64,32 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
         return IngredientSummaryBuilder.Build(recipes);
     }
 
+    /// <summary>
+    /// Recipes to plan between <paramref name="from"/> and <paramref name="to"/> (default: today and the next
+    /// 13 days), best first. See <see cref="PlanRecommender"/>.
+    /// </summary>
+    [HttpGet("suggestions")]
+    public async Task<ActionResult<List<PlanSuggestionDto>>> GetSuggestions(
+        [FromServices] PlanSuggestionService suggestions,
+        [FromQuery] string? from = null,
+        [FromQuery] string? to = null,
+        [FromQuery] int count = 10,
+        [FromQuery] string? user = null,
+        [FromQuery] string? shareToken = null)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var fromDate = today;
+        if (from != null && !DateOnly.TryParse(from, out fromDate)) return BadRequest("Invalid date format");
+        var toDate = fromDate.AddDays(PlanSuggestionService.DefaultDays - 1);
+        if (to != null && !DateOnly.TryParse(to, out toDate)) return BadRequest("Invalid date format");
+        if (toDate < fromDate || toDate.DayNumber - fromDate.DayNumber > 62) return BadRequest("Invalid date range");
+
+        var targetUser = await ResolveUser(user);
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+
+        return await suggestions.SuggestAsync(targetUser, fromDate, toDate, today, Math.Clamp(count, 1, 20));
+    }
+
     [HttpPost]
     [Authorize(Policy = "NotGuest")]
     public async Task<ActionResult<PlannedRecipeDto>> Create([FromBody] CreatePlannedRecipeRequest req)

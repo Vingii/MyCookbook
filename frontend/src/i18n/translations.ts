@@ -119,6 +119,9 @@ export const translations = {
     // Planner
     cloneToNextDay: 'Clone to next day',
     week: 'Week',
+    suggestions: 'Suggestions',
+    suggestionsHint: 'Recipes for the next two weeks. Drag one onto a day, or add it with +.',
+    suggestionsEmpty: 'No suggestions: all your recipes are already planned around the next two weeks.',
     shoppingList: 'Shopping list',
     shoppingListFrom: 'From',
     shoppingListTo: 'To',
@@ -261,6 +264,9 @@ export const translations = {
     // Planner
     cloneToNextDay: 'Zkopírovat na další den',
     week: 'Týden',
+    suggestions: 'Návrhy',
+    suggestionsHint: 'Recepty na příští dva týdny. Přetáhněte je na den nebo přidejte tlačítkem +.',
+    suggestionsEmpty: 'Žádné návrhy: všechny vaše recepty už jsou naplánované kolem příštích dvou týdnů.',
     shoppingList: 'Nákupní seznam',
     shoppingListFrom: 'Od',
     shoppingListTo: 'Do',
