@@ -189,7 +189,7 @@ async function loadHomeAssistant() {
   haConfigured.value = false
   if (auth.isGuest) return
   try {
-    haConfigured.value = !!(await homeAssistantApi.get()).webhookUrl
+    haConfigured.value = (await homeAssistantApi.status()).configured
   } catch {
     // No button if the setting can't be read.
   }

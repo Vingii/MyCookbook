@@ -21,8 +21,14 @@ public class HomeAssistantController(CookbookDatabaseService db, HomeAssistantSe
         return string.IsNullOrEmpty(url) ? null : url;
     }
 
+    /// <summary>The webhook URL is a secret (knowing it is enough to add items), so read-only API tokens can't read it.</summary>
     [HttpGet]
+    [DenyReadOnlyAccess]
     public async Task<HomeAssistantSettingsDto> Get() => new() { WebhookUrl = await GetWebhookUrl() };
+
+    /// <summary>Whether a webhook is set up, without revealing it. Used by the shopping list, also with a read-only token.</summary>
+    [HttpGet("status")]
+    public async Task<IActionResult> Status() => Ok(new { configured = await GetWebhookUrl() != null });
 
     [HttpPut]
     public async Task<IActionResult> Put([FromBody] HomeAssistantSettingsDto req)
@@ -40,7 +46,9 @@ public class HomeAssistantController(CookbookDatabaseService db, HomeAssistantSe
         return NoContent();
     }
 
+    /// <summary>Sends the shopping list. Allowed for read-only API tokens: it changes nothing in MyCookbook.</summary>
     [HttpPost("shopping-list")]
+    [AllowReadOnlyAccess]
     public async Task<IActionResult> SendShoppingList([FromBody] SendShoppingListRequest req)
     {
         var url = await GetWebhookUrl();

@@ -6,6 +6,8 @@ export const useAuthStore = defineStore('auth', () => {
   const username = ref<string | null>(null)
   const isAuthenticated = ref(false)
   const isGuest = ref(false)
+  /** Signed in with an API token (e.g. a Home Assistant dashboard link): can view, not change. */
+  const isReadOnly = ref(false)
   const loaded = ref(false)
 
   async function load() {
@@ -15,6 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
       username.value = me.username
       isAuthenticated.value = me.isAuthenticated
       isGuest.value = me.isGuest ?? false
+      isReadOnly.value = me.isReadOnly ?? false
     } catch {
       isAuthenticated.value = false
     } finally {
@@ -22,5 +25,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { username, isAuthenticated, isGuest, loaded, load }
+  return { username, isAuthenticated, isGuest, isReadOnly, loaded, load }
 })

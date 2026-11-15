@@ -182,7 +182,7 @@ const ui = useUiStore()
 const store = useRecipesStore()
 const auth = useAuthStore()
 // Someone else's recipe can be cloned into your own cookbook, but guests have no cookbook (MC-70).
-const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest)
+const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest && !auth.isReadOnly)
 const recipe = ref<RecipeDto | null>(null)
 watch(recipe, (r) => { document.title = r?.name ?? 'MyCookbook' }, { immediate: true })
 const loading = ref(true)

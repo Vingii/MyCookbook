@@ -17,12 +17,12 @@ vi.mock('../../api/planner', () => ({
   plannerApi: { getIngredients: vi.fn() },
 }))
 vi.mock('../../api/homeAssistant', () => ({
-  homeAssistantApi: { get: vi.fn(), sendShoppingList: vi.fn() },
+  homeAssistantApi: { status: vi.fn(), sendShoppingList: vi.fn() },
 }))
 
 const vuetify = createVuetify({ components, directives })
 const getIngredients = vi.mocked(plannerApi.getIngredients)
-const haGet = vi.mocked(homeAssistantApi.get)
+const haStatus = vi.mocked(homeAssistantApi.status)
 const haSend = vi.mocked(homeAssistantApi.sendShoppingList)
 
 const items: IngredientSummaryDto[] = [
@@ -58,8 +58,8 @@ describe('IngredientSummaryDialog', () => {
     useUiStore().locale = 'en'
     getIngredients.mockReset()
     getIngredients.mockResolvedValue(items)
-    haGet.mockReset()
-    haGet.mockResolvedValue({ webhookUrl: null })
+    haStatus.mockReset()
+    haStatus.mockResolvedValue({ configured: false })
     haSend.mockReset()
     haSend.mockResolvedValue(undefined as never)
     vi.useFakeTimers({ toFake: ['Date'] })
@@ -194,11 +194,11 @@ describe('IngredientSummaryDialog', () => {
     mountDialog()
     await flushPromises()
 
-    expect(haGet).not.toHaveBeenCalled()
+    expect(haStatus).not.toHaveBeenCalled()
   })
 
   it('sends the items not ticked off to Home Assistant', async () => {
-    haGet.mockResolvedValue({ webhookUrl: 'http://ha/api/webhook/x' })
+    haStatus.mockResolvedValue({ configured: true })
     const w = mountDialog()
     await flushPromises()
 
@@ -213,8 +213,20 @@ describe('IngredientSummaryDialog', () => {
     expect(w.find('[data-test="ha-message"]').text()).toBe('Sent 2 items to Home Assistant.')
   })
 
+  it('a read-only API token session can still send to Home Assistant', async () => {
+    useAuthStore().isReadOnly = true
+    haStatus.mockResolvedValue({ configured: true })
+    const w = mountDialog()
+    await flushPromises()
+
+    await w.find('[data-test="send-ha"]').trigger('click')
+    await flushPromises()
+
+    expect(haSend).toHaveBeenCalled()
+  })
+
   it('reports a Home Assistant failure', async () => {
-    haGet.mockResolvedValue({ webhookUrl: 'http://ha/api/webhook/x' })
+    haStatus.mockResolvedValue({ configured: true })
     haSend.mockRejectedValue(new Error('502'))
     const w = mountDialog()
     await flushPromises()

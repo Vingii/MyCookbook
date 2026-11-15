@@ -11,6 +11,10 @@ export const homeAssistantApi = {
   get: () =>
     client.get<{ webhookUrl: string | null }>('/homeassistant').then((r) => r.data),
 
+  /** Whether a webhook is set up; works with a read-only API token too. */
+  status: () =>
+    client.get<{ configured: boolean }>('/homeassistant/status').then((r) => r.data),
+
   save: (webhookUrl: string) =>
     client.put('/homeassistant', { webhookUrl }),
 

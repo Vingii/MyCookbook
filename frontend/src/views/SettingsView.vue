@@ -2,6 +2,9 @@
   <div>
     <h1 class="text-h4 mb-6">{{ ui.t.settings }}</h1>
 
+    <v-alert v-if="auth.isReadOnly" type="info" variant="tonal" data-test="read-only">{{ ui.t.readOnlySettings }}</v-alert>
+
+    <template v-else>
     <v-card class="mb-6" variant="outlined">
       <v-card-title>{{ ui.t.apiKey }}</v-card-title>
       <v-card-text>
@@ -89,6 +92,7 @@
         </v-expansion-panels>
       </v-card-text>
     </v-card>
+    </template>
   </div>
 </template>
 
@@ -270,8 +274,12 @@ function copyHaYaml() {
   setTimeout(() => { haYamlCopied.value = false }, 2000)
 }
 
-onMounted(loadShareToken)
-onMounted(loadHomeAssistant)
+onMounted(() => {
+  // A read-only API token can't read or change these settings.
+  if (auth.isReadOnly) return
+  loadShareToken()
+  loadHomeAssistant()
+})
 </script>
 
 <style scoped>

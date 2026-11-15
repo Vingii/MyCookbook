@@ -67,7 +67,7 @@ const ui = useUiStore()
 const auth = useAuthStore()
 // This page is public, so the router guard never loaded auth. Only signed-in, non-guest users
 // have a cookbook to clone into (MC-70).
-const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest)
+const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest && !auth.isReadOnly)
 const recipe = ref<RecipeDto | null>(null)
 const loading = ref(true)
 const highlightWords = ref(new Set<string>())

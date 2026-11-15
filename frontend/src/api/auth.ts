@@ -2,7 +2,7 @@ import client from './client'
 
 export const authApi = {
   me: () =>
-    client.get<{ username: string; isAuthenticated: boolean; isGuest?: boolean }>('/auth/me').then((r) => r.data),
+    client.get<{ username: string; isAuthenticated: boolean; isGuest?: boolean; isReadOnly?: boolean }>('/auth/me').then((r) => r.data),
 
   getToken: () =>
     client.get<{ token?: string; message?: string }>('/auth/token').then((r) => r.data),
