@@ -1,8 +1,13 @@
 name: Build, Test, and Publish
 
+# Pushes to main and pull requests (to any branch) only build and test. E2E runs only on main and release tags. A release is published by pushing a
+# vX.Y.Z tag that matches <Version> in MyCookbook.csproj (see "Releasing" in CLAUDE.md).
+# Pushes to beta publish the :beta image.
 on:
   push:
     branches: [ "main", "beta" ]
+    tags: [ "v*" ]
+  pull_request:
   workflow_dispatch:
 
 env:
@@ -11,10 +16,38 @@ env:
 
 jobs:
   test-and-publish:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, which Playwright's Chromium does not support yet.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.prep.outputs.version }}
+      release: ${{ steps.prep.outputs.release }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Extract version
+        id: prep
+        run: |
+          VERSION=$(grep -oP '(?<=<Version>).*?(?=</Version>)' MyCookbook/MyCookbook.csproj)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          # E2E only on main and on release tags (a release is still E2E-tested before it is published).
+          if [ "${{ github.event_name }}" = "push" ] && { [ "${{ github.ref }}" = "refs/heads/main" ] || [[ "${{ github.ref }}" == refs/tags/v* ]]; }; then
+            echo "e2e=true" >> $GITHUB_OUTPUT
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            if [ "${{ github.ref_name }}" != "v${VERSION}" ]; then
+              echo "::error::Tag ${{ github.ref_name }} does not match <Version>${VERSION}</Version> in MyCookbook.csproj"
+              exit 1
+            fi
+            echo "publish=true" >> $GITHUB_OUTPUT
+            echo "release=true" >> $GITHUB_OUTPUT
+            echo "tags=${{ env.DOCKER_IMAGE_NAME }}:${VERSION},${{ env.DOCKER_IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "beta" ]; then
+            echo "publish=true" >> $GITHUB_OUTPUT
+            echo "tags=${{ env.DOCKER_IMAGE_NAME }}:beta" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -48,6 +81,7 @@ jobs:
           npm test
 
       - name: Set up E2E Node.js
+        if: steps.prep.outputs.e2e == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -55,6 +89,7 @@ jobs:
           cache-dependency-path: e2e/package-lock.json
 
       - name: Cache Playwright browsers
+        if: steps.prep.outputs.e2e == 'true'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -62,6 +97,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('e2e/package-lock.json') }}
 
       - name: Install E2E deps
+        if: steps.prep.outputs.e2e == 'true'
         working-directory: e2e
         run: |
           npm ci
@@ -75,6 +111,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image for E2E
+        if: steps.prep.outputs.e2e == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -86,6 +123,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Start stack for E2E
+        if: steps.prep.outputs.e2e == 'true'
         run: |
           echo "SA_PASSWORD=E2eTestPassword1!" > .env
           echo "ASPNETCORE_ENVIRONMENT=Development" >> .env
@@ -97,34 +135,27 @@ jobs:
           timeout 90 bash -c 'until curl -sf http://localhost:8080/api/auth/me; do sleep 3; done'
 
       - name: Run E2E tests
+        if: steps.prep.outputs.e2e == 'true'
         working-directory: e2e
         run: npm test
 
       - name: Upload Playwright report
-        if: always()
+        if: always() && steps.prep.outputs.e2e == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 7
 
-      - name: Extract version
-        id: prep
-        run: |
-          VERSION=$(grep -oP '(?<=<Version>).*?(?=</Version>)' MyCookbook/MyCookbook.csproj || echo "1.0.0")
-          TAGS="${{ env.DOCKER_IMAGE_NAME }}:${VERSION},${{ env.DOCKER_IMAGE_NAME }}:latest"
-          if [ "${{ github.ref_name }}" != "main" ]; then
-            TAGS="${{ env.DOCKER_IMAGE_NAME }}:beta"
-          fi
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-
       - name: Login to Docker Hub
+        if: steps.prep.outputs.publish == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
+        if: steps.prep.outputs.publish == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -133,3 +164,27 @@ jobs:
           tags: ${{ steps.prep.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  release:
+    # Runs only for a vX.Y.Z tag, after the image has been published.
+    needs: test-and-publish
+    if: needs.test-and-publish.outputs.release == 'true'
+    # Pinned: ubuntu-latest moved to 26.04, which Playwright's Chromium does not support yet.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.test-and-publish.outputs.version }}
+        run: |
+          # Release notes: this version's section of the English changelog.
+          awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+            found
+          ' MyCookbook/CHANGELOG.md > release-notes.md
+          gh release create "v$VERSION" --title "$VERSION" --notes-file release-notes.md --verify-tag

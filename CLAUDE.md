@@ -130,6 +130,22 @@ git commit -m "Fix E2E test reliability"
 
 Version is set in `MyCookbook/MyCookbook.csproj` as `<Version>`. The project follows [Semantic Versioning](https://semver.org/). All changes are documented in `MyCookbook/CHANGELOG.md` using the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. When adding a feature, update both the `<Version>` in the `.csproj` and add an entry to `CHANGELOG.md`.
 
+## Releasing
+
+Merging to `main` does **not** publish anything. CI (`.github/workflows/build-and-publish.yml`) builds and runs the unit tests on every PR and on pushes to `main`; E2E runs only on pushes to `main` and on release tags. It publishes only for:
+
+- **A `vX.Y.Z` tag**: pushes `vingii/mycookbook:X.Y.Z` and `:latest` to Docker Hub and creates a GitHub Release with that version's section of `CHANGELOG.md` as notes. The run fails if the tag doesn't match `<Version>` in `MyCookbook.csproj`.
+- **A push to `beta`**: pushes `vingii/mycookbook:beta`.
+
+So a version stays open (more tasks can be added to its changelog section) until it is tagged. To release, once the version's PRs are merged:
+
+```bash
+git checkout main && git pull --ff-only
+git tag v2.7.0 && git push origin v2.7.0
+```
+
+Only the user decides when to tag a release.
+
 ## Testing and Coverage
 
 **After finishing any implementation, Claude must run both test suites with coverage and print the results as a coverage table.**
