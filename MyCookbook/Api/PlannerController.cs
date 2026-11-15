@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyCookbook.Api.Dto;
 using MyCookbook.Data;
 using MyCookbook.Data.CookbookDatabase;
+using MyCookbook.Services;
 
 namespace MyCookbook.Api;
 
@@ -42,6 +43,25 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
             flat = flat.Where(p => p.Date <= toDate);
 
         return flat.Select(p => p.ToDto()).ToList();
+    }
+
+    /// <summary>Combined ingredients of the recipes planned to be cooked from <paramref name="from"/> to <paramref name="to"/>.</summary>
+    [HttpGet("ingredients")]
+    public async Task<ActionResult<List<IngredientSummaryDto>>> GetIngredients(
+        [FromQuery] string? from,
+        [FromQuery] string? to,
+        [FromQuery] string? user,
+        [FromQuery] string? shareToken)
+    {
+        if (!DateOnly.TryParse(from, out var fromDate) || !DateOnly.TryParse(to, out var toDate))
+            return BadRequest("Invalid date format");
+        if (toDate < fromDate) return BadRequest("'to' is before 'from'");
+
+        var targetUser = await ResolveUser(user);
+        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
+
+        var recipes = await db.GetPlannedRecipesToCookAsync(targetUser, fromDate, toDate);
+        return IngredientSummaryBuilder.Build(recipes);
     }
 
     [HttpPost]

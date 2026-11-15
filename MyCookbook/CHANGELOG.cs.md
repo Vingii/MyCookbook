@@ -6,6 +6,10 @@ a projekt dodržuje [sémantické verzování](https://semver.org/lang/cs/).
 
 Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zobrazí v angličtině.
 
+## [2.7.0] - 2026-11-15
+### Přidáno
+- Nákupní seznam v Plánovači: vyberte dny a uvidíte suroviny všech receptů, které chcete vařit, sloučené a se sečteným množstvím. Odškrtněte, co už máte doma, a zbytek si zkopírujte.
+
 ## [2.6.2] - 2026-11-01
 ### Opraveno
 - Odkazy na jiné recepty ve sdíleném receptu už je neotevírají.

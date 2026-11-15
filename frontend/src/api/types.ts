@@ -52,6 +52,16 @@ export interface PlannedRecipeDto {
   fromFridge: boolean
 }
 
+/** One line of the planner shopping list (GET /api/planner/ingredients). */
+export interface IngredientSummaryDto {
+  name: string
+  /** Numeric amounts summed per unit; unit is "" for bare numbers. */
+  totals: { quantity: number; unit: string }[]
+  /** Amounts that are not a number with a unit, as written (e.g. "špetka"). */
+  otherAmounts: string[]
+  recipes: string[]
+}
+
 export interface CreateRecipeRequest {
   name: string
   category?: string

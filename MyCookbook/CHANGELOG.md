@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-11-15
+### Added
+- Shopping list on the Planner page: pick the days and see the ingredients of all recipes you plan to cook, combined and with amounts added up. Tick off what you already have and copy the rest.
+
 ## [2.6.2] - 2026-11-01
 ### Fixed
 - Links to other recipes in a shared recipe no longer open them.

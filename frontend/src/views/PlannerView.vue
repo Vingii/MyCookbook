@@ -2,7 +2,20 @@
   <div>
     <div class="d-flex align-center ga-3 mb-4">
       <h1 class="text-h4">{{ ui.t.mealPlanner }}</h1>
+      <v-spacer />
+      <v-btn
+          variant="tonal"
+          prepend-icon="mdi-cart-outline"
+          data-test="shopping-list"
+          @click="shoppingListOpen = true"
+      >{{ ui.t.shoppingList }}</v-btn>
     </div>
+
+    <IngredientSummaryDialog
+        v-model="shoppingListOpen"
+        :user="viewingUser || undefined"
+        :share-token="shareToken"
+    />
 
     <div v-for="(week, wi) in weeks" :key="wi">
       <div v-if="wi > 0" class="d-flex align-center ga-3 my-5">
@@ -138,6 +151,7 @@ import { useReadonly } from '../composables/useReadonly'
 import { plannerApi } from '../api/planner'
 import { recipesApi } from '../api/recipes'
 import type { RecipeDto, PlannedRecipeDto } from '../api/types'
+import IngredientSummaryDialog from '../components/IngredientSummaryDialog.vue'
 
 const plannerStore = usePlannerStore()
 const recipesStore = useRecipesStore()
@@ -145,6 +159,7 @@ const ui = useUiStore()
 watchEffect(() => { document.title = ui.t.mealPlanner })
 const { viewingUser, shareToken, readonly } = useReadonly()
 const dialogOpen = ref(false)
+const shoppingListOpen = ref(false)
 const dialogDate = ref('')
 const selectedRecipeGuid = ref<string | null>(null)
 const autocompleteSearch = ref('')

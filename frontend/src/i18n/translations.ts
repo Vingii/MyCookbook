@@ -119,6 +119,11 @@ export const translations = {
     // Planner
     cloneToNextDay: 'Clone to next day',
     week: 'Week',
+    shoppingList: 'Shopping list',
+    shoppingListFrom: 'From',
+    shoppingListTo: 'To',
+    shoppingListEmpty: 'No recipes are planned to cook in these days.',
+    shoppingListFridgeNote: 'Recipes marked as eaten from the fridge are left out.',
     // Unauthorized
     notAuthenticated: 'Not authenticated',
     notAuthenticatedDesc: 'Please log in to access MyCookbook.',
@@ -242,6 +247,11 @@ export const translations = {
     // Planner
     cloneToNextDay: 'Zkopírovat na další den',
     week: 'Týden',
+    shoppingList: 'Nákupní seznam',
+    shoppingListFrom: 'Od',
+    shoppingListTo: 'Do',
+    shoppingListEmpty: 'Na tyto dny nejsou naplánované žádné recepty k vaření.',
+    shoppingListFridgeNote: 'Recepty, které se jedí z lednice, se nezapočítávají.',
     // Unauthorized
     notAuthenticated: 'Nepřihlášen',
     notAuthenticatedDesc: 'Pro přístup k MyCookbook se prosím přihlaste.',
