@@ -91,7 +91,7 @@ export const translations = {
     // Settings
     settings: 'Settings',
     apiKey: 'API Key',
-    apiKeyDesc: 'Use a bearer token to access the API from scripts or Home Assistant.',
+    apiKeyDesc: 'Use a bearer token to view your recipes and plans from scripts or Home Assistant. The token is read-only: it can\'t change or delete anything, but it can send the shopping list to Home Assistant.',
     generateToken: 'Generate Token',
     revokeToken: 'Revoke Token',
     saveTokenNote: "Save this token now — it won't be shown again.",
@@ -136,6 +136,7 @@ export const translations = {
     save: 'Save',
     remove: 'Remove',
     homeAssistantSetup: 'Set up in Home Assistant',
+    readOnlySettings: 'You are signed in with an API token, which can only view recipes and plans. Open MyCookbook normally to change settings.',
     homeAssistantSetupSteps: 'In Home Assistant, go to Settings → Automations → Create automation → ⋮ → Edit in YAML and paste the automation below. Change todo.shopping_list to your to-do list, save it, then enter the webhook URL above. Keep the webhook ID secret: anyone who knows it can add items to your list.',
     // Unauthorized
     notAuthenticated: 'Not authenticated',
@@ -232,7 +233,7 @@ export const translations = {
     // Settings
     settings: 'Nastavení',
     apiKey: 'API klíč',
-    apiKeyDesc: 'Použijte bearer token pro přístup k API ze skriptů nebo Home Assistant.',
+    apiKeyDesc: 'Použijte bearer token pro prohlížení receptů a plánů ze skriptů nebo z Home Assistantu. Token je jen pro čtení: nic nezmění ani nesmaže, ale nákupní seznam do Home Assistantu poslat umí.',
     generateToken: 'Vygenerovat token',
     revokeToken: 'Zrušit token',
     saveTokenNote: 'Uložte si tento token — nebude znovu zobrazen.',
@@ -277,6 +278,7 @@ export const translations = {
     save: 'Uložit',
     remove: 'Odebrat',
     homeAssistantSetup: 'Nastavení v Home Assistantu',
+    readOnlySettings: 'Jste přihlášeni API tokenem, který umožňuje jen prohlížet recepty a plány. Nastavení změníte po běžném přihlášení do MyCookbook.',
     homeAssistantSetupSteps: 'V Home Assistantu otevřete Nastavení → Automatizace → Vytvořit automatizaci → ⋮ → Upravit v YAML a vložte automatizaci níže. Změňte todo.shopping_list na svůj seznam úkolů, uložte ji a nahoře zadejte URL webhooku. ID webhooku nikomu neprozrazujte: kdo ho zná, může přidávat položky do vašeho seznamu.',
     // Unauthorized
     notAuthenticated: 'Nepřihlášen',

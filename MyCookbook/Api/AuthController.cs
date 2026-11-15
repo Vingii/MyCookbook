@@ -18,7 +18,8 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config,
     {
         username = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity?.Name,
         isAuthenticated = User.Identity?.IsAuthenticated == true,
-        isGuest = User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) == true
+        isGuest = User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) == true,
+        isReadOnly = User.IsReadOnly(),
     });
 
     [HttpGet("login")]
@@ -44,6 +45,7 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config,
 
     [HttpGet("token")]
     [Authorize(Policy = "NotGuest")]
+    [DenyReadOnlyAccess]
     public async Task<IActionResult> GetToken()
     {
         var user = User.Identity!.Name!;
@@ -65,6 +67,7 @@ public class AuthController(ApiTokenService tokenService, IConfiguration config,
 
     [HttpGet("share-token")]
     [Authorize(Policy = "NotGuest")]
+    [DenyReadOnlyAccess]
     public async Task<IActionResult> GetShareToken()
     {
         var token = await db.GetUserPreference("ShareToken", User.Identity!.Name!);

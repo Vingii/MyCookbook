@@ -29,7 +29,7 @@ public class ApiKeyAuthenticationHandler(
         if (userName == null)
             return AuthenticateResult.Fail("Invalid token");
 
-        var claims = new List<Claim> { new Claim(ClaimTypes.Name, userName) };
+        var claims = new List<Claim> { new Claim(ClaimTypes.Name, userName), ReadOnlyAccess.Claim() };
         var displayName = await tokenService.GetDisplayNameAsync(userName);
         if (!string.IsNullOrEmpty(displayName))
             claims.Add(new Claim(ClaimTypes.GivenName, displayName));

@@ -27,6 +27,8 @@ public class TokenQueryParamMiddleware(RequestDelegate next)
                 {
                     new Claim(ClaimTypes.Name, username),
                     new Claim(ClaimTypes.NameIdentifier, username),
+                    // The session comes from an API token, so it is read-only like the token itself.
+                    ReadOnlyAccess.Claim(),
                 };
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);

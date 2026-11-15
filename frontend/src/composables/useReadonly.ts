@@ -15,7 +15,7 @@ export function useReadonly() {
   )
 
   const readonly = computed(() =>
-    auth.isGuest || (auth.username !== null && viewingUser.value !== auth.username)
+    auth.isGuest || auth.isReadOnly || (auth.username !== null && viewingUser.value !== auth.username)
   )
 
   return { viewingUser, shareToken, readonly }

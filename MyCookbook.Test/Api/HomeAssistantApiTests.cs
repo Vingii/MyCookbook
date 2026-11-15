@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -149,4 +150,55 @@ public class HomeAssistantApiTests : IDisposable
 
         Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Status_ReportsWhetherConfigured()
+    {
+        Assert.False((await _client.GetFromJsonAsync<StatusResponse>("/api/homeassistant/status"))!.Configured);
+        await ConfigureAsync();
+        Assert.True((await _client.GetFromJsonAsync<StatusResponse>("/api/homeassistant/status"))!.Configured);
+    }
+
+    // MC-78: a read-only API token can still send the shopping list, but not see or change the webhook.
+    private async Task<HttpRequestMessage> WithReadOnlyTokenAsync(HttpMethod method, string url, object? body = null)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var token = await scope.ServiceProvider.GetRequiredService<ApiTokenService>().GenerateTokenAsync("devuser");
+        var request = new HttpRequestMessage(method, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (body != null) request.Content = JsonContent.Create(body);
+        return request;
+    }
+
+    [Fact]
+    public async Task ReadOnlyToken_CanSendShoppingListAndReadStatus()
+    {
+        await ConfigureAsync();
+        _ha.Expect(HttpMethod.Post, WebhookUrl).Respond(HttpStatusCode.OK);
+
+        var send = await _client.SendAsync(await WithReadOnlyTokenAsync(HttpMethod.Post, "/api/homeassistant/shopping-list", Request()));
+        var status = await _client.SendAsync(await WithReadOnlyTokenAsync(HttpMethod.Get, "/api/homeassistant/status"));
+
+        Assert.Equal(HttpStatusCode.NoContent, send.StatusCode);
+        _ha.VerifyNoOutstandingExpectation();
+        Assert.True((await status.Content.ReadFromJsonAsync<StatusResponse>())!.Configured);
+    }
+
+    [Fact]
+    public async Task ReadOnlyToken_CannotReadOrChangeWebhook()
+    {
+        await ConfigureAsync();
+
+        var get = await _client.SendAsync(await WithReadOnlyTokenAsync(HttpMethod.Get, "/api/homeassistant"));
+        var put = await _client.SendAsync(await WithReadOnlyTokenAsync(HttpMethod.Put, "/api/homeassistant",
+            new HomeAssistantSettingsDto { WebhookUrl = "http://evil.local/api/webhook/x" }));
+        var delete = await _client.SendAsync(await WithReadOnlyTokenAsync(HttpMethod.Delete, "/api/homeassistant"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, get.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, put.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, delete.StatusCode);
+        Assert.Equal(WebhookUrl, (await _client.GetFromJsonAsync<HomeAssistantSettingsDto>("/api/homeassistant"))!.WebhookUrl);
+    }
+
+    private record StatusResponse(bool Configured);
 }

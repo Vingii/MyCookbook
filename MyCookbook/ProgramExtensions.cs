@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
 using MyCookbook.Services;
 
 namespace MyCookbook
@@ -139,12 +140,15 @@ namespace MyCookbook
             services.AddAuthorizationBuilder()
                 .AddPolicy("CookieOrApiKey", policy =>
                     policy.RequireAuthenticatedUser()
-                          .AddAuthenticationSchemes(webScheme, "ApiKey"))
+                          .AddAuthenticationSchemes(webScheme, "ApiKey")
+                          .AddRequirements(new ReadOnlyAccessRequirement()))
                 .AddPolicy("NotGuest", policy =>
                     policy.RequireAuthenticatedUser()
                           .AddAuthenticationSchemes(webScheme, "ApiKey")
                           .RequireAssertion(ctx =>
-                              ctx.User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) != true));
+                              ctx.User.Identity?.Name?.StartsWith("guest-", StringComparison.OrdinalIgnoreCase) != true)
+                          .AddRequirements(new ReadOnlyAccessRequirement()));
+            services.AddSingleton<IAuthorizationHandler, ReadOnlyAccessHandler>();
         }
     }
 }

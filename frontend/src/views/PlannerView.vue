@@ -78,7 +78,7 @@
                     variant="text"
                     :color="plan.fromFridge ? 'info' : undefined"
                     :title="plan.fromFridge ? 'From fridge' : 'Cook'"
-                    @click="toggleFromFridge(plan)"
+                    @click="!readonly && toggleFromFridge(plan)"
                 />
                 <v-btn
                     v-if="!readonly"

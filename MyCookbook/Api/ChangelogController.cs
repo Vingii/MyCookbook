@@ -42,6 +42,7 @@ namespace MyCookbook.Api
 
         [HttpPut("lastSeen")]
         [Authorize(Policy = "CookieOrApiKey")]
+        [AllowReadOnlyAccess]
         public async Task<IActionResult> MarkAsSeen()
         {
             await db.UpdateUserPreference("LastSeenVersion", CurrentVersion, CurrentUser);
