@@ -6,6 +6,9 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import IngredientSummaryDialog from '../IngredientSummaryDialog.vue'
 import { plannerApi } from '../../api/planner'
+import { homeAssistantApi } from '../../api/homeAssistant'
+import { useAuthStore } from '../../stores/auth'
+import { VDatePicker } from 'vuetify/components'
 import type { IngredientSummaryDto } from '../../api/types'
 import { useUiStore } from '../../stores/ui'
 
@@ -13,9 +16,14 @@ import { useUiStore } from '../../stores/ui'
 vi.mock('../../api/planner', () => ({
   plannerApi: { getIngredients: vi.fn() },
 }))
+vi.mock('../../api/homeAssistant', () => ({
+  homeAssistantApi: { get: vi.fn(), sendShoppingList: vi.fn() },
+}))
 
 const vuetify = createVuetify({ components, directives })
 const getIngredients = vi.mocked(plannerApi.getIngredients)
+const haGet = vi.mocked(homeAssistantApi.get)
+const haSend = vi.mocked(homeAssistantApi.sendShoppingList)
 
 const items: IngredientSummaryDto[] = [
   { name: 'Vepřové', totals: [{ quantity: 1000, unit: 'g' }], otherAmounts: [], recipes: ['Gyros'] },
@@ -27,13 +35,18 @@ function mountDialog(props: Record<string, unknown> = {}) {
   return mount(IngredientSummaryDialog, {
     props: { modelValue: true, ...props },
     // VDialog needs visualViewport, which the test DOM lacks; render its content inline instead.
-    global: { plugins: [vuetify], stubs: { VDialog: { template: '<div><slot /></div>' } } },
+    global: { plugins: [vuetify], stubs: {
+      VDialog: { template: '<div><slot /></div>' },
+      // Render the date pickers inline instead of in a popup.
+      VMenu: { template: '<div><slot name="activator" :props="{}" /><slot /></div>' },
+    } },
   })
 }
 
 type Wrapper = ReturnType<typeof mountDialog>
 const rows = (w: Wrapper) => w.findAll('[data-test="item"]')
-const copyButton = (w: Wrapper) => w.findAll('button').find((b) => b.text() === 'Copy' || b.text() === 'Kopírovat')!
+const copyButton = (w: Wrapper) => w.find('[data-test="copy"]')
+const pickers = (w: Wrapper) => w.findAllComponents(VDatePicker)
 
 enableAutoUnmount(afterEach)
 
@@ -45,6 +58,10 @@ describe('IngredientSummaryDialog', () => {
     useUiStore().locale = 'en'
     getIngredients.mockReset()
     getIngredients.mockResolvedValue(items)
+    haGet.mockReset()
+    haGet.mockResolvedValue({ webhookUrl: null })
+    haSend.mockReset()
+    haSend.mockResolvedValue(undefined as never)
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 10, 15, 0, 30))
     writeText = vi.fn().mockResolvedValue(undefined)
@@ -55,11 +72,39 @@ describe('IngredientSummaryDialog', () => {
     vi.useRealTimers()
   })
 
-  it('loads the next seven days by default, for the viewed user', async () => {
+  it('loads next week by default, for the viewed user (Czech week starts on Monday)', async () => {
+    useUiStore().locale = 'cs'
     mountDialog({ user: 'anna', shareToken: 'tok' })
     await flushPromises()
 
-    expect(getIngredients).toHaveBeenCalledWith('2026-11-15', '2026-11-21', 'anna', 'tok')
+    // Today is Sunday 2026-11-15.
+    expect(getIngredients).toHaveBeenCalledTimes(1)
+    expect(getIngredients).toHaveBeenCalledWith('2026-11-16', '2026-11-22', 'anna', 'tok')
+  })
+
+  it('in English the default week and the pickers start on Sunday', async () => {
+    const w = mountDialog()
+    await flushPromises()
+
+    expect(getIngredients).toHaveBeenCalledWith('2026-11-22', '2026-11-28', undefined, undefined)
+    expect(pickers(w).map((p) => p.props('firstDayOfWeek'))).toEqual([0, 0])
+  })
+
+  it('Czech date pickers start on Monday', async () => {
+    useUiStore().locale = 'cs'
+    const w = mountDialog()
+    await flushPromises()
+
+    expect(pickers(w).map((p) => p.props('firstDayOfWeek'))).toEqual([1, 1])
+  })
+
+  it('shows the dates in the UI language', async () => {
+    useUiStore().locale = 'cs'
+    const w = mountDialog()
+    await flushPromises()
+
+    expect((w.find('[data-test="from"] input').element as HTMLInputElement).value).toBe(
+      new Date(2026, 10, 16).toLocaleDateString('cs-CZ', { weekday: 'short', day: 'numeric', month: 'numeric', year: 'numeric' }))
   })
 
   it('lists ingredients alphabetically with amounts and recipes', async () => {
@@ -88,22 +133,20 @@ describe('IngredientSummaryDialog', () => {
     const w = mountDialog()
     await flushPromises()
 
-    await w.find('[data-test="to"] input').setValue('2026-11-30')
+    pickers(w)[1]!.vm.$emit('update:modelValue', new Date(2026, 10, 30))
     await flushPromises()
 
-    expect(getIngredients).toHaveBeenLastCalledWith('2026-11-15', '2026-11-30', undefined, undefined)
+    expect(getIngredients).toHaveBeenLastCalledWith('2026-11-22', '2026-11-30', undefined, undefined)
   })
 
-  it('does not load when the end is before the start', async () => {
+  it('moving the start past the end moves the end along', async () => {
     const w = mountDialog()
     await flushPromises()
-    getIngredients.mockClear()
 
-    await w.find('[data-test="to"] input').setValue('2026-11-10')
+    pickers(w)[0]!.vm.$emit('update:modelValue', new Date(2026, 11, 5))
     await flushPromises()
 
-    expect(getIngredients).not.toHaveBeenCalled()
-    expect(w.find('[data-test="empty"]').exists()).toBe(true)
+    expect(getIngredients).toHaveBeenLastCalledWith('2026-12-05', '2026-12-05', undefined, undefined)
   })
 
   it('shows a message when nothing is planned', async () => {
@@ -137,6 +180,49 @@ describe('IngredientSummaryDialog', () => {
     await flushPromises()
 
     expect(writeText).toHaveBeenCalledWith('cibule: 1.5 ks + velká\nSůl\nVepřové: 1000 g')
+  })
+
+  it('has no Home Assistant button when no webhook is set', async () => {
+    const w = mountDialog()
+    await flushPromises()
+
+    expect(w.find('[data-test="send-ha"]').exists()).toBe(false)
+  })
+
+  it('does not ask guests for the Home Assistant setting', async () => {
+    useAuthStore().isGuest = true
+    mountDialog()
+    await flushPromises()
+
+    expect(haGet).not.toHaveBeenCalled()
+  })
+
+  it('sends the items not ticked off to Home Assistant', async () => {
+    haGet.mockResolvedValue({ webhookUrl: 'http://ha/api/webhook/x' })
+    const w = mountDialog()
+    await flushPromises()
+
+    await rows(w)[1]!.trigger('click')
+    await w.find('[data-test="send-ha"]').trigger('click')
+    await flushPromises()
+
+    expect(haSend).toHaveBeenCalledWith([
+      { name: 'cibule', amount: '1.5 ks + velká', recipes: ['Gyros', 'Guláš'] },
+      { name: 'Vepřové', amount: '1000 g', recipes: ['Gyros'] },
+    ])
+    expect(w.find('[data-test="ha-message"]').text()).toBe('Sent 2 items to Home Assistant.')
+  })
+
+  it('reports a Home Assistant failure', async () => {
+    haGet.mockResolvedValue({ webhookUrl: 'http://ha/api/webhook/x' })
+    haSend.mockRejectedValue(new Error('502'))
+    const w = mountDialog()
+    await flushPromises()
+
+    await w.find('[data-test="send-ha"]').trigger('click')
+    await flushPromises()
+
+    expect(w.find('[data-test="ha-message"]').text()).toBe('Home Assistant could not be reached.')
   })
 
   it('emits close from the close button', async () => {

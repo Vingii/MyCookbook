@@ -53,6 +53,10 @@ namespace MyCookbook
                 builder.Services.AddTransient<RecipePageFetcher>();
                 builder.Services.AddTransient<LlmClient>();
                 builder.Services.AddTransient<RecipeImportService>();
+                builder.Services.AddHttpClient(HomeAssistantService.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(10))
+                    // Never follow a redirect away from the validated webhook URL.
+                    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+                builder.Services.AddTransient<HomeAssistantService>();
                 builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>

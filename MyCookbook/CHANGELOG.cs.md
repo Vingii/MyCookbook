@@ -8,7 +8,8 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 
 ## [2.7.0] - 2026-11-15
 ### Přidáno
-- Nákupní seznam v Plánovači: vyberte dny a uvidíte suroviny všech receptů, které chcete vařit, sloučené a se sečteným množstvím. Odškrtněte, co už máte doma, a zbytek si zkopírujte.
+- Nákupní seznam v Plánovači: suroviny všech receptů, které chcete vařit příští týden (nebo ve vybrané dny), sloučené a se sečteným množstvím. Odškrtněte, co už máte doma, a zbytek si zkopírujte.
+- Nákupní seznam můžete poslat do seznamu úkolů v Home Assistantu. Nastavíte to v Nastavení → Home Assistant.
 
 ## [2.6.2] - 2026-11-01
 ### Opraveno

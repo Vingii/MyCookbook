@@ -17,3 +17,21 @@ public class IngredientQuantityDto
     public decimal Quantity { get; set; }
     public string Unit { get; set; } = "";
 }
+
+/// <summary>One shopping list line sent to Home Assistant.</summary>
+public class ShoppingListItemDto
+{
+    public string Name { get; set; } = "";
+    public string? Amount { get; set; }
+    public List<string> Recipes { get; set; } = [];
+}
+
+public class SendShoppingListRequest
+{
+    public List<ShoppingListItemDto> Items { get; set; } = [];
+}
+
+public class HomeAssistantSettingsDto
+{
+    public string? WebhookUrl { get; set; }
+}
