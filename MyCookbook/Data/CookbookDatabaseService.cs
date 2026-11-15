@@ -151,6 +151,24 @@ namespace MyCookbook.Data
             return plannedRecipes.GroupBy(x => x.Date).ToDictionary(x => x.Key, x => x.ToList());
         }
 
+        /// <summary>
+        /// Recipes planned to be cooked between <paramref name="from"/> and <paramref name="to"/> (inclusive),
+        /// with their ingredients, ordered by date. A recipe planned on two days appears twice; plans marked
+        /// "from fridge" are skipped because nothing needs to be bought for them.
+        /// </summary>
+        public async Task<List<Recipe>> GetPlannedRecipesToCookAsync(string user, DateOnly from, DateOnly to)
+        {
+            using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
+            await using var context = await GetContext();
+            var planned = await context.PlannedRecipes
+                .Where(x => x.UserName == user && !x.FromFridge && x.Date >= from && x.Date <= to)
+                .OrderBy(x => x.Date).ThenBy(x => x.Id)
+                .Include(x => x.Recipe).ThenInclude(r => r.Ingredients)
+                .AsNoTracking().ToListAsync();
+
+            return planned.Select(x => x.Recipe).Where(r => r != null).ToList();
+        }
+
         public async Task<Recipe> CreateRecipeAsync(Recipe recipe, string user)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
