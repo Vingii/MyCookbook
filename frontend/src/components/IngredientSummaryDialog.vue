@@ -108,7 +108,7 @@ import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
 import { firstDayOfWeek, isoDate, localeTag, nextWeekRange, parseIsoDate } from '../utils/dates'
 
-const props = defineProps<{ modelValue: boolean; user?: string; shareToken?: string }>()
+const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const ui = useUiStore()
@@ -177,7 +177,7 @@ async function load() {
   const id = ++requestId
   loading.value = true
   try {
-    const result = await plannerApi.getIngredients(from.value, to.value, props.user, props.shareToken)
+    const result = await plannerApi.getIngredients(from.value, to.value)
     // Ignore responses to an older date range that arrive after a newer one.
     if (id === requestId) items.value = result
   } finally {

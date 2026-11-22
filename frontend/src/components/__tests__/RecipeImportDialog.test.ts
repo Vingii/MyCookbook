@@ -40,9 +40,9 @@ function axiosError(status: number, code?: string) {
   })
 }
 
-function mountDialog() {
+function mountDialog(cookbookId?: number) {
   return mount(RecipeImportDialog, {
-    props: { modelValue: true },
+    props: { modelValue: true, cookbookId },
     // VDialog needs visualViewport, which the test DOM lacks; render its content inline instead.
     global: { plugins: [vuetify], stubs: { VDialog: { template: '<div><slot /></div>' } } },
   })
@@ -96,6 +96,18 @@ describe('RecipeImportDialog (MC-69)', () => {
     expect(w.text()).toContain('As written on the page.')
   })
 
+  it('saves into the given cookbook (MC-80)', async () => {
+    preview.mockResolvedValue(result)
+    save.mockResolvedValue({ guid: 'new-guid' } as never)
+    const w = mountDialog(7)
+    await loadLink(w)
+
+    await button(w, 'Save recipe').trigger('click')
+    await flushPromises()
+
+    expect(save).toHaveBeenCalledWith(expect.anything(), 7)
+  })
+
   it('saves the chosen version and reports the new recipe', async () => {
     preview.mockResolvedValue(result)
     save.mockResolvedValue({ guid: 'new-guid' } as never)
@@ -106,7 +118,7 @@ describe('RecipeImportDialog (MC-69)', () => {
     await button(w, 'Save recipe').trigger('click')
     await flushPromises()
 
-    expect(save).toHaveBeenCalledWith(result.variants[1]!.recipe)
+    expect(save).toHaveBeenCalledWith(result.variants[1]!.recipe, undefined)
     expect(w.emitted('created')).toEqual([['new-guid']])
     expect(w.emitted('update:modelValue')).toEqual([[false]])
   })

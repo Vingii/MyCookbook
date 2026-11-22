@@ -22,6 +22,10 @@ namespace MyCookbook.Data.CookbookDatabase
         public DateTime? LastCooked { get; set; }
         public Guid Guid { get; set; } = Guid.NewGuid();
 
+        /// <summary>The cookbook it belongs to; null means the owner's default cookbook (MC-80).</summary>
+        public int? CookbookId { get; set; }
+        public virtual Cookbook Cookbook { get; set; }
+
         public virtual ICollection<Ingredient> Ingredients { get; set; }
         public virtual ICollection<Step> Steps { get; set; }
         public virtual ICollection<FavoriteRecipe> FavoriteRecipes { get; set; }

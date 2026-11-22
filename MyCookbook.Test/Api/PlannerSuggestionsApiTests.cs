@@ -62,11 +62,12 @@ public class PlannerSuggestionsApiTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_OtherUserWithoutShareToken_IsForbidden()
+    public async Task Get_IgnoresUserParameter_AndSuggestsOnlyYourRecipes()
     {
+        // Sharing a whole collection with ?user=&shareToken= was removed; the parameters must not reach anyone else's data.
         await SeedAsync("anna");
-        var response = await _client.GetAsync("/api/planner/suggestions?user=anna");
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var result = await _client.GetFromJsonAsync<List<PlanSuggestionDto>>("/api/planner/suggestions?user=anna&shareToken=tok");
+        Assert.Empty(result!);
     }
 
     [Fact]

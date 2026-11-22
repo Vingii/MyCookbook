@@ -67,7 +67,7 @@ public class RecipeImportService(CookbookDatabaseService db, RecipePageFetcher f
     }
 
     /// <summary>Saves the version the user picked as a new recipe, with a unique name.</summary>
-    public async Task<Recipe> SaveAsync(RecipeDraftDto draft, string user)
+    public async Task<Recipe> SaveAsync(RecipeDraftDto draft, string user, int? cookbookId = null)
     {
         draft = Sanitize(draft);
         await using var context = await db.GetContext();
@@ -77,6 +77,7 @@ public class RecipeImportService(CookbookDatabaseService db, RecipePageFetcher f
         {
             UserName = user,
             Name = UniqueName(draft.Name, existingNames),
+            CookbookId = cookbookId,
             Category = draft.Category,
             Servings = draft.Servings,
             Duration = draft.Duration,

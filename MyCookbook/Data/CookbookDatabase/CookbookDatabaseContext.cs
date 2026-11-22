@@ -26,6 +26,7 @@ namespace MyCookbook.Data.CookbookDatabase
         public virtual DbSet<Step> Steps { get; set; }
         public virtual DbSet<UserPreference> UserPreferences { get; set; }
         public virtual DbSet<SharedItem> SharedItems { get; set; }
+        public virtual DbSet<Cookbook> Cookbooks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -138,6 +139,25 @@ namespace MyCookbook.Data.CookbookDatabase
                 entity.Property(e => e.OwnerUserName)
                     .IsRequired()
                     .HasMaxLength(450);
+            });
+
+            modelBuilder.Entity<Cookbook>(entity =>
+            {
+                entity.HasIndex(e => e.UserName, "IX_Cookbooks_UserName");
+
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(450);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                // A non-empty cookbook can't be deleted, so nothing should ever cascade.
+                entity.HasMany(e => e.Recipes)
+                    .WithOne(r => r.Cookbook)
+                    .HasForeignKey(r => r.CookbookId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<Tag>(entity =>

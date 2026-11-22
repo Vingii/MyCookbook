@@ -9,8 +9,18 @@ import type {
   UpdateStepRequest,
 } from './types'
 
+export interface RecipeListParams {
+  search?: string
+  category?: string
+  tag?: string
+  /** Only recipes in this cookbook of yours (MC-80). */
+  cookbook?: number
+  /** Only recipes from cookbooks shown in the planner. */
+  planner?: boolean
+}
+
 export const recipesApi = {
-  getAll: (params?: { search?: string; category?: string; tag?: string; user?: string; shareToken?: string }) =>
+  getAll: (params?: RecipeListParams) =>
     client.get<RecipeDto[]>('/recipes', { params }).then((r) => r.data),
 
   getAllIngredientNames: () =>
@@ -19,10 +29,10 @@ export const recipesApi = {
   getAllNames: () =>
     client.get<string[]>('/recipes/names').then((r) => r.data),
 
-  getById: (guid: string, params?: { user?: string; shareToken?: string }) =>
-    client.get<RecipeDto>(`/recipes/${guid}`, { params }).then((r) => r.data),
+  getById: (guid: string) =>
+    client.get<RecipeDto>(`/recipes/${guid}`).then((r) => r.data),
 
-  getRandom: (params?: { user?: string; shareToken?: string }) =>
+  getRandom: (params?: { cookbook?: number }) =>
     client.get<RecipeDto>('/recipes/random', { params }).then((r) => r.data),
 
   getShared: (guid: string) =>
@@ -37,8 +47,9 @@ export const recipesApi = {
   delete: (guid: string) =>
     client.delete(`/recipes/${guid}`),
 
-  clone: (guid: string) =>
-    client.post<RecipeDto>(`/recipes/${guid}/clone`).then((r) => r.data),
+  /** Without a cookbook, a copy of your own recipe stays in its cookbook and anyone else's goes to your default one. */
+  clone: (guid: string, cookbook?: number) =>
+    client.post<RecipeDto>(`/recipes/${guid}/clone`, null, { params: cookbook ? { cookbook } : undefined }).then((r) => r.data),
 
   markCooked: (guid: string) =>
     client.post(`/recipes/${guid}/lastcooked`),

@@ -29,13 +29,24 @@
         <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.clone }}</v-btn>
         <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">{{ ui.t.delete }}</v-btn>
       </v-col>
-      <v-col v-else-if="canCloneToOwn" cols="auto">
-        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.cloneToMyRecipes }}</v-btn>
-      </v-col>
     </v-row>
 
     <v-row v-if="!readonly && editingMeta" class="mb-4" align="center">
-      <v-col cols="12" sm="4">
+      <v-col v-if="cookbooks.hasSeveral" cols="12" sm="3">
+        <v-select
+          :model-value="cookbooks.ofRecipe(recipe)?.id"
+          :items="cookbooks.cookbooks"
+          :item-title="(c) => cookbooks.displayName(c)"
+          item-value="id"
+          :label="ui.t.cookbook"
+          density="compact"
+          variant="outlined"
+          hide-details
+          data-test="recipe-cookbook"
+          @update:model-value="moveToCookbook"
+        />
+      </v-col>
+      <v-col cols="12" :sm="cookbooks.hasSeveral ? 3 : 4">
         <v-combobox
           v-model="recipe.category"
           :items="store.allCategories"
@@ -46,7 +57,7 @@
           @blur="saveRecipe"
         />
       </v-col>
-      <v-col cols="6" sm="4">
+      <v-col cols="6" :sm="cookbooks.hasSeveral ? 3 : 4">
         <v-text-field
           v-model.number="recipe.duration"
           :label="ui.t.durationMin"
@@ -57,7 +68,7 @@
           @blur="saveRecipe"
         />
       </v-col>
-      <v-col cols="6" sm="4">
+      <v-col cols="6" :sm="cookbooks.hasSeveral ? 3 : 4">
         <v-text-field
           v-model.number="recipe.servings"
           :label="ui.t.servings"
@@ -70,6 +81,10 @@
       </v-col>
     </v-row>
     <div v-else class="d-flex flex-wrap ga-6 mb-4 text-body-2">
+      <div v-if="!readonly && cookbooks.hasSeveral" data-test="recipe-cookbook-name">
+        <div class="text-medium-emphasis text-caption">{{ ui.t.cookbook }}</div>
+        {{ cookbooks.displayName(cookbooks.ofRecipe(recipe)) }}
+      </div>
       <div>
         <div class="text-medium-emphasis text-caption">{{ ui.t.category }}</div>
         {{ recipe.category || '—' }}
@@ -165,7 +180,7 @@ import { recipesApi } from '../api/recipes'
 import { useReadonly } from '../composables/useReadonly'
 import { useUiStore } from '../stores/ui'
 import { useRecipesStore } from '../stores/recipes'
-import { useAuthStore } from '../stores/auth'
+import { useCookbooksStore } from '../stores/cookbooks'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useRecipeHref } from '../composables/useRecipeLinks'
 import type { RecipeDto } from '../api/types'
@@ -177,12 +192,10 @@ const router = useRouter()
 // Computed rather than captured: following a recipe link reuses this component instance.
 const guid = computed(() => route.params.guid as string)
 const recipeHref = useRecipeHref()
-const { viewingUser, shareToken, readonly } = useReadonly()
+const { readonly } = useReadonly()
 const ui = useUiStore()
 const store = useRecipesStore()
-const auth = useAuthStore()
-// Someone else's recipe can be cloned into your own cookbook, but guests have no cookbook (MC-70).
-const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest && !auth.isReadOnly)
+const cookbooks = useCookbooksStore()
 const recipe = ref<RecipeDto | null>(null)
 watch(recipe, (r) => { document.title = r?.name ?? 'MyCookbook' }, { immediate: true })
 const loading = ref(true)
@@ -200,6 +213,8 @@ onMounted(() => {
   loadRecipe()
   if (store.allTags.length === 0) store.fetchAllTags()
   if (store.allCategories.length === 0) store.fetchAllCategories()
+  // Your own recipe can be moved to another cookbook (MC-80).
+  if (!readonly.value) cookbooks.ensureLoaded().catch(() => {})
 })
 
 watch(guid, () => {
@@ -210,7 +225,7 @@ watch(guid, () => {
 async function loadRecipe() {
   loading.value = true
   try {
-    recipe.value = await recipesApi.getById(guid.value, { user: viewingUser.value || undefined, shareToken: shareToken.value })
+    recipe.value = await recipesApi.getById(guid.value)
     highlightWords.value = await getHighlightWords(recipe.value.ingredients.map((i) => i.name))
   } finally {
     loading.value = false
@@ -238,7 +253,22 @@ async function saveRecipe() {
   store.fetchAllRecipeNames()
 }
 
+async function moveToCookbook(cookbookId: number) {
+  if (!recipe.value) return
+  recipe.value.cookbookId = cookbookId
+  await recipesApi.update(guid.value, {
+    name: recipe.value.name,
+    category: recipe.value.category,
+    duration: recipe.value.duration,
+    servings: recipe.value.servings,
+    cookbookId,
+  })
+  // Recipe counts in the cookbook switcher changed.
+  cookbooks.fetchAll().catch(() => {})
+}
+
 async function cloneRecipe() {
+  // The copy stays in the same cookbook as the original.
   const cloned = await recipesApi.clone(guid.value)
   router.push(`/recipe/${cloned.guid}`)
 }

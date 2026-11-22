@@ -55,6 +55,7 @@ import { sharedApi } from '../api/shared'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
+import { useCookbooksStore } from '../stores/cookbooks'
 import type { RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
@@ -65,6 +66,7 @@ const guid = computed(() => route.params.guid as string)
 const router = useRouter()
 const ui = useUiStore()
 const auth = useAuthStore()
+const cookbooks = useCookbooksStore()
 // This page is public, so the router guard never loaded auth. Only signed-in, non-guest users
 // have a cookbook to clone into (MC-70).
 const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest && !auth.isReadOnly)
@@ -114,7 +116,8 @@ async function refreshRecipe() {
 }
 
 async function cloneRecipe() {
-  const cloned = await recipesApi.clone(guid.value)
+  // The copy goes to the cookbook you are browsing (MC-80).
+  const cloned = await recipesApi.clone(guid.value, await cookbooks.targetForNewRecipe())
   router.push(`/recipe/${cloned.guid}`)
 }
 

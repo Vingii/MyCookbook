@@ -7,12 +7,16 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import SharedRecipeView from '../SharedRecipeView.vue'
 import { recipesApi } from '../../api/recipes'
+import { cookbooksApi } from '../../api/cookbooks'
 import { authApi } from '../../api/auth'
 import { sharedApi } from '../../api/shared'
 import type { RecipeDto } from '../../api/types'
 
 vi.mock('../../api/recipes', () => ({
   recipesApi: { getShared: vi.fn(), clone: vi.fn() },
+}))
+vi.mock('../../api/cookbooks', () => ({
+  cookbooksApi: { getAll: vi.fn() },
 }))
 vi.mock('../../api/shared', () => ({
   sharedApi: { recordRecipe: vi.fn() },
@@ -71,6 +75,7 @@ describe('SharedRecipeView', () => {
     setActivePinia(createPinia())
     getShared.mockReset()
     clone.mockReset()
+    vi.mocked(cookbooksApi.getAll).mockReset().mockResolvedValue([{ id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }])
     me.mockReset()
     vi.mocked(sharedApi.recordRecipe).mockReset().mockResolvedValue({} as never)
     // Anonymous by default: the shared page is public.
@@ -174,9 +179,26 @@ describe('SharedRecipeView', () => {
       await cloneButton(wrapper)!.trigger('click')
       await flushPromises()
 
-      expect(clone).toHaveBeenCalledWith(GUID)
+      expect(clone).toHaveBeenCalledWith(GUID, undefined)
       await vi.waitFor(() => expect(wrapper.router.currentRoute.value.fullPath).toBe('/recipe/new-guid'))
     })
+  })
+
+  it('clones into the cookbook you are browsing when you have several (MC-80)', async () => {
+    me.mockResolvedValue({ username: 'adel', isAuthenticated: true, isGuest: false } as never)
+    vi.mocked(cookbooksApi.getAll).mockResolvedValue([
+  { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
+  { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
+])
+    localStorage.setItem('activeCookbook', '2')
+    getShared.mockResolvedValue(recipe('Gyros'))
+    clone.mockResolvedValue({ ...recipe('Gyros'), guid: 'new-guid' })
+    const wrapper = await mountView()
+
+    await wrapper.findAll('button').find((b) => b.text().includes('Clone'))!.trigger('click')
+    await flushPromises()
+
+    expect(clone).toHaveBeenCalledWith(GUID, 2)
   })
 
   describe('remembering shared recipes (MC-71)', () => {

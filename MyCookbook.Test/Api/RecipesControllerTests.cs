@@ -134,4 +134,29 @@ public class RecipesControllerTests : IDisposable
         var response = await _client.GetAsync($"/api/recipes/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+    // Sharing a whole collection with ?user=&shareToken= was removed: recipes are shared one by one with their
+    // share link (GET /api/recipes/shared/{guid}). The old parameters must not reach anyone else's recipes.
+    [Fact]
+    public async Task UserAndShareTokenParameters_NoLongerOpenAnotherUsersRecipes()
+    {
+        var annasGuid = Guid.NewGuid();
+        await SeedAsync(ctx =>
+        {
+            ctx.Recipes.Add(new Recipe { Guid = annasGuid, Name = "Anna's gyros", UserName = "anna" });
+            ctx.Recipes.Add(new Recipe { Name = "Mine", UserName = "devuser" });
+            ctx.UserPreferences.Add(new UserPreference { UserName = "anna", Key = "ShareToken", Value = "tok" });
+        });
+
+        var list = await _client.GetFromJsonAsync<List<RecipeDto>>("/api/recipes?user=anna&shareToken=tok");
+        var detail = await _client.GetAsync($"/api/recipes/{annasGuid}?user=anna&shareToken=tok");
+
+        Assert.Equal(["Mine"], list!.Select(r => r.Name));
+        Assert.Equal(HttpStatusCode.NotFound, detail.StatusCode);
+    }
+
+    [Fact]
+    public async Task ShareTokenEndpoint_IsGone()
+    {
+        Assert.False((await _client.PostAsync("/api/auth/share-token", null)).IsSuccessStatusCode);
+    }
 }

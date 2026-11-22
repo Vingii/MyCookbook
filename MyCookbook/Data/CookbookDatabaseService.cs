@@ -263,6 +263,7 @@ namespace MyCookbook.Data
             foundRecipe.Category = recipe.Category;
             foundRecipe.Duration = recipe.Duration;
             foundRecipe.Servings = recipe.Servings;
+            foundRecipe.CookbookId = recipe.CookbookId;
             await context.SaveChangesAsync();
 
             return true;
@@ -335,13 +336,15 @@ namespace MyCookbook.Data
             return true;
         }
 
-        public async Task<Recipe> CloneRecipeAsync(Recipe recipe, string user)
+        /// <param name="cookbookId">The cookbook the copy goes to; null is the user's default cookbook.</param>
+        public async Task<Recipe> CloneRecipeAsync(Recipe recipe, string user, int? cookbookId = null)
         {
             using var logger = new TimeLogger(MethodBase.GetCurrentMethod());
             var context = await GetContext();
             recipe = await GetDetailedRecipeAsync(recipe.Name, recipe.UserName) ?? recipe;
             var newRecipe = recipe.Clone();
             newRecipe.UserName = user;
+            newRecipe.CookbookId = cookbookId;
             // Another user's cooking history does not carry over to your copy.
             if (recipe.UserName != user) newRecipe.LastCooked = null;
             var name = newRecipe.Name;
@@ -758,15 +761,6 @@ namespace MyCookbook.Data
             return preference?.Value;
         }
 
-        public async Task<string> ResolveUserIdAsync(string displayNameOrId)
-        {
-            var context = await GetContext();
-            var match = await context.UserPreferences
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Key == "DisplayName" && p.Value == displayNameOrId);
-            return match?.UserName ?? displayNameOrId;
-        }
-
         public async Task<string> Export(string user)
         {
             var context = await GetContext();
@@ -808,6 +802,11 @@ namespace MyCookbook.Data
                 try
                 {
                     var existingRecipes = await context.Recipes.Where(r => r.UserName == user).ToListAsync();
+                    // A recipe keeps its cookbook when restoring your own backup; anything else lands in the default one.
+                    var ownCookbookIds = (await context.Cookbooks
+                        .Where(c => c.UserName == user)
+                        .Select(c => c.Id)
+                        .ToListAsync()).ToHashSet();
                     if (existingRecipes.Any())
                     {
                         context.Recipes.RemoveRange(existingRecipes);
@@ -834,6 +833,8 @@ namespace MyCookbook.Data
 
                         recipe.Id = 0;
                         recipe.UserName = user;
+                        recipe.Cookbook = null;
+                        if (recipe.CookbookId is { } cookbookId && !ownCookbookIds.Contains(cookbookId)) recipe.CookbookId = null;
 
                         var originalIngredients = recipe.Ingredients?.ToList() ?? [];
                         recipe.Ingredients?.Clear();

@@ -1,4 +1,3 @@
-import { useRoute } from 'vue-router'
 import { escapeHtml } from './useIngredientHighlighter'
 import type { RecipeLinkDto } from '../api/types'
 
@@ -164,18 +163,7 @@ export function suggestRecipeNames(names: string[], query: string, limit = 8): s
   return [...prefix, ...contains].slice(0, limit)
 }
 
-/**
- * Builds the href for a recipe link, preserving the context the current recipe is being viewed in:
- * read-only browsing of someone else's cookbook keeps its `user` / `shareToken` query parameters.
- */
+/** Builds the href for a link to one of your recipes. */
 export function useRecipeHref() {
-  const route = useRoute()
-
-  return (guid: string): string => {
-    const params = new URLSearchParams()
-    if (route.query.user) params.set('user', String(route.query.user))
-    if (route.query.shareToken) params.set('shareToken', String(route.query.shareToken))
-    const query = params.toString()
-    return `/recipe/${guid}${query ? `?${query}` : ''}`
-  }
+  return (guid: string): string => `/recipe/${guid}`
 }

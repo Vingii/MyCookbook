@@ -9,13 +9,4 @@ export const authApi = {
 
   revokeToken: () =>
     client.delete('/auth/token'),
-
-  getShareToken: () =>
-    client.get<{ token: string | null }>('/auth/share-token').then((r) => r.data),
-
-  createShareToken: () =>
-    client.post<{ token: string }>('/auth/share-token').then((r) => r.data),
-
-  revokeShareToken: () =>
-    client.delete('/auth/share-token'),
 }

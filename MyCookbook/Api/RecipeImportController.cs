@@ -9,7 +9,7 @@ namespace MyCookbook.Api;
 [ApiController]
 [Route("api/recipe-import")]
 [Authorize(Policy = "NotGuest")]
-public class RecipeImportController(RecipeImportService import) : ControllerBase
+public class RecipeImportController(RecipeImportService import, CookbookService cookbooks) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
@@ -34,11 +34,13 @@ public class RecipeImportController(RecipeImportService import) : ControllerBase
         }
     }
 
-    /// <summary>Saves the chosen version as a new recipe in the current user's cookbook.</summary>
+    /// <summary>Saves the chosen version as a new recipe in <paramref name="cookbook"/> (default: the default cookbook).</summary>
     [HttpPost("save")]
-    public async Task<ActionResult<RecipeDto>> Save([FromBody] RecipeDraftDto draft)
+    public async Task<ActionResult<RecipeDto>> Save([FromBody] RecipeDraftDto draft, [FromQuery] int? cookbook = null)
     {
-        var recipe = await import.SaveAsync(draft, CurrentUser);
+        var (found, cookbookId) = await cookbooks.ResolveAsync(CurrentUser, cookbook);
+        if (!found) return BadRequest("Unknown cookbook");
+        var recipe = await import.SaveAsync(draft, CurrentUser, cookbookId);
         return CreatedAtAction(nameof(RecipesController.GetById), "Recipes", new { guid = recipe.Guid }, recipe.ToDto(CurrentUser));
     }
 }
