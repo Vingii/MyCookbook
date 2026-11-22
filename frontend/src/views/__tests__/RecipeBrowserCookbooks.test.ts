@@ -31,8 +31,8 @@ const vuetify = createVuetify({ components, directives })
 const getAll = vi.mocked(recipesApi.getAll)
 const getCookbooks = vi.mocked(cookbooksApi.getAll)
 
-const home: CookbookDto = { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }
-const baking: CookbookDto = { id: 2, name: 'Baking', showInPlanner: false, isDefault: false, recipeCount: 1 }
+const home: CookbookDto = { id: 1, name: '', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: true, recipeCount: 3 }
+const baking: CookbookDto = { id: 2, name: 'Baking', showInPlanner: false, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: false, recipeCount: 1 }
 
 async function mountView(path = '/') {
   const router = createRouter({
@@ -129,6 +129,24 @@ describe('RecipeBrowserView cookbooks (MC-80)', () => {
     await flushPromises()
 
     expect(recipesApi.create).toHaveBeenCalledWith({ name: 'Bread', servings: 2, cookbookId: 2 })
+  })
+
+  // MC-81
+  it('hides the columns the shown cookbook turns off', async () => {
+    localStorage.setItem('activeCookbook', '2')
+    getCookbooks.mockResolvedValue([home, { ...baking, showDuration: false }])
+    const wrapper = await mountView()
+
+    const table = wrapper.findComponent({ name: 'RecipeTable' })
+    expect(table.props('showDuration')).toBe(false)
+    expect(table.props('showLastCooked')).toBe(true)
+  })
+
+  it('uses the only cookbook\'s settings when there is one', async () => {
+    getCookbooks.mockResolvedValue([{ ...home, showLastCooked: false }])
+    const wrapper = await mountView()
+
+    expect(wrapper.findComponent({ name: 'RecipeTable' }).props('showLastCooked')).toBe(false)
   })
 
   it('still lists recipes when cookbooks fail to load', async () => {

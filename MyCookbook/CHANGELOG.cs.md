@@ -10,6 +10,7 @@ Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zo
 ### Přidáno
 - Více kuchařek: recepty si můžete rozdělit do samostatných kuchařek, třeba na běžné vaření a pečení. Přepínáte mezi nimi nadpisem na stránce Recepty a při úpravě receptu ho můžete přesunout do jiné kuchařky.
 - Kuchařky spravujete v Nastavení: můžete je přejmenovat, přidat nové, smazat prázdné a zvolit, jestli se jejich recepty nabízejí v Plánovači.
+- Každá kuchařka může u svých receptů skrýt dobu přípravy, datum posledního vaření, počet porcí nebo časovou osu kroků, třeba u nápojů. Najdete to v Nastavení → Kuchařky.
 
 ## [2.7.0] - 2026-11-15
 ### Přidáno

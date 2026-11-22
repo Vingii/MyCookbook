@@ -294,4 +294,98 @@ public class CookbooksApiTests : IDisposable
         Assert.Equal(baking.Id, recipes["Bread"].CookbookId);
         Assert.Null(recipes["Gyros"].CookbookId);
     }
+    // MC-81: what recipes in a cookbook show.
+    [Fact]
+    public async Task DisplaySettings_ShowEverythingByDefault()
+    {
+        var baking = await CreateCookbookAsync("Baking");
+
+        Assert.True(baking.ShowDuration && baking.ShowLastCooked && baking.ShowServings && baking.ShowStepTimeline);
+        var all = await GetCookbooksAsync();
+        Assert.All(all, c => Assert.True(c.ShowDuration && c.ShowLastCooked && c.ShowServings && c.ShowStepTimeline));
+    }
+
+    [Fact]
+    public async Task DisplaySettings_AreSaved_AndKeptWhenAnUpdateLeavesThemOut()
+    {
+        var defaultId = (await GetCookbooksAsync())[0].Id;
+
+        await _client.PutAsJsonAsync($"/api/cookbooks/{defaultId}", new SaveCookbookRequest
+        {
+            Name = "Home", ShowDuration = false, ShowLastCooked = false, ShowServings = true, ShowStepTimeline = false,
+        });
+        // An older client sends only the name and the planner setting.
+        await _client.PutAsJsonAsync($"/api/cookbooks/{defaultId}", new SaveCookbookRequest { Name = "Home 2", ShowInPlanner = false });
+
+        var cookbook = Assert.Single(await GetCookbooksAsync());
+        Assert.Equal("Home 2", cookbook.Name);
+        Assert.False(cookbook.ShowInPlanner);
+        Assert.False(cookbook.ShowDuration);
+        Assert.False(cookbook.ShowLastCooked);
+        Assert.True(cookbook.ShowServings);
+        Assert.False(cookbook.ShowStepTimeline);
+    }
+
+    [Fact]
+    public async Task Create_WithDisplaySettings_SavesThem()
+    {
+        var response = await _client.PostAsJsonAsync("/api/cookbooks", new SaveCookbookRequest { Name = "Drinks", ShowServings = false });
+        var created = (await response.Content.ReadFromJsonAsync<CookbookDto>())!;
+
+        Assert.False(created.ShowServings);
+        Assert.True(created.ShowDuration);
+        Assert.False((await GetCookbooksAsync()).Single(c => c.Id == created.Id).ShowServings);
+    }
+
+    [Fact]
+    public async Task RecipeDetail_CarriesItsCookbooksDisplaySettings()
+    {
+        var bar = await CreateCookbookAsync("Bar");
+        await _client.PutAsJsonAsync($"/api/cookbooks/{bar.Id}", new SaveCookbookRequest { Name = "Bar", ShowServings = false, ShowStepTimeline = false });
+        var mojito = await CreateRecipeAsync("Mojito", bar.Id);
+        var gyros = await CreateRecipeAsync("Gyros", null);
+
+        var mojitoDisplay = (await _client.GetFromJsonAsync<RecipeDto>($"/api/recipes/{mojito.Guid}"))!.Display!;
+        var gyrosDisplay = (await _client.GetFromJsonAsync<RecipeDto>($"/api/recipes/{gyros.Guid}"))!.Display!;
+
+        Assert.False(mojitoDisplay.Servings);
+        Assert.False(mojitoDisplay.StepTimeline);
+        Assert.True(mojitoDisplay.Duration);
+        Assert.True(mojitoDisplay.LastCooked);
+        // Gyros has no cookbook: it is in the default one, which shows everything.
+        Assert.True(gyrosDisplay.Servings && gyrosDisplay.StepTimeline && gyrosDisplay.Duration && gyrosDisplay.LastCooked);
+        // Lists don't carry it.
+        Assert.All((await _client.GetFromJsonAsync<List<RecipeDto>>("/api/recipes"))!, r => Assert.Null(r.Display));
+    }
+
+    [Fact]
+    public async Task SharedRecipe_ShowsAsTheOwnersCookbookDoes_WithoutRevealingTheCookbook()
+    {
+        var guid = Guid.NewGuid();
+        var annasBar = new Cookbook { UserName = "anna", Name = "Bar", ShowLastCooked = false, ShowDuration = false };
+        await SeedAsync(ctx => ctx.Recipes.Add(new Recipe { Guid = guid, Name = "Mojito", UserName = "anna", Cookbook = annasBar }));
+
+        var shared = (await _client.GetFromJsonAsync<RecipeDto>($"/api/recipes/shared/{guid}"))!;
+
+        Assert.Null(shared.CookbookId);
+        Assert.False(shared.Display!.LastCooked);
+        Assert.False(shared.Display.Duration);
+        Assert.True(shared.Display.Servings);
+    }
+
+    [Fact]
+    public async Task SharedRecipe_OwnerWithoutCookbooks_ShowsEverything()
+    {
+        var guid = Guid.NewGuid();
+        await SeedAsync(ctx => ctx.Recipes.Add(new Recipe { Guid = guid, Name = "Mojito", UserName = "anna" }));
+
+        var display = (await _client.GetFromJsonAsync<RecipeDto>($"/api/recipes/shared/{guid}"))!.Display!;
+
+        Assert.True(display.Duration && display.LastCooked && display.Servings && display.StepTimeline);
+        // Reading a shared recipe doesn't create cookbooks for its owner.
+        using var scope = _factory.Services.CreateScope();
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<CookbookDatabaseContext>>();
+        await using var ctx = await dbFactory.CreateDbContextAsync();
+        Assert.False(await ctx.Cookbooks.AnyAsync(c => c.UserName == "anna"));
+    }
 }

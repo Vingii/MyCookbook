@@ -12,6 +12,8 @@ export interface RecipeDto {
   steps: StepDto[]
   /** The cookbook it belongs to; null means the owner's default cookbook (MC-80). */
   cookbookId?: number | null
+  /** What its cookbook shows (MC-81). Only on detail requests. */
+  display?: RecipeDisplayDto
   /** Resolved [[wiki links]] occurring in this recipe's steps. Only present on detail requests. */
   links: RecipeLinkDto[]
   /** Recipes whose steps link to this one. Only present on authenticated detail requests. */
@@ -131,6 +133,10 @@ export interface CookbookDto {
   /** Empty for the default cookbook until the user names it. */
   name: string
   showInPlanner: boolean
+  showDuration: boolean
+  showLastCooked: boolean
+  showServings: boolean
+  showStepTimeline: boolean
   /** The first cookbook; recipes without a cookbook belong to it. */
   isDefault: boolean
   recipeCount: number
@@ -139,4 +145,19 @@ export interface CookbookDto {
 export interface SaveCookbookRequest {
   name: string
   showInPlanner: boolean
+  showDuration?: boolean
+  showLastCooked?: boolean
+  showServings?: boolean
+  showStepTimeline?: boolean
 }
+
+/** What a recipe's cookbook shows (MC-81); hidden fields keep their data. */
+export interface RecipeDisplayDto {
+  duration: boolean
+  lastCooked: boolean
+  servings: boolean
+  stepTimeline: boolean
+}
+
+/** Recipes without display settings (e.g. from an older server) show everything. */
+export const SHOW_EVERYTHING: RecipeDisplayDto = { duration: true, lastCooked: true, servings: true, stepTimeline: true }

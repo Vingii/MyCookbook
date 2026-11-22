@@ -17,6 +17,12 @@ namespace MyCookbook.Data.CookbookDatabase
         /// <summary>Whether its recipes are offered when planning (the add dialog and suggestions).</summary>
         public bool ShowInPlanner { get; set; } = true;
 
+        // What recipes in this cookbook show (MC-81). Hiding a field keeps its data; it only stops showing it.
+        public bool ShowDuration { get; set; } = true;
+        public bool ShowLastCooked { get; set; } = true;
+        public bool ShowServings { get; set; } = true;
+        public bool ShowStepTimeline { get; set; } = true;
+
         public virtual ICollection<Recipe> Recipes { get; set; }
     }
 }

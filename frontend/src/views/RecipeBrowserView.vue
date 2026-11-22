@@ -117,7 +117,12 @@
       </template>
     </v-row>
 
-    <RecipeTable :recipes="filteredRecipes" @clone="handleClone" />
+    <RecipeTable
+      :recipes="filteredRecipes"
+      :show-duration="tableCookbook?.showDuration ?? true"
+      :show-last-cooked="tableCookbook?.showLastCooked ?? true"
+      @clone="handleClone"
+    />
   </div>
 </template>
 
@@ -151,6 +156,8 @@ const { xs } = useDisplay()
 const filtersOpen = ref(false)
 // Only filter when there is a choice: a single cookbook shows every recipe, as before cookbooks existed.
 const activeCookbookId = computed(() => (!readonly.value && cookbooks.hasSeveral ? cookbooks.active?.id : undefined))
+// The cookbook whose recipes are listed; with just one, that one (MC-81).
+const tableCookbook = computed(() => (readonly.value ? null : cookbooks.active))
 const activeFilterCount = computed(
   () => (category.value ? 1 : 0) + (tag.value ? 1 : 0) + (selectedIngredients.value.length > 0 ? 1 : 0)
 )

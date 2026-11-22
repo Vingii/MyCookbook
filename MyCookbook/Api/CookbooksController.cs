@@ -17,14 +17,7 @@ public class CookbooksController(CookbookService cookbooks) : ControllerBase
     public async Task<ActionResult<List<CookbookDto>>> GetAll()
     {
         var all = await cookbooks.GetAllAsync(CurrentUser);
-        return all.Select(c => new CookbookDto
-        {
-            Id = c.Cookbook.Id,
-            Name = c.Cookbook.Name,
-            ShowInPlanner = c.Cookbook.ShowInPlanner,
-            IsDefault = c.IsDefault,
-            RecipeCount = c.RecipeCount,
-        }).ToList();
+        return all.Select(c => ToDto(c.Cookbook, c.IsDefault, c.RecipeCount)).ToList();
     }
 
     [HttpPost]
@@ -33,8 +26,8 @@ public class CookbooksController(CookbookService cookbooks) : ControllerBase
     {
         var name = req.Name.Trim();
         if (!IsValidName(name)) return BadRequest("Invalid name");
-        var created = await cookbooks.CreateAsync(CurrentUser, name, req.ShowInPlanner);
-        return Ok(new CookbookDto { Id = created.Id, Name = created.Name, ShowInPlanner = created.ShowInPlanner });
+        var created = await cookbooks.CreateAsync(CurrentUser, name, req);
+        return Ok(ToDto(created, isDefault: false, recipeCount: 0));
     }
 
     [HttpPut("{id:int}")]
@@ -43,7 +36,7 @@ public class CookbooksController(CookbookService cookbooks) : ControllerBase
     {
         var name = req.Name.Trim();
         if (!IsValidName(name)) return BadRequest("Invalid name");
-        var updated = await cookbooks.UpdateAsync(CurrentUser, id, name, req.ShowInPlanner);
+        var updated = await cookbooks.UpdateAsync(CurrentUser, id, name, req);
         return updated == null ? NotFound() : Ok();
     }
 
@@ -57,6 +50,19 @@ public class CookbooksController(CookbookService cookbooks) : ControllerBase
             CookbookService.DeleteResult.NotEmpty => Conflict("The cookbook still has recipes"),
             _ => Conflict("The last cookbook can't be deleted"),
         };
+
+    private static CookbookDto ToDto(Data.CookbookDatabase.Cookbook c, bool isDefault, int recipeCount) => new()
+    {
+        Id = c.Id,
+        Name = c.Name,
+        ShowInPlanner = c.ShowInPlanner,
+        ShowDuration = c.ShowDuration,
+        ShowLastCooked = c.ShowLastCooked,
+        ShowServings = c.ShowServings,
+        ShowStepTimeline = c.ShowStepTimeline,
+        IsDefault = isDefault,
+        RecipeCount = recipeCount,
+    };
 
     private static bool IsValidName(string name) =>
         name.Length is > 0 and <= CookbookService.MaxNameLength;
