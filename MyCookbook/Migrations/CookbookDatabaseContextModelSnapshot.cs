@@ -22,6 +22,34 @@ namespace MyCookbook.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.Cookbook", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("ShowInPlanner")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "UserName" }, "IX_Cookbooks_UserName");
+
+                    b.ToTable("Cookbooks");
+                });
+
             modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.FavoriteRecipe", b =>
                 {
                     b.Property<string>("UserName")
@@ -115,6 +143,9 @@ namespace MyCookbook.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int?>("CookbookId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("Duration")
                         .HasColumnType("integer");
 
@@ -139,6 +170,8 @@ namespace MyCookbook.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CookbookId");
 
                     b.HasIndex(new[] { "Guid" }, "UQ_Recipes_Guid")
                         .IsUnique();
@@ -293,6 +326,16 @@ namespace MyCookbook.Migrations
                     b.Navigation("Recipe");
                 });
 
+            modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.Recipe", b =>
+                {
+                    b.HasOne("MyCookbook.Data.CookbookDatabase.Cookbook", "Cookbook")
+                        .WithMany("Recipes")
+                        .HasForeignKey("CookbookId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Cookbook");
+                });
+
             modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.Step", b =>
                 {
                     b.HasOne("MyCookbook.Data.CookbookDatabase.Recipe", "Recipe")
@@ -313,6 +356,11 @@ namespace MyCookbook.Migrations
                         .IsRequired();
 
                     b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.Cookbook", b =>
+                {
+                    b.Navigation("Recipes");
                 });
 
             modelBuilder.Entity("MyCookbook.Data.CookbookDatabase.Recipe", b =>

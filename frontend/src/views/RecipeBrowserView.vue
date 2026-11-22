@@ -2,7 +2,29 @@
   <div>
     <v-row align="center" class="mb-4">
       <v-col>
-        <h1 class="text-h4">{{ ui.t.recipes }}</h1>
+        <!-- With several cookbooks (MC-80) the title switches between them. -->
+        <v-menu v-if="!readonly && cookbooks.hasSeveral">
+          <template #activator="{ props: menuProps }">
+            <h1 v-bind="menuProps" class="text-h4 cookbook-switcher" data-test="cookbook-switcher" role="button" tabindex="0">
+              {{ cookbooks.displayName(cookbooks.active) }}
+              <v-icon icon="mdi-chevron-down" size="small" />
+            </h1>
+          </template>
+          <v-list density="compact">
+            <v-list-item
+              v-for="c in cookbooks.cookbooks"
+              :key="c.id"
+              :active="c.id === cookbooks.active?.id"
+              :title="cookbooks.displayName(c)"
+              :subtitle="cookbooks.recipeCountLabel(c)"
+              :data-test="`cookbook-${c.id}`"
+              @click="switchCookbook(c.id)"
+            />
+            <v-divider class="my-1" />
+            <v-list-item prepend-icon="mdi-cog" :title="ui.t.manageCookbooks" to="/settings#cookbooks" />
+          </v-list>
+        </v-menu>
+        <h1 v-else class="text-h4">{{ ui.t.recipes }}</h1>
       </v-col>
       <v-col cols="auto" class="d-flex ga-2">
         <v-btn
@@ -20,7 +42,7 @@
       </v-col>
     </v-row>
 
-    <RecipeImportDialog v-model="importOpen" @created="(guid) => router.push(`/recipe/${guid}`)" />
+    <RecipeImportDialog v-model="importOpen" :cookbook-id="activeCookbookId" @created="(guid) => router.push(`/recipe/${guid}`)" />
 
     <v-row class="mb-4" :dense="xs">
       <v-col cols="12" sm="6" md="3" class="d-flex align-center ga-2">
@@ -104,6 +126,7 @@ import { ref, computed, onMounted, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useRecipesStore } from '../stores/recipes'
+import { useCookbooksStore } from '../stores/cookbooks'
 import { useUiStore } from '../stores/ui'
 import { useReadonly } from '../composables/useReadonly'
 import { recipesApi } from '../api/recipes'
@@ -112,10 +135,11 @@ import RecipeImportDialog from '../components/RecipeImportDialog.vue'
 import { recipeImportApi } from '../api/recipeImport'
 
 const store = useRecipesStore()
+const cookbooks = useCookbooksStore()
 const ui = useUiStore()
-watchEffect(() => { document.title = ui.t.recipes })
 const router = useRouter()
 const { viewingUser, shareToken, readonly } = useReadonly()
+watchEffect(() => { document.title = cookbooks.hasSeveral && !readonly.value ? cookbooks.displayName(cookbooks.active) : ui.t.recipes })
 const search = ref('')
 const category = ref<string | null>(null)
 const tag = ref<string | null>(null)
@@ -125,6 +149,8 @@ const importEnabled = ref(false)
 const importOpen = ref(false)
 const { xs } = useDisplay()
 const filtersOpen = ref(false)
+// Only filter when there is a choice: a single cookbook shows every recipe, as before cookbooks existed.
+const activeCookbookId = computed(() => (!readonly.value && cookbooks.hasSeveral ? cookbooks.active?.id : undefined))
 const activeFilterCount = computed(
   () => (category.value ? 1 : 0) + (tag.value ? 1 : 0) + (selectedIngredients.value.length > 0 ? 1 : 0)
 )
@@ -144,10 +170,18 @@ const filteredRecipes = computed(() => {
   )
 })
 
-onMounted(() => {
-  store.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value })
+onMounted(async () => {
   store.fetchIngredientNames()
-  if (!readonly.value) recipeImportApi.isEnabled().then((enabled) => { importEnabled.value = enabled }).catch(() => {})
+  if (!readonly.value) {
+    recipeImportApi.isEnabled().then((enabled) => { importEnabled.value = enabled }).catch(() => {})
+    // Someone else's shared recipes have no cookbooks of yours to pick from.
+    try {
+      await cookbooks.fetchAll()
+    } catch {
+      // Without cookbooks the list just shows every recipe.
+    }
+  }
+  applyFilters()
 })
 
 function applyFilters() {
@@ -157,7 +191,13 @@ function applyFilters() {
     tag: tag.value || undefined,
     user: viewingUser.value || undefined,
     shareToken: shareToken.value,
+    cookbook: activeCookbookId.value,
   })
+}
+
+function switchCookbook(id: number) {
+  cookbooks.setActive(id)
+  applyFilters()
 }
 
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -176,7 +216,7 @@ function onSearchClear() {
 async function createRecipe() {
   const name = prompt(`${ui.t.colName}:`)
   if (!name) return
-  const recipe = await recipesApi.create({ name, servings: 2 })
+  const recipe = await recipesApi.create({ name, servings: 2, cookbookId: activeCookbookId.value })
   router.push(`/recipe/${recipe.guid}`)
 }
 
@@ -185,3 +225,12 @@ async function handleClone(guid: string) {
   applyFilters()
 }
 </script>
+
+<style scoped>
+.cookbook-switcher {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+</style>

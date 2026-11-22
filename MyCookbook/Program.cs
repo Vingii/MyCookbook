@@ -59,6 +59,7 @@ namespace MyCookbook
                 builder.Services.AddTransient<HomeAssistantService>();
                 builder.Services.AddMemoryCache();
                 builder.Services.AddTransient<PlanSuggestionService>();
+                builder.Services.AddTransient<CookbookService>();
                 builder.Services.AddHostedService<DailyLastCookedWorker>();
 
                 builder.Services.AddDbContextFactory<CookbookDatabaseContext>(options =>

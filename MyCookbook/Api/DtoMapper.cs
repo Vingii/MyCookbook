@@ -19,6 +19,7 @@ public static class DtoMapper
         DurationText = recipe.DurationText,
         Servings = recipe.Servings,
         LastCooked = recipe.LastCooked,
+        CookbookId = recipe.CookbookId,
         IsFavorite = recipe.IsFavorite(user),
         Tags = recipe.Tags?.Select(t => t.Name).ToList() ?? [],
         Ingredients = recipe.Ingredients?

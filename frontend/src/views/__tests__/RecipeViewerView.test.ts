@@ -7,11 +7,15 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import RecipeViewerView from '../RecipeViewerView.vue'
 import { recipesApi } from '../../api/recipes'
+import { cookbooksApi } from '../../api/cookbooks'
 import { useAuthStore } from '../../stores/auth'
 import type { RecipeDto } from '../../api/types'
 
 vi.mock('../../api/recipes', () => ({
   recipesApi: { getById: vi.fn(), clone: vi.fn() },
+}))
+vi.mock('../../api/cookbooks', () => ({
+  cookbooksApi: { getAll: vi.fn() },
 }))
 vi.mock('../../api/tags', () => ({
   tagsApi: { getAll: vi.fn().mockResolvedValue([]) },
@@ -62,6 +66,7 @@ describe('RecipeViewerView clone (MC-70)', () => {
     setActivePinia(createPinia())
     getById.mockReset().mockResolvedValue(gyros)
     clone.mockReset()
+    vi.mocked(cookbooksApi.getAll).mockReset().mockResolvedValue([{ id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }])
   })
 
   it('offers owner actions on your own recipe', async () => {
@@ -91,6 +96,38 @@ describe('RecipeViewerView clone (MC-70)', () => {
     expect(buttonTexts(own)).not.toContain('Kopírovat')
   })
 
+  it('clones a shared recipe into the cookbook you are browsing (MC-80)', async () => {
+    vi.mocked(cookbooksApi.getAll).mockResolvedValue([
+  { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
+  { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
+])
+    localStorage.setItem('activeCookbook', '2')
+    clone.mockResolvedValue({ ...gyros, guid: 'new-guid' })
+    const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
+
+    await wrapper.findAll('button').find((b) => b.text() === 'Clone')!.trigger('click')
+    await flushPromises()
+
+    expect(clone).toHaveBeenCalledWith(GUID, 2)
+  })
+
+  it('shows the cookbook of your own recipe when you have several (MC-80)', async () => {
+    vi.mocked(cookbooksApi.getAll).mockResolvedValue([
+  { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
+  { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
+])
+    getById.mockResolvedValue({ ...gyros, cookbookId: 2 })
+    const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel' })
+
+    expect(wrapper.find('[data-test="recipe-cookbook-name"]').text()).toContain('Baking')
+  })
+
+  it('hides the cookbook with just one (MC-80)', async () => {
+    const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel' })
+
+    expect(wrapper.find('[data-test="recipe-cookbook-name"]').exists()).toBe(false)
+  })
+
   it('opens your own copy after cloning a shared recipe', async () => {
     clone.mockResolvedValue({ ...gyros, guid: 'new-guid' })
     const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
@@ -98,7 +135,7 @@ describe('RecipeViewerView clone (MC-70)', () => {
     await wrapper.findAll('button').find((b) => b.text() === 'Clone')!.trigger('click')
     await flushPromises()
 
-    expect(clone).toHaveBeenCalledWith(GUID)
+    expect(clone).toHaveBeenCalledWith(GUID, undefined)
     // No ?user= or ?shareToken=: the copy is in your own cookbook. The view does not await the push.
     await vi.waitFor(() => expect(wrapper.router.currentRoute.value.fullPath).toBe('/recipe/new-guid'))
   })

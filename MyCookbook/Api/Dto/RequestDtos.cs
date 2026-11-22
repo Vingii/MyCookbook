@@ -6,6 +6,9 @@ public class CreateRecipeRequest
     public string? Category { get; set; }
     public int? Duration { get; set; }
     public int Servings { get; set; } = 1;
+
+    /// <summary>The cookbook to add it to; the default cookbook when omitted.</summary>
+    public int? CookbookId { get; set; }
 }
 
 public class UpdateRecipeRequest
@@ -14,6 +17,9 @@ public class UpdateRecipeRequest
     public string? Category { get; set; }
     public int? Duration { get; set; }
     public int Servings { get; set; } = 1;
+
+    /// <summary>Moves it to this cookbook; left where it is when omitted.</summary>
+    public int? CookbookId { get; set; }
 }
 
 public class CreateIngredientRequest

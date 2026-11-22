@@ -200,6 +200,8 @@ watch(autocompleteSearch, (query) => {
       search: query || undefined,
       user: viewingUser.value || undefined,
       shareToken: shareToken.value,
+      // Cookbooks hidden from the planner (MC-80) are left out.
+      planner: true,
     })
   }, 200)
 })
@@ -261,7 +263,7 @@ function fetchPlans() {
 
 onMounted(() => {
   fetchPlans()
-  recipesStore.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value })
+  recipesStore.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value, planner: true })
 })
 
 function getPlansForDate(date: string) {

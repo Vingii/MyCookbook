@@ -6,6 +6,11 @@ a projekt dodržuje [sémantické verzování](https://semver.org/lang/cs/).
 
 Toto je český překlad souboru `CHANGELOG.md`. Verze, které zde chybí, se zobrazí v angličtině.
 
+## [2.8.0] - 2026-11-22
+### Přidáno
+- Více kuchařek: recepty si můžete rozdělit do samostatných kuchařek, třeba na běžné vaření a pečení. Přepínáte mezi nimi nadpisem na stránce Recepty a při úpravě receptu ho můžete přesunout do jiné kuchařky.
+- Kuchařky spravujete v Nastavení: můžete je přejmenovat, přidat nové, smazat prázdné a zvolit, jestli se jejich recepty nabízejí v Plánovači.
+
 ## [2.7.0] - 2026-11-15
 ### Přidáno
 - Nákupní seznam v Plánovači: suroviny všech receptů, které chcete vařit příští týden (nebo ve vybrané dny), sloučené a se sečteným množstvím. Odškrtněte, co už máte doma, a zbytek si zkopírujte.

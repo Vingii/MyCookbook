@@ -22,6 +22,10 @@ vi.mock('../../api/recipes', () => ({
   },
 }))
 
+vi.mock('../../api/cookbooks', () => ({
+  cookbooksApi: { getAll: vi.fn().mockResolvedValue([]) },
+}))
+
 vi.mock('../../api/recipeImport', () => ({
   recipeImportApi: { isEnabled: vi.fn().mockResolvedValue(false) },
 }))

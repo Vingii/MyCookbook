@@ -10,6 +10,8 @@ export interface RecipeDto {
   tags: string[]
   ingredients: IngredientDto[]
   steps: StepDto[]
+  /** The cookbook it belongs to; null means the owner's default cookbook (MC-80). */
+  cookbookId?: number | null
   /** Resolved [[wiki links]] occurring in this recipe's steps. Only present on detail requests. */
   links: RecipeLinkDto[]
   /** Recipes whose steps link to this one. Only present on authenticated detail requests. */
@@ -77,6 +79,8 @@ export interface CreateRecipeRequest {
   category?: string
   duration?: number
   servings: number
+  /** Default cookbook when omitted. */
+  cookbookId?: number
 }
 
 export interface UpdateRecipeRequest {
@@ -84,6 +88,8 @@ export interface UpdateRecipeRequest {
   category?: string
   duration?: number
   servings: number
+  /** Moves the recipe; it stays where it is when omitted. */
+  cookbookId?: number
 }
 
 export interface CreateIngredientRequest {
@@ -117,4 +123,20 @@ export interface CreatePlannedRecipeRequest {
 export interface UpdatePlannedRecipeRequest {
   date: string
   fromFridge: boolean
+}
+
+/** One of the user's cookbooks (MC-80). */
+export interface CookbookDto {
+  id: number
+  /** Empty for the default cookbook until the user names it. */
+  name: string
+  showInPlanner: boolean
+  /** The first cookbook; recipes without a cookbook belong to it. */
+  isDefault: boolean
+  recipeCount: number
+}
+
+export interface SaveCookbookRequest {
+  name: string
+  showInPlanner: boolean
 }

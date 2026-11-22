@@ -15,7 +15,7 @@ namespace MyCookbook.Api;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "CookieOrApiKey")]
-public class RecipesController(CookbookDatabaseService db, RecipeLinkService recipeLinks) : ControllerBase
+public class RecipesController(CookbookDatabaseService db, RecipeLinkService recipeLinks, CookbookService cookbooks) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
@@ -37,17 +37,43 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
         return !string.IsNullOrEmpty(stored) && stored == shareToken;
     }
 
+    /// <summary>
+    /// Narrows <paramref name="recipes"/> to one of your cookbooks and/or to the cookbooks shown in the planner.
+    /// Null when the cookbook isn't yours. Someone else's shared recipes are never narrowed: their cookbooks are theirs.
+    /// </summary>
+    private async Task<List<Recipe>?> FilterByCookbook(List<Recipe> recipes, string targetUser, int? cookbook, bool planner)
+    {
+        if (targetUser != CurrentUser) return recipes;
+        if (cookbook != null)
+        {
+            var inCookbook = await cookbooks.InCookbookAsync(CurrentUser, cookbook.Value);
+            if (inCookbook == null) return null;
+            recipes = recipes.Where(inCookbook).ToList();
+        }
+        if (planner)
+        {
+            var shown = await cookbooks.ShownInPlannerAsync(CurrentUser);
+            recipes = recipes.Where(shown).ToList();
+        }
+        return recipes;
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<RecipeDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? category,
         [FromQuery] string? tag,
         [FromQuery] string? user,
-        [FromQuery] string? shareToken)
+        [FromQuery] string? shareToken,
+        [FromQuery] int? cookbook = null,
+        [FromQuery] bool planner = false)
     {
         var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
         var recipes = await db.GetRecipesAsync(targetUser);
+        var filtered = await FilterByCookbook(recipes, targetUser, cookbook, planner);
+        if (filtered == null) return NotFound();
+        recipes = filtered;
 
         if (!string.IsNullOrWhiteSpace(category))
             recipes = recipes.Where(r => r.Category?.Equals(category, StringComparison.OrdinalIgnoreCase) == true).ToList();
@@ -83,6 +109,9 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
             Duration = req.Duration,
             Servings = req.Servings
         };
+        var (found, cookbookId) = await cookbooks.ResolveAsync(CurrentUser, req.CookbookId);
+        if (!found) return BadRequest("Unknown cookbook");
+        recipe.CookbookId = cookbookId;
         var created = await db.CreateRecipeAsync(recipe, CurrentUser);
         return CreatedAtAction(nameof(GetById), new { guid = created.Guid }, created.ToDto(CurrentUser));
     }
@@ -99,11 +128,12 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
     }
 
     [HttpGet("random")]
-    public async Task<ActionResult<RecipeDto>> GetRandom([FromQuery] string? user, [FromQuery] string? shareToken)
+    public async Task<ActionResult<RecipeDto>> GetRandom([FromQuery] string? user, [FromQuery] string? shareToken, [FromQuery] int? cookbook = null)
     {
         var targetUser = await ResolveUser(user);
         if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
-        var recipes = await db.GetRecipesAsync(targetUser);
+        var recipes = await FilterByCookbook(await db.GetRecipesAsync(targetUser), targetUser, cookbook, planner: false);
+        if (recipes == null) return NotFound();
         if (recipes.Count == 0) return NotFound();
         var recipe = recipes[Random.Shared.Next(recipes.Count)];
         return recipe.ToDto(targetUser);
@@ -135,6 +165,12 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
         existing.Category = req.Category;
         existing.Duration = req.Duration;
         existing.Servings = req.Servings;
+        if (req.CookbookId != null)
+        {
+            var (found, cookbookId) = await cookbooks.ResolveAsync(CurrentUser, req.CookbookId);
+            if (!found) return BadRequest("Unknown cookbook");
+            existing.CookbookId = cookbookId;
+        }
 
         await db.UpdateRecipeAsync(existing, CurrentUser);
 
@@ -158,13 +194,20 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
 
     [HttpPost("{guid:guid}/clone")]
     [Authorize(Policy = "NotGuest")]
-    public async Task<ActionResult<RecipeDto>> Clone(Guid guid)
+    public async Task<ActionResult<RecipeDto>> Clone(Guid guid, [FromQuery] int? cookbook = null)
     {
         // Any recipe can be cloned into your own cookbook by its guid. This grants nothing new:
         // the guid alone already makes a recipe readable through the public GetShared endpoint.
         var existing = await db.GetDetailedRecipeByIdAsync(guid.ToString());
         if (existing == null) return NotFound();
-        var cloned = await db.CloneRecipeAsync(existing, CurrentUser);
+        // Without a cookbook, a copy of your own recipe stays next to it; anyone else's goes to your default one.
+        int? cookbookId = existing.UserName == CurrentUser ? existing.CookbookId : null;
+        if (cookbook != null)
+        {
+            (var found, cookbookId) = await cookbooks.ResolveAsync(CurrentUser, cookbook);
+            if (!found) return BadRequest("Unknown cookbook");
+        }
+        var cloned = await db.CloneRecipeAsync(existing, CurrentUser, cookbookId);
         return CreatedAtAction(nameof(GetById), new { guid = cloned.Guid }, cloned.ToDto(CurrentUser));
     }
 

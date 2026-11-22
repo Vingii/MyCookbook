@@ -104,7 +104,8 @@ import { isAxiosError } from 'axios'
 import { recipeImportApi, type RecipeImportPreview } from '../api/recipeImport'
 import { useUiStore } from '../stores/ui'
 
-defineProps<{ modelValue: boolean }>()
+// The new recipe goes to this cookbook (MC-80); the default cookbook when omitted.
+const props = defineProps<{ modelValue: boolean; cookbookId?: number }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; created: [guid: string] }>()
 
 const ui = useUiStore()
@@ -149,7 +150,7 @@ async function save() {
   saving.value = true
   error.value = null
   try {
-    const created = await recipeImportApi.save(selected.value)
+    const created = await recipeImportApi.save(selected.value, props.cookbookId)
     emit('created', created.guid)
     close()
   } catch {

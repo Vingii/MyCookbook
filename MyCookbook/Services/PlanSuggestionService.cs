@@ -8,7 +8,7 @@ namespace MyCookbook.Services;
 /// Loads what <see cref="PlanRecommender"/> needs and caches each user's trained model, so it is only retrained
 /// when their recipes or plans change (or the day changes), not on every request.
 /// </summary>
-public class PlanSuggestionService(CookbookDatabaseService db, IMemoryCache cache)
+public class PlanSuggestionService(CookbookDatabaseService db, CookbookService cookbooks, IMemoryCache cache)
 {
     /// <summary>Days of suggestions the planner asks for: today and the next 13 days.</summary>
     public const int DefaultDays = 14;
@@ -17,7 +17,9 @@ public class PlanSuggestionService(CookbookDatabaseService db, IMemoryCache cach
     {
         // Enough history for the model, plus plans up to the end of the period for the exclusion rule.
         var since = today.AddDays(-PlanRecommender.HistoryDays - PlanRecommender.ExclusionDays);
-        var recipes = await db.GetRecipesForSuggestionsAsync(user);
+        // Recipes in cookbooks hidden from the planner are never suggested (MC-80).
+        var shown = await cookbooks.ShownInPlannerAsync(user);
+        var recipes = (await db.GetRecipesForSuggestionsAsync(user)).Where(shown).ToList();
         var plans = (await db.GetPlansForSuggestionsAsync(user, since))
             .Select(p => new PlanRecommender.Plan(p.RecipeId, p.Date, p.FromFridge))
             .ToList();

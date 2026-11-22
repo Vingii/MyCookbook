@@ -15,6 +15,9 @@ import { authApi } from '../../api/auth'
 vi.mock('../../api/auth', () => ({
   authApi: { getShareToken: vi.fn().mockResolvedValue({ token: null }) },
 }))
+vi.mock('../../api/cookbooks', () => ({
+  cookbooksApi: { getAll: vi.fn().mockResolvedValue([]) },
+}))
 vi.mock('../../api/homeAssistant', () => ({
   homeAssistantApi: { get: vi.fn(), save: vi.fn(), remove: vi.fn() },
 }))

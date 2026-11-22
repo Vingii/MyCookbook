@@ -35,5 +35,6 @@ export const recipeImportApi = {
   preview: (url: string, language: string) =>
     client.post<RecipeImportPreview>('/recipe-import/preview', { url, language }, { timeout: 150_000 }).then((r) => r.data),
 
-  save: (recipe: RecipeDraft) => client.post<RecipeDto>('/recipe-import/save', recipe).then((r) => r.data),
+  save: (recipe: RecipeDraft, cookbook?: number) =>
+    client.post<RecipeDto>('/recipe-import/save', recipe, { params: cookbook ? { cookbook } : undefined }).then((r) => r.data),
 }

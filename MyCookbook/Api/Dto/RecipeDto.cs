@@ -14,6 +14,9 @@ public class RecipeDto
     public List<IngredientDto> Ingredients { get; set; } = [];
     public List<StepDto> Steps { get; set; } = [];
 
+    /// <summary>The cookbook it belongs to; null means the owner's default cookbook.</summary>
+    public int? CookbookId { get; set; }
+
     /// <summary>Resolved <c>[[wiki links]]</c> occurring in this recipe's steps. Only populated on detail requests.</summary>
     public List<RecipeLinkDto> Links { get; set; } = [];
 

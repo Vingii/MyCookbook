@@ -5,6 +5,8 @@
     <v-alert v-if="auth.isReadOnly" type="info" variant="tonal" data-test="read-only">{{ ui.t.readOnlySettings }}</v-alert>
 
     <template v-else>
+    <CookbookSettings />
+
     <v-card class="mb-6" variant="outlined">
       <v-card-title>{{ ui.t.apiKey }}</v-card-title>
       <v-card-text>
@@ -102,6 +104,7 @@ import { useAuthStore } from '../stores/auth'
 import { useUiStore } from '../stores/ui'
 import { authApi } from '../api/auth'
 import { homeAssistantApi } from '../api/homeAssistant'
+import CookbookSettings from '../components/CookbookSettings.vue'
 
 const auth = useAuthStore()
 const ui = useUiStore()
