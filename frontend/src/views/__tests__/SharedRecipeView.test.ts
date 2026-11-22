@@ -6,6 +6,7 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import SharedRecipeView from '../SharedRecipeView.vue'
+import StepList from '../../components/StepList.vue'
 import { recipesApi } from '../../api/recipes'
 import { cookbooksApi } from '../../api/cookbooks'
 import { authApi } from '../../api/auth'
@@ -75,11 +76,31 @@ describe('SharedRecipeView', () => {
     setActivePinia(createPinia())
     getShared.mockReset()
     clone.mockReset()
-    vi.mocked(cookbooksApi.getAll).mockReset().mockResolvedValue([{ id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }])
+    vi.mocked(cookbooksApi.getAll).mockReset().mockResolvedValue([{ id: 1, name: '', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: true, recipeCount: 3 }])
     me.mockReset()
     vi.mocked(sharedApi.recordRecipe).mockReset().mockResolvedValue({} as never)
     // Anonymous by default: the shared page is public.
     me.mockRejectedValue(new Error('401'))
+  })
+
+  // MC-81
+  it('shows the recipe the way the owner\'s cookbook does', async () => {
+    getShared.mockResolvedValue({ ...recipe('Mojito'), durationText: '0:10', servings: 2, display: { duration: false, lastCooked: false, servings: false, stepTimeline: false } })
+    const wrapper = await mountView()
+
+    expect(wrapper.text()).toContain('Mojito')
+    expect(wrapper.find('[data-test="recipe-duration"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="recipe-servings"]').exists()).toBe(false)
+    expect(wrapper.findComponent(StepList).props('timeline')).toBe(false)
+  })
+
+  it('shows duration, servings and the timeline when the owner\'s cookbook does', async () => {
+    getShared.mockResolvedValue({ ...recipe('Mojito'), durationText: '0:10', servings: 2 })
+    const wrapper = await mountView()
+
+    expect(wrapper.find('[data-test="recipe-duration"]').text()).toContain('0:10')
+    expect(wrapper.find('[data-test="recipe-servings"]').text()).toContain('2')
+    expect(wrapper.findComponent(StepList).props('timeline')).toBe(true)
   })
 
   it('renders recipe links in steps as plain text', async () => {
@@ -187,8 +208,8 @@ describe('SharedRecipeView', () => {
   it('clones into the cookbook you are browsing when you have several (MC-80)', async () => {
     me.mockResolvedValue({ username: 'adel', isAuthenticated: true, isGuest: false } as never)
     vi.mocked(cookbooksApi.getAll).mockResolvedValue([
-  { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
-  { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
+  { id: 1, name: '', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: true, recipeCount: 3 },
+  { id: 2, name: 'Baking', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: false, recipeCount: 1 },
 ])
     localStorage.setItem('activeCookbook', '2')
     getShared.mockResolvedValue(recipe('Gyros'))

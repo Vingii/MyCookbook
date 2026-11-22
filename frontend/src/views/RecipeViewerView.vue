@@ -32,7 +32,7 @@
     </v-row>
 
     <v-row v-if="!readonly && editingMeta" class="mb-4" align="center">
-      <v-col v-if="cookbooks.hasSeveral" cols="12" sm="3">
+      <v-col v-if="cookbooks.hasSeveral" cols="12" :sm="metaCols">
         <v-select
           :model-value="cookbooks.ofRecipe(recipe)?.id"
           :items="cookbooks.cookbooks"
@@ -46,7 +46,7 @@
           @update:model-value="moveToCookbook"
         />
       </v-col>
-      <v-col cols="12" :sm="cookbooks.hasSeveral ? 3 : 4">
+      <v-col cols="12" :sm="metaCols">
         <v-combobox
           v-model="recipe.category"
           :items="store.allCategories"
@@ -57,7 +57,7 @@
           @blur="saveRecipe"
         />
       </v-col>
-      <v-col cols="6" :sm="cookbooks.hasSeveral ? 3 : 4">
+      <v-col v-if="display.duration" cols="6" :sm="metaCols">
         <v-text-field
           v-model.number="recipe.duration"
           :label="ui.t.durationMin"
@@ -68,7 +68,7 @@
           @blur="saveRecipe"
         />
       </v-col>
-      <v-col cols="6" :sm="cookbooks.hasSeveral ? 3 : 4">
+      <v-col v-if="display.servings" cols="6" :sm="metaCols">
         <v-text-field
           v-model.number="recipe.servings"
           :label="ui.t.servings"
@@ -89,11 +89,11 @@
         <div class="text-medium-emphasis text-caption">{{ ui.t.category }}</div>
         {{ recipe.category || '—' }}
       </div>
-      <div>
+      <div v-if="display.duration" data-test="recipe-duration">
         <div class="text-medium-emphasis text-caption">{{ ui.t.colDuration }}</div>
         {{ recipe.durationText || '—' }}
       </div>
-      <div>
+      <div v-if="display.servings" data-test="recipe-servings">
         <div class="text-medium-emphasis text-caption">{{ ui.t.servings }}</div>
         {{ recipe.servings ?? '—' }}
       </div>
@@ -135,6 +135,7 @@
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
         <StepList
           :guid="guid"
+          :timeline="display.stepTimeline"
           :steps="recipe.steps"
           :readonly="readonly"
           :highlight-words="highlightWords"
@@ -158,8 +159,9 @@
       </div>
     </div>
 
-    <div v-if="!readonly" class="d-flex justify-center mt-6">
-      <v-btn color="success" size="large" prepend-icon="mdi-check-circle" @click="finishCooking">
+    <!-- Finishing only records when it was last cooked, so it goes with that setting (MC-81). -->
+    <div v-if="!readonly && display.lastCooked" class="d-flex justify-center mt-6">
+      <v-btn color="success" size="large" prepend-icon="mdi-check-circle" data-test="finish-cooking" @click="finishCooking">
         {{ ui.t.finishCooking }}
       </v-btn>
     </div>
@@ -183,7 +185,7 @@ import { useRecipesStore } from '../stores/recipes'
 import { useCookbooksStore } from '../stores/cookbooks'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useRecipeHref } from '../composables/useRecipeLinks'
-import type { RecipeDto } from '../api/types'
+import { SHOW_EVERYTHING, type RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
 
@@ -197,6 +199,10 @@ const ui = useUiStore()
 const store = useRecipesStore()
 const cookbooks = useCookbooksStore()
 const recipe = ref<RecipeDto | null>(null)
+// What this recipe's cookbook shows (MC-81).
+const display = computed(() => recipe.value?.display ?? SHOW_EVERYTHING)
+// The edit row splits its width among the fields that are shown.
+const metaCols = computed(() => 12 / ((cookbooks.hasSeveral ? 1 : 0) + 1 + (display.value.duration ? 1 : 0) + (display.value.servings ? 1 : 0)))
 watch(recipe, (r) => { document.title = r?.name ?? 'MyCookbook' }, { immediate: true })
 const loading = ref(true)
 const newTag = ref('')
@@ -263,8 +269,9 @@ async function moveToCookbook(cookbookId: number) {
     servings: recipe.value.servings,
     cookbookId,
   })
-  // Recipe counts in the cookbook switcher changed.
+  // Recipe counts in the cookbook switcher changed, and the new cookbook may show different fields.
   cookbooks.fetchAll().catch(() => {})
+  await loadRecipe()
 }
 
 async function cloneRecipe() {

@@ -30,7 +30,11 @@ import { useRouter } from 'vue-router'
 import { useUiStore } from '../stores/ui'
 import type { RecipeDto } from '../api/types'
 
-defineProps<{ recipes: RecipeDto[] }>()
+// Columns the shown cookbook hides (MC-81) are left out.
+const props = withDefaults(
+  defineProps<{ recipes: RecipeDto[]; showDuration?: boolean; showLastCooked?: boolean }>(),
+  { showDuration: true, showLastCooked: true },
+)
 
 const emit = defineEmits<{ clone: [guid: string] }>()
 
@@ -40,8 +44,8 @@ const router = useRouter()
 const headers = computed(() => [
   { title: ui.t.colName, key: 'name', sortable: true },
   { title: ui.t.colCategory, key: 'category', sortable: true },
-  { title: ui.t.colDuration, key: 'durationText', sortable: true },
-  { title: ui.t.colLastCooked, key: 'lastCooked', sortable: true },
+  ...(props.showDuration ? [{ title: ui.t.colDuration, key: 'durationText', sortable: true }] : []),
+  ...(props.showLastCooked ? [{ title: ui.t.colLastCooked, key: 'lastCooked', sortable: true }] : []),
   { title: '', key: 'actions', sortable: false, align: 'end' as const },
 ])
 

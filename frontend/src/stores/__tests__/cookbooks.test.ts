@@ -10,8 +10,8 @@ vi.mock('../../api/cookbooks', () => ({
 }))
 
 const getAll = vi.mocked(cookbooksApi.getAll)
-const home: CookbookDto = { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }
-const baking: CookbookDto = { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 }
+const home: CookbookDto = { id: 1, name: '', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: true, recipeCount: 3 }
+const baking: CookbookDto = { id: 2, name: 'Baking', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: false, recipeCount: 1 }
 
 describe('useCookbooksStore (MC-80)', () => {
   beforeEach(() => {

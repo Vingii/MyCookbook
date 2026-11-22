@@ -35,7 +35,19 @@ namespace MyCookbook.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<bool>("ShowDuration")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("ShowInPlanner")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowLastCooked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowServings")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowStepTimeline")
                         .HasColumnType("boolean");
 
                     b.Property<string>("UserName")

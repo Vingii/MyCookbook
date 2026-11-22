@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MyCookbook.Api.Dto;
 using MyCookbook.Data.CookbookDatabase;
 
 namespace MyCookbook.Services;
@@ -74,26 +75,59 @@ public class CookbookService(IDbContextFactory<CookbookDatabaseContext> contextF
         return r => r.CookbookId is { } id ? !hidden.Contains(id) : !defaultHidden;
     }
 
-    public async Task<Cookbook> CreateAsync(string user, string name, bool showInPlanner)
+    /// <summary>
+    /// What the cookbook of <paramref name="recipe"/> shows. Read-only: an owner without cookbooks yet (only the
+    /// implicit default one) shows everything.
+    /// </summary>
+    public async Task<RecipeDisplayDto> GetDisplayAsync(Recipe recipe)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var cookbooks = context.Cookbooks.Where(c => c.UserName == recipe.UserName).AsNoTracking();
+        var cookbook = recipe.CookbookId is { } id
+            ? await cookbooks.FirstOrDefaultAsync(c => c.Id == id)
+            : await cookbooks.OrderBy(c => c.Id).FirstOrDefaultAsync();
+        return cookbook == null
+            ? new RecipeDisplayDto()
+            : new RecipeDisplayDto
+            {
+                Duration = cookbook.ShowDuration,
+                LastCooked = cookbook.ShowLastCooked,
+                Servings = cookbook.ShowServings,
+                StepTimeline = cookbook.ShowStepTimeline,
+            };
+    }
+
+    public async Task<Cookbook> CreateAsync(string user, string name, SaveCookbookRequest settings)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         // Make sure the default exists first, so the new cookbook never becomes the default by accident.
         await LoadOrCreateAsync(context, user);
-        var cookbook = new Cookbook { UserName = user, Name = name, ShowInPlanner = showInPlanner };
+        var cookbook = new Cookbook { UserName = user, Name = name };
+        Apply(cookbook, settings);
         context.Cookbooks.Add(cookbook);
         await context.SaveChangesAsync();
         return cookbook;
     }
 
-    public async Task<Cookbook?> UpdateAsync(string user, int id, string name, bool showInPlanner)
+    public async Task<Cookbook?> UpdateAsync(string user, int id, string name, SaveCookbookRequest settings)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var cookbook = await context.Cookbooks.FirstOrDefaultAsync(c => c.Id == id && c.UserName == user);
         if (cookbook == null) return null;
         cookbook.Name = name;
-        cookbook.ShowInPlanner = showInPlanner;
+        Apply(cookbook, settings);
         await context.SaveChangesAsync();
         return cookbook;
+    }
+
+    /// <summary>Copies the settings; display settings left out of the request stay as they are.</summary>
+    private static void Apply(Cookbook cookbook, SaveCookbookRequest settings)
+    {
+        cookbook.ShowInPlanner = settings.ShowInPlanner;
+        cookbook.ShowDuration = settings.ShowDuration ?? cookbook.ShowDuration;
+        cookbook.ShowLastCooked = settings.ShowLastCooked ?? cookbook.ShowLastCooked;
+        cookbook.ShowServings = settings.ShowServings ?? cookbook.ShowServings;
+        cookbook.ShowStepTimeline = settings.ShowStepTimeline ?? cookbook.ShowStepTimeline;
     }
 
     /// <summary>Deletes an empty cookbook. The last one can't be deleted: a user always has a cookbook.</summary>

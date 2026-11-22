@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Several cookbooks: keep recipes in separate cookbooks, for example everyday cooking and baking. Switch between them with the title on the Recipes page, and move a recipe to another cookbook while editing it.
 - Cookbooks are managed in Settings: rename them, add new ones, delete empty ones, and choose whether their recipes are offered in the Planner.
+- Each cookbook can hide the preparation time, last cooked date, servings or step timeline of its recipes, for example for drinks. Find it in Settings → Cookbooks.
 
 ## [2.7.0] - 2026-11-15
 ### Added

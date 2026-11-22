@@ -7,22 +7,36 @@
       <div
         v-for="c in store.cookbooks"
         :key="c.id"
-        class="d-flex flex-wrap align-center ga-3 mb-3"
+        class="cookbook-row border rounded pa-3 mb-3"
         :data-test="`cookbook-row-${c.id}`"
       >
-        <v-text-field
-          v-model="names[c.id]"
-          :placeholder="ui.t.defaultCookbookName"
-          :label="ui.t.cookbookName"
-          :maxlength="MAX_NAME_LENGTH"
-          density="compact"
-          variant="outlined"
-          hide-details
-          style="min-width: 200px; flex: 1;"
-          data-test="cookbook-name"
-          @blur="saveName(c)"
-          @keyup.enter="saveName(c)"
-        />
+        <div class="d-flex flex-wrap align-center ga-3">
+          <v-text-field
+            v-model="names[c.id]"
+            :placeholder="ui.t.defaultCookbookName"
+            :label="ui.t.cookbookName"
+            :maxlength="MAX_NAME_LENGTH"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="min-width: 200px; flex: 1;"
+            data-test="cookbook-name"
+            @blur="saveName(c)"
+            @keyup.enter="saveName(c)"
+          />
+          <span class="text-caption text-medium-emphasis" style="min-width: 80px;">{{ store.recipeCountLabel(c) }}</span>
+          <v-btn
+            icon="mdi-delete"
+            variant="text"
+            size="small"
+            :disabled="busy || !canDelete(c)"
+            :title="deleteHint(c)"
+            :aria-label="ui.t.delete"
+            data-test="cookbook-delete"
+            @click="remove(c)"
+          />
+        </div>
+
         <v-switch
           :model-value="c.showInPlanner"
           :label="ui.t.cookbookShowInPlanner"
@@ -33,17 +47,22 @@
           data-test="cookbook-planner"
           @update:model-value="(v) => save(c, { showInPlanner: !!v })"
         />
-        <span class="text-caption text-medium-emphasis" style="min-width: 80px;">{{ store.recipeCountLabel(c) }}</span>
-        <v-btn
-          icon="mdi-delete"
-          variant="text"
-          size="small"
-          :disabled="busy || !canDelete(c)"
-          :title="deleteHint(c)"
-          :aria-label="ui.t.delete"
-          data-test="cookbook-delete"
-          @click="remove(c)"
-        />
+        <!-- MC-81: what recipes in this cookbook show. -->
+        <div class="d-flex flex-wrap align-center column-gap-4">
+          <span class="text-body-2 text-medium-emphasis">{{ ui.t.cookbookShows }}</span>
+          <v-checkbox
+            v-for="field in displayFields"
+            :key="field.key"
+            :model-value="c[field.key]"
+            :label="field.label()"
+            color="primary"
+            density="compact"
+            hide-details
+            class="flex-grow-0"
+            :data-test="`cookbook-${field.key}`"
+            @update:model-value="(v) => save(c, { [field.key]: !!v })"
+          />
+        </div>
       </div>
 
       <div class="d-flex flex-wrap align-center ga-2 mt-4">
@@ -114,13 +133,26 @@ async function run(action: () => Promise<unknown>) {
   }
 }
 
-function save(c: CookbookDto, change: { name?: string; showInPlanner?: boolean }) {
-  return run(() =>
-    cookbooksApi.update(c.id, {
-      name: change.name ?? c.name,
-      showInPlanner: change.showInPlanner ?? c.showInPlanner,
-    }),
-  )
+type Settings = Pick<CookbookDto, 'name' | 'showInPlanner' | 'showDuration' | 'showLastCooked' | 'showServings' | 'showStepTimeline'>
+
+const displayFields: { key: 'showDuration' | 'showLastCooked' | 'showServings' | 'showStepTimeline'; label: () => string }[] = [
+  { key: 'showDuration', label: () => ui.t.cookbookShowDuration },
+  { key: 'showLastCooked', label: () => ui.t.cookbookShowLastCooked },
+  { key: 'showServings', label: () => ui.t.cookbookShowServings },
+  { key: 'showStepTimeline', label: () => ui.t.cookbookShowStepTimeline },
+]
+
+function save(c: CookbookDto, change: Partial<Settings>) {
+  const settings: Settings = {
+    name: c.name,
+    showInPlanner: c.showInPlanner,
+    showDuration: c.showDuration,
+    showLastCooked: c.showLastCooked,
+    showServings: c.showServings,
+    showStepTimeline: c.showStepTimeline,
+    ...change,
+  }
+  return run(() => cookbooksApi.update(c.id, settings))
 }
 
 function saveName(c: CookbookDto) {

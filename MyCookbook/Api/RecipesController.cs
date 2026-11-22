@@ -126,10 +126,12 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
     {
         var recipe = await db.GetDetailedRecipeAsync(guid, CurrentUser);
         if (recipe == null) return NotFound();
-        return recipe.ToDto(
+        var dto = recipe.ToDto(
             CurrentUser,
             await recipeLinks.GetLinksAsync(recipe, CurrentUser),
             await recipeLinks.GetBacklinksAsync(recipe, CurrentUser));
+        dto.Display = await cookbooks.GetDisplayAsync(recipe);
+        return dto;
     }
 
     [HttpPut("{guid:guid}")]
@@ -208,6 +210,10 @@ public class RecipesController(CookbookDatabaseService db, RecipeLinkService rec
         var recipe = await db.GetDetailedRecipeByIdAsync(guid.ToString());
         if (recipe == null) return NotFound();
         // No links or backlinks: they would open recipes the owner did not share.
-        return recipe.ToDto(recipe.UserName);
+        var dto = recipe.ToDto(recipe.UserName);
+        // Shown the way the owner's cookbook shows it, but nothing reveals which cookbook that is.
+        dto.CookbookId = null;
+        dto.Display = await cookbooks.GetDisplayAsync(recipe);
+        return dto;
     }
 }

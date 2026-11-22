@@ -17,6 +17,9 @@ public class RecipeDto
     /// <summary>The cookbook it belongs to; null means the owner's default cookbook.</summary>
     public int? CookbookId { get; set; }
 
+    /// <summary>What its cookbook shows (MC-81). Only populated on detail requests.</summary>
+    public RecipeDisplayDto? Display { get; set; }
+
     /// <summary>Resolved <c>[[wiki links]]</c> occurring in this recipe's steps. Only populated on detail requests.</summary>
     public List<RecipeLinkDto> Links { get; set; } = [];
 

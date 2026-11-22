@@ -14,11 +14,11 @@
         <div class="text-medium-emphasis text-caption">{{ ui.t.category }}</div>
         {{ recipe.category }}
       </div>
-      <div v-if="recipe.durationText">
+      <div v-if="display.duration && recipe.durationText" data-test="recipe-duration">
         <div class="text-medium-emphasis text-caption">{{ ui.t.colDuration }}</div>
         {{ recipe.durationText }}
       </div>
-      <div v-if="recipe.servings">
+      <div v-if="display.servings && recipe.servings" data-test="recipe-servings">
         <div class="text-medium-emphasis text-caption">{{ ui.t.servings }}</div>
         {{ recipe.servings }}
       </div>
@@ -37,7 +37,7 @@
       </v-col>
       <v-col cols="12" md="7">
         <h2 class="text-h6 mb-2">{{ ui.t.steps }}</h2>
-        <StepList :guid="guid" :steps="recipe.steps" :readonly="true" :highlight-words="highlightWords" plain-links />
+        <StepList :guid="guid" :steps="recipe.steps" :readonly="true" :timeline="display.stepTimeline" :highlight-words="highlightWords" plain-links />
       </v-col>
     </v-row>
   </div>
@@ -56,7 +56,7 @@ import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useUiStore } from '../stores/ui'
 import { useAuthStore } from '../stores/auth'
 import { useCookbooksStore } from '../stores/cookbooks'
-import type { RecipeDto } from '../api/types'
+import { SHOW_EVERYTHING, type RecipeDto } from '../api/types'
 import IngredientList from '../components/IngredientList.vue'
 import StepList from '../components/StepList.vue'
 
@@ -71,6 +71,8 @@ const cookbooks = useCookbooksStore()
 // have a cookbook to clone into (MC-70).
 const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest && !auth.isReadOnly)
 const recipe = ref<RecipeDto | null>(null)
+// Shown the way the owner's cookbook shows it (MC-81).
+const display = computed(() => recipe.value?.display ?? SHOW_EVERYTHING)
 const loading = ref(true)
 const highlightWords = ref(new Set<string>())
 

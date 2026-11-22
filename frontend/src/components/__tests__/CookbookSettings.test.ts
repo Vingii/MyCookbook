@@ -17,8 +17,8 @@ vi.mock('../../api/cookbooks', () => ({
 const vuetify = createVuetify({ components, directives })
 const api = vi.mocked(cookbooksApi)
 
-const home: CookbookDto = { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }
-const baking: CookbookDto = { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 0 }
+const home: CookbookDto = { id: 1, name: '', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: true, recipeCount: 3 }
+const baking: CookbookDto = { id: 2, name: 'Baking', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true, isDefault: false, recipeCount: 0 }
 
 function mountCard() {
   return mount(CookbookSettings, { global: { plugins: [vuetify] } })
@@ -61,7 +61,7 @@ describe('CookbookSettings', () => {
     await nameInput(w, 1).trigger('keyup.enter')
     await flushPromises()
 
-    expect(api.update).toHaveBeenCalledWith(1, { name: 'Home', showInPlanner: true })
+    expect(api.update).toHaveBeenCalledWith(1, { name: 'Home', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true })
     // Reloaded so the Recipes page switcher shows the new name.
     expect(api.getAll).toHaveBeenCalledTimes(2)
   })
@@ -85,7 +85,34 @@ describe('CookbookSettings', () => {
     await row(w, 2).find('[data-test="cookbook-planner"] input').setValue(false)
     await flushPromises()
 
-    expect(api.update).toHaveBeenCalledWith(2, { name: 'Baking', showInPlanner: false })
+    expect(api.update).toHaveBeenCalledWith(2, { name: 'Baking', showInPlanner: false, showDuration: true, showLastCooked: true, showServings: true, showStepTimeline: true })
+  })
+
+  // MC-81
+  it('turns off what recipes in a cookbook show, keeping the other settings', async () => {
+    const w = mountCard()
+    await flushPromises()
+
+    expect(row(w, 2).text()).toContain('Show in recipes:')
+    expect(row(w, 2).text()).toContain('Step timeline')
+    await row(w, 2).find('[data-test="cookbook-showServings"] input').setValue(false)
+    await flushPromises()
+
+    expect(api.update).toHaveBeenCalledWith(2, {
+      name: 'Baking', showInPlanner: true, showDuration: true, showLastCooked: true, showServings: false, showStepTimeline: true,
+    })
+  })
+
+  it('shows which fields are turned off', async () => {
+    api.getAll.mockResolvedValue([home, { ...baking, showLastCooked: false }])
+    const w = mountCard()
+    await flushPromises()
+
+    const checked = (id: number, key: string) =>
+      (row(w, id).find(`[data-test="cookbook-${key}"] input`).element as HTMLInputElement).checked
+    expect(checked(2, 'showLastCooked')).toBe(false)
+    expect(checked(2, 'showDuration')).toBe(true)
+    expect(checked(1, 'showLastCooked')).toBe(true)
   })
 
   it('adds a cookbook', async () => {

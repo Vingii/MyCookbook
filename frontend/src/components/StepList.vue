@@ -2,8 +2,9 @@
   <div>
     <div v-for="(step, idx) in sorted" :key="step.id" class="d-flex" style="min-height: 56px;">
 
-      <!-- Vertical timeline bar -->
+      <!-- Vertical timeline bar; a cookbook can turn it off (MC-81) -->
       <div
+        v-if="timeline"
         class="step-bar flex-shrink-0 d-flex align-center justify-center"
         :style="{
           background: barColor(step.stepType),
@@ -88,7 +89,7 @@ import { renderWithLinks, renderLinksAsText, useRecipeHref } from '../composable
 import type { StepDto, RecipeLinkDto } from '../api/types'
 import StepTextarea from './StepTextarea.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   guid: string
   steps: StepDto[]
   readonly?: boolean
@@ -96,7 +97,9 @@ const props = defineProps<{
   links?: RecipeLinkDto[]
   /** Show `[[links]]` as plain text (shared recipes must not open the owner's other recipes). */
   plainLinks?: boolean
-}>()
+  /** Show the timeline bar with each step's type and duration (MC-81). */
+  timeline?: boolean
+}>(), { timeline: true })
 const emit = defineEmits<{ refresh: [] }>()
 
 const ui = useUiStore()
