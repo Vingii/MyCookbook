@@ -13,8 +13,6 @@ export interface RecipeListParams {
   search?: string
   category?: string
   tag?: string
-  user?: string
-  shareToken?: string
   /** Only recipes in this cookbook of yours (MC-80). */
   cookbook?: number
   /** Only recipes from cookbooks shown in the planner. */
@@ -31,10 +29,10 @@ export const recipesApi = {
   getAllNames: () =>
     client.get<string[]>('/recipes/names').then((r) => r.data),
 
-  getById: (guid: string, params?: { user?: string; shareToken?: string }) =>
-    client.get<RecipeDto>(`/recipes/${guid}`, { params }).then((r) => r.data),
+  getById: (guid: string) =>
+    client.get<RecipeDto>(`/recipes/${guid}`).then((r) => r.data),
 
-  getRandom: (params?: { user?: string; shareToken?: string; cookbook?: number }) =>
+  getRandom: (params?: { cookbook?: number }) =>
     client.get<RecipeDto>('/recipes/random', { params }).then((r) => r.data),
 
   getShared: (guid: string) =>

@@ -14,27 +14,13 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
 {
     private string CurrentUser => HttpContext.User.Identity!.Name!;
 
-    private async Task<string> ResolveUser(string? user) =>
-        user != null ? await db.ResolveUserIdAsync(user) : CurrentUser;
-
-    private async Task<bool> ValidateShareAccess(string targetUser, string? shareToken)
-    {
-        if (targetUser == CurrentUser) return true;
-        if (string.IsNullOrEmpty(shareToken)) return false;
-        var stored = await db.GetUserPreference("ShareToken", targetUser);
-        return !string.IsNullOrEmpty(stored) && stored == shareToken;
-    }
 
     [HttpGet]
     public async Task<ActionResult<List<PlannedRecipeDto>>> GetAll(
         [FromQuery] string? from,
-        [FromQuery] string? to,
-        [FromQuery] string? user,
-        [FromQuery] string? shareToken)
+        [FromQuery] string? to)
     {
-        var targetUser = await ResolveUser(user);
-        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
-        var all = await db.GetPlannedRecipesAsync(targetUser);
+        var all = await db.GetPlannedRecipesAsync(CurrentUser);
         var flat = all.SelectMany(kv => kv.Value);
 
         if (DateOnly.TryParse(from, out var fromDate))
@@ -49,18 +35,13 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
     [HttpGet("ingredients")]
     public async Task<ActionResult<List<IngredientSummaryDto>>> GetIngredients(
         [FromQuery] string? from,
-        [FromQuery] string? to,
-        [FromQuery] string? user,
-        [FromQuery] string? shareToken)
+        [FromQuery] string? to)
     {
         if (!DateOnly.TryParse(from, out var fromDate) || !DateOnly.TryParse(to, out var toDate))
             return BadRequest("Invalid date format");
         if (toDate < fromDate) return BadRequest("'to' is before 'from'");
 
-        var targetUser = await ResolveUser(user);
-        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
-
-        var recipes = await db.GetPlannedRecipesToCookAsync(targetUser, fromDate, toDate);
+        var recipes = await db.GetPlannedRecipesToCookAsync(CurrentUser, fromDate, toDate);
         return IngredientSummaryBuilder.Build(recipes);
     }
 
@@ -73,9 +54,7 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
         [FromServices] PlanSuggestionService suggestions,
         [FromQuery] string? from = null,
         [FromQuery] string? to = null,
-        [FromQuery] int count = 10,
-        [FromQuery] string? user = null,
-        [FromQuery] string? shareToken = null)
+        [FromQuery] int count = 10)
     {
         var today = DateOnly.FromDateTime(DateTime.Now);
         var fromDate = today;
@@ -84,10 +63,7 @@ public class PlannerController(CookbookDatabaseService db) : ControllerBase
         if (to != null && !DateOnly.TryParse(to, out toDate)) return BadRequest("Invalid date format");
         if (toDate < fromDate || toDate.DayNumber - fromDate.DayNumber > 62) return BadRequest("Invalid date range");
 
-        var targetUser = await ResolveUser(user);
-        if (!await ValidateShareAccess(targetUser, shareToken)) return Forbid();
-
-        return await suggestions.SuggestAsync(targetUser, fromDate, toDate, today, Math.Clamp(count, 1, 20));
+        return await suggestions.SuggestAsync(CurrentUser, fromDate, toDate, today, Math.Clamp(count, 1, 20));
     }
 
     [HttpPost]

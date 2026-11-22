@@ -108,7 +108,7 @@ Serilog with Console and Grafana Loki sinks.
 | `ConnectionStrings__DefaultConnection` | SQL Server connection string |
 | `SA_PASSWORD` | SQL Server SA password (used in docker-compose) |
 | `ASPNETCORE_ENVIRONMENT` | `Development`, `Production`, or `Docker` |
-| `DEV_SEED_DATA` | `true` (local `.env` only) seeds sample recipes, a meal plan and a second user `dev-anna` who shares her cookbook (`/?user=dev-anna&shareToken=dev-share-token`). Needs `DEV_AUTO_LOGIN`; each user is seeded once. Never set in CI or tests. |
+| `DEV_SEED_DATA` | `true` (local `.env` only) seeds sample recipes, a meal plan and a second user `dev-anna` ("Anna Nováková") whose recipes you can open by their share links (`/recipe/shared/{guid}`), for trying out sharing and cloning. Needs `DEV_AUTO_LOGIN`; each user is seeded once. Never set in CI or tests. |
 | `ASPNETCORE_URLS` | App listen URLs (e.g. `http://+:8080`) |
 | `WEB_PORT` | Host port exposed by docker-compose (default: `8080`) |
 | `COOKBOOK_URL` | Public URL of the app |

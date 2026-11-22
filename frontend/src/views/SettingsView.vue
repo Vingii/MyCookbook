@@ -29,38 +29,7 @@
       </v-card-text>
     </v-card>
 
-    <v-card variant="outlined">
-      <v-card-title>{{ ui.t.shareAccess }}</v-card-title>
-      <v-card-text>
-        <p class="mb-3">{{ ui.t.shareAccessDesc }}</p>
-        <div v-if="shareToken === undefined">Loading...</div>
-        <div v-else-if="shareToken">
-          <p class="mb-2">{{ ui.t.shareLink }}</p>
-          <div class="d-flex ga-2 align-center flex-wrap mb-2">
-            <v-text-field
-              :model-value="shareUrl"
-              readonly
-              density="compact"
-              variant="outlined"
-              hide-details
-              style="min-width: 300px; flex: 1;"
-              @focus="($event.target as HTMLInputElement).select()"
-            />
-            <v-btn @click="copyShareUrl">{{ shareTokenCopied ? ui.t.copied : ui.t.copy }}</v-btn>
-          </div>
-          <v-btn :disabled="shareTokenBusy" @click="revokeShareToken">{{ ui.t.revoke }}</v-btn>
-        </div>
-        <div v-else>
-          <v-btn color="primary" :disabled="shareTokenBusy" @click="generateShareToken">
-            {{ ui.t.generateShareLink }}
-          </v-btn>
-        </div>
-        <v-alert v-if="shareTokenError" type="error" density="compact" class="mt-3">
-          {{ shareTokenError }}
-        </v-alert>
-      </v-card-text>
-    </v-card>
-    <v-card class="mt-6" variant="outlined" data-test="ha-card">
+    <v-card variant="outlined" data-test="ha-card">
       <v-card-title>{{ ui.t.homeAssistant }}</v-card-title>
       <v-card-text>
         <p class="mb-3">{{ ui.t.homeAssistantDesc }}</p>
@@ -146,60 +115,6 @@ async function revokeApiToken() {
   }
 }
 
-// --- Share Token ---
-const shareToken = ref<string | null | undefined>(undefined)
-const shareTokenBusy = ref(false)
-const shareTokenError = ref<string | null>(null)
-const shareTokenCopied = ref(false)
-
-const shareUrl = computed(() => {
-  if (!shareToken.value || !auth.username) return ''
-  const base = window.location.origin
-  return `${base}/browser?user=${encodeURIComponent(auth.username)}&shareToken=${encodeURIComponent(shareToken.value)}`
-})
-
-async function loadShareToken() {
-  try {
-    const res = await authApi.getShareToken()
-    shareToken.value = res.token
-  } catch {
-    shareTokenError.value = 'Failed to load share token.'
-    shareToken.value = null
-  }
-}
-
-async function generateShareToken() {
-  shareTokenBusy.value = true
-  shareTokenError.value = null
-  try {
-    const res = await authApi.createShareToken()
-    shareToken.value = res.token
-  } catch {
-    shareTokenError.value = 'Failed to generate share token.'
-  } finally {
-    shareTokenBusy.value = false
-  }
-}
-
-async function revokeShareToken() {
-  shareTokenBusy.value = true
-  shareTokenError.value = null
-  try {
-    await authApi.revokeShareToken()
-    shareToken.value = null
-  } catch {
-    shareTokenError.value = 'Failed to revoke share token.'
-  } finally {
-    shareTokenBusy.value = false
-  }
-}
-
-function copyShareUrl() {
-  navigator.clipboard.writeText(shareUrl.value)
-  shareTokenCopied.value = true
-  setTimeout(() => { shareTokenCopied.value = false }, 2000)
-}
-
 // --- Home Assistant ---
 const haUrl = ref('')
 const haStoredUrl = ref<string | null>(null)
@@ -280,7 +195,6 @@ function copyHaYaml() {
 onMounted(() => {
   // A read-only API token can't read or change these settings.
   if (auth.isReadOnly) return
-  loadShareToken()
   loadHomeAssistant()
 })
 </script>

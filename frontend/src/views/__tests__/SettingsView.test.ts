@@ -9,12 +9,8 @@ import SettingsView from '../SettingsView.vue'
 import { homeAssistantApi } from '../../api/homeAssistant'
 import { useUiStore } from '../../stores/ui'
 import { useAuthStore } from '../../stores/auth'
-import { authApi } from '../../api/auth'
 
 // MC-77: Home Assistant webhook settings.
-vi.mock('../../api/auth', () => ({
-  authApi: { getShareToken: vi.fn().mockResolvedValue({ token: null }) },
-}))
 vi.mock('../../api/cookbooks', () => ({
   cookbooksApi: { getAll: vi.fn().mockResolvedValue([]) },
 }))
@@ -41,7 +37,6 @@ describe('SettingsView – Home Assistant', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     useUiStore().locale = 'en'
-    vi.mocked(authApi.getShareToken).mockClear()
     haGet.mockReset().mockResolvedValue({ webhookUrl: null })
     haSave.mockReset().mockResolvedValue(undefined as never)
     haRemove.mockReset().mockResolvedValue(undefined as never)
@@ -55,7 +50,6 @@ describe('SettingsView – Home Assistant', () => {
     expect(w.find('[data-test="read-only"]').text()).toContain('API token')
     expect(w.find('[data-test="ha-card"]').exists()).toBe(false)
     expect(haGet).not.toHaveBeenCalled()
-    expect(vi.mocked(authApi.getShareToken)).not.toHaveBeenCalled()
   })
 
   it('shows the saved webhook URL', async () => {

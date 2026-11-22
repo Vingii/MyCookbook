@@ -138,7 +138,7 @@ const store = useRecipesStore()
 const cookbooks = useCookbooksStore()
 const ui = useUiStore()
 const router = useRouter()
-const { viewingUser, shareToken, readonly } = useReadonly()
+const { readonly } = useReadonly()
 watchEffect(() => { document.title = cookbooks.hasSeveral && !readonly.value ? cookbooks.displayName(cookbooks.active) : ui.t.recipes })
 const search = ref('')
 const category = ref<string | null>(null)
@@ -174,7 +174,7 @@ onMounted(async () => {
   store.fetchIngredientNames()
   if (!readonly.value) {
     recipeImportApi.isEnabled().then((enabled) => { importEnabled.value = enabled }).catch(() => {})
-    // Someone else's shared recipes have no cookbooks of yours to pick from.
+    // A read-only session (e.g. the Home Assistant panel) just shows every recipe.
     try {
       await cookbooks.fetchAll()
     } catch {
@@ -189,8 +189,6 @@ function applyFilters() {
     search: search.value || undefined,
     category: category.value || undefined,
     tag: tag.value || undefined,
-    user: viewingUser.value || undefined,
-    shareToken: shareToken.value,
     cookbook: activeCookbookId.value,
   })
 }

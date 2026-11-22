@@ -112,16 +112,9 @@ public class PlannerIngredientsApiTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_OtherUserWithoutShareToken_IsForbidden()
+    public async Task Get_IgnoresUserParameter_AndListsOnlyYourIngredients()
     {
-        await SeedAsync("anna");
-        var response = await _client.GetAsync("/api/planner/ingredients?from=2026-11-16&to=2026-11-22&user=anna");
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Get_OtherUserWithShareToken_ReturnsTheirIngredients()
-    {
+        // Sharing a whole collection with ?user=&shareToken= was removed, even with a token that used to work.
         await SeedAsync("anna");
         await WithContextAsync(ctx =>
         {
@@ -131,6 +124,6 @@ public class PlannerIngredientsApiTests : IDisposable
 
         var result = await GetAsync("from=2026-11-16&to=2026-11-22&user=anna&shareToken=tok");
 
-        Assert.Equal(["Cibule", "Vepřové"], result.Select(r => r.Name));
+        Assert.Empty(result);
     }
 }

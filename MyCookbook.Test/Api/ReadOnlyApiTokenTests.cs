@@ -108,8 +108,6 @@ public class ReadOnlyApiTokenTests : IDisposable
         { "POST", "/api/shared/recipes/{guid}" },
         { "PUT", "/api/homeassistant" },
         { "DELETE", "/api/auth/token" },
-        { "POST", "/api/auth/share-token" },
-        { "DELETE", "/api/auth/share-token" },
     };
 
     [Theory]
@@ -145,7 +143,6 @@ public class ReadOnlyApiTokenTests : IDisposable
 
     [Theory]
     [InlineData("/api/auth/token")]
-    [InlineData("/api/auth/share-token")]
     [InlineData("/api/homeassistant")]
     public async Task Token_CannotReadAccountSecrets(string url)
     {

@@ -22,8 +22,6 @@
 
     <IngredientSummaryDialog
         v-model="shoppingListOpen"
-        :user="viewingUser || undefined"
-        :share-token="shareToken"
     />
 
     <div v-for="(week, wi) in weeks" :key="wi">
@@ -167,7 +165,7 @@ const plannerStore = usePlannerStore()
 const recipesStore = useRecipesStore()
 const ui = useUiStore()
 watchEffect(() => { document.title = ui.t.mealPlanner })
-const { viewingUser, shareToken, readonly } = useReadonly()
+const { readonly } = useReadonly()
 const dialogOpen = ref(false)
 const shoppingListOpen = ref(false)
 const dialogDate = ref('')
@@ -198,8 +196,6 @@ watch(autocompleteSearch, (query) => {
   searchDebounce = setTimeout(async () => {
     filteredRecipes.value = await recipesApi.getAll({
       search: query || undefined,
-      user: viewingUser.value || undefined,
-      shareToken: shareToken.value,
       // Cookbooks hidden from the planner (MC-80) are left out.
       planner: true,
     })
@@ -258,12 +254,12 @@ async function addSuggestion(suggestion: PlanSuggestionDto, date: string) {
 function fetchPlans() {
   const from = days.value[0]!.date
   const to = days.value[20]!.date
-  plannerStore.fetchRange(from, to, viewingUser.value || undefined, shareToken.value)
+  plannerStore.fetchRange(from, to)
 }
 
 onMounted(() => {
   fetchPlans()
-  recipesStore.fetchAll({ user: viewingUser.value || undefined, shareToken: shareToken.value, planner: true })
+  recipesStore.fetchAll({ planner: true })
 })
 
 function getPlansForDate(date: string) {

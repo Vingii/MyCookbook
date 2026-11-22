@@ -66,7 +66,7 @@ public class DevDataSeederTests
     }
 
     [Fact]
-    public async Task SeedsSharingUserWithDisplayNameAndShareLink()
+    public async Task SeedsSharingUserWithDisplayName()
     {
         await SeedAsync();
 
@@ -75,7 +75,7 @@ public class DevDataSeederTests
         var prefs = await context.UserPreferences.Where(p => p.UserName == DevDataSeeder.SharingUser)
             .ToDictionaryAsync(p => p.Key, p => p.Value);
         Assert.Equal(DevDataSeeder.SharingUserDisplayName, prefs["DisplayName"]);
-        Assert.Equal(DevDataSeeder.SharingUserToken, prefs["ShareToken"]);
+        Assert.False(prefs.ContainsKey("ShareToken"));
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class DevDataSeederTests
         {
             context.Recipes.Add(new Recipe { UserName = DevUser, Name = "test", Servings = 1 });
             context.Recipes.Add(new Recipe { UserName = DevUser, Name = "Palačinky", Servings = 2 });
-            context.UserPreferences.Add(new UserPreference { UserName = DevDataSeeder.SharingUser, Key = "ShareToken", Value = "existing" });
+            context.UserPreferences.Add(new UserPreference { UserName = DevDataSeeder.SharingUser, Key = "Theme", Value = "existing" });
             await context.SaveChangesAsync();
         }
 
@@ -123,6 +123,6 @@ public class DevDataSeederTests
         Assert.Single(recipes, r => r.Name == "Palačinky");
         Assert.Empty(recipes.Single(r => r.Name == "Palačinky").Ingredients); // the user's own, untouched
         await using var check = NewContext();
-        Assert.Equal("existing", (await check.UserPreferences.SingleAsync(p => p.UserName == DevDataSeeder.SharingUser && p.Key == "ShareToken")).Value);
+        Assert.Equal("existing", (await check.UserPreferences.SingleAsync(p => p.UserName == DevDataSeeder.SharingUser && p.Key == "Theme")).Value);
     }
 }

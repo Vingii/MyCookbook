@@ -140,10 +140,11 @@ describe('RecipeBrowserView cookbooks (MC-80)', () => {
     expect(lastCookbookParam()).toBeUndefined()
   })
 
-  it('does not load your cookbooks when viewing someone else\'s recipes', async () => {
+  // MC-78: e.g. the Home Assistant panel.
+  it('shows every recipe without a switcher in a read-only API token session', async () => {
     getCookbooks.mockResolvedValue([home, baking])
-    useAuthStore().username = 'adel'
-    await mountView('/?user=anna&shareToken=abc')
+    useAuthStore().isReadOnly = true
+    await mountView()
 
     expect(getCookbooks).not.toHaveBeenCalled()
     expect(lastCookbookParam()).toBeUndefined()

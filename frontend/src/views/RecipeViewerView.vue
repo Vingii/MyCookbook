@@ -29,9 +29,6 @@
         <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.clone }}</v-btn>
         <v-btn color="error" variant="outlined" prepend-icon="mdi-delete" @click="deleteRecipe">{{ ui.t.delete }}</v-btn>
       </v-col>
-      <v-col v-else-if="canCloneToOwn" cols="auto">
-        <v-btn variant="outlined" prepend-icon="mdi-content-copy" @click="cloneRecipe">{{ ui.t.cloneToMyRecipes }}</v-btn>
-      </v-col>
     </v-row>
 
     <v-row v-if="!readonly && editingMeta" class="mb-4" align="center">
@@ -184,7 +181,6 @@ import { useReadonly } from '../composables/useReadonly'
 import { useUiStore } from '../stores/ui'
 import { useRecipesStore } from '../stores/recipes'
 import { useCookbooksStore } from '../stores/cookbooks'
-import { useAuthStore } from '../stores/auth'
 import { getHighlightWords } from '../composables/useIngredientHighlighter'
 import { useRecipeHref } from '../composables/useRecipeLinks'
 import type { RecipeDto } from '../api/types'
@@ -196,13 +192,10 @@ const router = useRouter()
 // Computed rather than captured: following a recipe link reuses this component instance.
 const guid = computed(() => route.params.guid as string)
 const recipeHref = useRecipeHref()
-const { viewingUser, shareToken, readonly } = useReadonly()
+const { readonly } = useReadonly()
 const ui = useUiStore()
 const store = useRecipesStore()
 const cookbooks = useCookbooksStore()
-const auth = useAuthStore()
-// Someone else's recipe can be cloned into your own cookbook, but guests have no cookbook (MC-70).
-const canCloneToOwn = computed(() => auth.isAuthenticated && !auth.isGuest && !auth.isReadOnly)
 const recipe = ref<RecipeDto | null>(null)
 watch(recipe, (r) => { document.title = r?.name ?? 'MyCookbook' }, { immediate: true })
 const loading = ref(true)
@@ -221,7 +214,7 @@ onMounted(() => {
   if (store.allTags.length === 0) store.fetchAllTags()
   if (store.allCategories.length === 0) store.fetchAllCategories()
   // Your own recipe can be moved to another cookbook (MC-80).
-  if (!readonly.value && canCloneToOwn.value) cookbooks.ensureLoaded().catch(() => {})
+  if (!readonly.value) cookbooks.ensureLoaded().catch(() => {})
 })
 
 watch(guid, () => {
@@ -232,7 +225,7 @@ watch(guid, () => {
 async function loadRecipe() {
   loading.value = true
   try {
-    recipe.value = await recipesApi.getById(guid.value, { user: viewingUser.value || undefined, shareToken: shareToken.value })
+    recipe.value = await recipesApi.getById(guid.value)
     highlightWords.value = await getHighlightWords(recipe.value.ingredients.map((i) => i.name))
   } finally {
     loading.value = false
@@ -275,9 +268,8 @@ async function moveToCookbook(cookbookId: number) {
 }
 
 async function cloneRecipe() {
-  // A copy of someone else's recipe goes to the cookbook you are browsing; your own stays next to the original.
-  const cookbook = readonly.value ? await cookbooks.targetForNewRecipe() : undefined
-  const cloned = await recipesApi.clone(guid.value, cookbook)
+  // The copy stays in the same cookbook as the original.
+  const cloned = await recipesApi.clone(guid.value)
   router.push(`/recipe/${cloned.guid}`)
 }
 

@@ -72,21 +72,21 @@ describe('IngredientSummaryDialog', () => {
     vi.useRealTimers()
   })
 
-  it('loads next week by default, for the viewed user (Czech week starts on Monday)', async () => {
+  it('loads next week by default (Czech week starts on Monday)', async () => {
     useUiStore().locale = 'cs'
-    mountDialog({ user: 'anna', shareToken: 'tok' })
+    mountDialog()
     await flushPromises()
 
     // Today is Sunday 2026-11-15.
     expect(getIngredients).toHaveBeenCalledTimes(1)
-    expect(getIngredients).toHaveBeenCalledWith('2026-11-16', '2026-11-22', 'anna', 'tok')
+    expect(getIngredients).toHaveBeenCalledWith('2026-11-16', '2026-11-22')
   })
 
   it('in English the default week and the pickers start on Sunday', async () => {
     const w = mountDialog()
     await flushPromises()
 
-    expect(getIngredients).toHaveBeenCalledWith('2026-11-22', '2026-11-28', undefined, undefined)
+    expect(getIngredients).toHaveBeenCalledWith('2026-11-22', '2026-11-28')
     expect(pickers(w).map((p) => p.props('firstDayOfWeek'))).toEqual([0, 0])
   })
 
@@ -136,7 +136,7 @@ describe('IngredientSummaryDialog', () => {
     pickers(w)[1]!.vm.$emit('update:modelValue', new Date(2026, 10, 30))
     await flushPromises()
 
-    expect(getIngredients).toHaveBeenLastCalledWith('2026-11-22', '2026-11-30', undefined, undefined)
+    expect(getIngredients).toHaveBeenLastCalledWith('2026-11-22', '2026-11-30')
   })
 
   it('moving the start past the end moves the end along', async () => {
@@ -146,7 +146,7 @@ describe('IngredientSummaryDialog', () => {
     pickers(w)[0]!.vm.$emit('update:modelValue', new Date(2026, 11, 5))
     await flushPromises()
 
-    expect(getIngredients).toHaveBeenLastCalledWith('2026-12-05', '2026-12-05', undefined, undefined)
+    expect(getIngredients).toHaveBeenLastCalledWith('2026-12-05', '2026-12-05')
   })
 
   it('shows a message when nothing is planned', async () => {

@@ -35,11 +35,12 @@ const gyros = {
 } as unknown as RecipeDto
 
 /** Mounts the viewer at <paramref name="path"/> with the given signed-in user. */
-async function mountView(path: string, user: { username: string; isGuest?: boolean }) {
+async function mountView(path: string, user: { username: string; isGuest?: boolean; isReadOnly?: boolean }) {
   const auth = useAuthStore()
   auth.username = user.username
   auth.isAuthenticated = true
   auth.isGuest = user.isGuest ?? false
+  auth.isReadOnly = user.isReadOnly ?? false
   auth.loaded = true
 
   const router = createRouter({
@@ -60,13 +61,19 @@ const buttonTexts = (wrapper: Awaited<ReturnType<typeof mountView>>) =>
 
 enableAutoUnmount(afterEach)
 
-describe('RecipeViewerView clone (MC-70)', () => {
+// Only your own recipes open here; recipes others share open on /recipe/shared/{guid} (SharedRecipeView).
+describe('RecipeViewerView', () => {
+  const twoCookbooks = [
+    { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
+    { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
+  ]
+
   beforeEach(() => {
     localStorage.clear()
     setActivePinia(createPinia())
     getById.mockReset().mockResolvedValue(gyros)
     clone.mockReset()
-    vi.mocked(cookbooksApi.getAll).mockReset().mockResolvedValue([{ id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 }])
+    vi.mocked(cookbooksApi.getAll).mockReset().mockResolvedValue([twoCookbooks[0]!])
   })
 
   it('offers owner actions on your own recipe', async () => {
@@ -75,47 +82,36 @@ describe('RecipeViewerView clone (MC-70)', () => {
     expect(buttonTexts(wrapper)).toEqual(expect.arrayContaining(['Share', 'Clone', 'Delete']))
   })
 
-  it('offers only Clone on a recipe someone shared with you', async () => {
-    const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
-
-    expect(buttonTexts(wrapper)).toContain('Clone')
-    expect(buttonTexts(wrapper)).not.toContain('Share')
-    expect(buttonTexts(wrapper)).not.toContain('Delete')
-  })
-
-  it('labels the shared-recipe clone "Kopírovat" in Czech', async () => {
-    localStorage.setItem('locale', 'cs')
-    setActivePinia(createPinia())
-    const shared = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
-    expect(buttonTexts(shared)).toContain('Kopírovat')
-    shared.unmount()
-
-    // Your own recipe keeps the existing label.
-    const own = await mountView(`/recipe/${GUID}`, { username: 'adel' })
-    expect(buttonTexts(own)).toContain('Duplikovat')
-    expect(buttonTexts(own)).not.toContain('Kopírovat')
-  })
-
-  it('clones a shared recipe into the cookbook you are browsing (MC-80)', async () => {
-    vi.mocked(cookbooksApi.getAll).mockResolvedValue([
-  { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
-  { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
-])
-    localStorage.setItem('activeCookbook', '2')
+  it('opens the copy after cloning, which stays in the same cookbook', async () => {
     clone.mockResolvedValue({ ...gyros, guid: 'new-guid' })
-    const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
+    const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel' })
 
     await wrapper.findAll('button').find((b) => b.text() === 'Clone')!.trigger('click')
     await flushPromises()
 
-    expect(clone).toHaveBeenCalledWith(GUID, 2)
+    expect(clone).toHaveBeenCalledWith(GUID)
+    // The view does not await the push.
+    await vi.waitFor(() => expect(wrapper.router.currentRoute.value.fullPath).toBe('/recipe/new-guid'))
   })
 
-  it('shows the cookbook of your own recipe when you have several (MC-80)', async () => {
-    vi.mocked(cookbooksApi.getAll).mockResolvedValue([
-  { id: 1, name: '', showInPlanner: true, isDefault: true, recipeCount: 3 },
-  { id: 2, name: 'Baking', showInPlanner: true, isDefault: false, recipeCount: 1 },
-])
+  // MC-78: e.g. the Home Assistant panel.
+  it('offers no actions in a read-only API token session', async () => {
+    const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel', isReadOnly: true })
+
+    expect(buttonTexts(wrapper)).not.toContain('Clone')
+    expect(buttonTexts(wrapper)).not.toContain('Share')
+    expect(buttonTexts(wrapper)).not.toContain('Delete')
+    expect(cookbooksApi.getAll).not.toHaveBeenCalled()
+  })
+
+  it('offers no clone to guests, who have no cookbook', async () => {
+    const wrapper = await mountView(`/recipe/${GUID}`, { username: 'guest-1', isGuest: true })
+
+    expect(buttonTexts(wrapper)).not.toContain('Clone')
+  })
+
+  it('shows the cookbook of your recipe when you have several (MC-80)', async () => {
+    vi.mocked(cookbooksApi.getAll).mockResolvedValue(twoCookbooks)
     getById.mockResolvedValue({ ...gyros, cookbookId: 2 })
     const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel' })
 
@@ -126,23 +122,5 @@ describe('RecipeViewerView clone (MC-70)', () => {
     const wrapper = await mountView(`/recipe/${GUID}`, { username: 'adel' })
 
     expect(wrapper.find('[data-test="recipe-cookbook-name"]').exists()).toBe(false)
-  })
-
-  it('opens your own copy after cloning a shared recipe', async () => {
-    clone.mockResolvedValue({ ...gyros, guid: 'new-guid' })
-    const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'adel' })
-
-    await wrapper.findAll('button').find((b) => b.text() === 'Clone')!.trigger('click')
-    await flushPromises()
-
-    expect(clone).toHaveBeenCalledWith(GUID, undefined)
-    // No ?user= or ?shareToken=: the copy is in your own cookbook. The view does not await the push.
-    await vi.waitFor(() => expect(wrapper.router.currentRoute.value.fullPath).toBe('/recipe/new-guid'))
-  })
-
-  it('offers no clone to guests, who have no cookbook', async () => {
-    const wrapper = await mountView(`/recipe/${GUID}?user=michal&shareToken=abc`, { username: 'guest-1', isGuest: true })
-
-    expect(buttonTexts(wrapper)).not.toContain('Clone')
   })
 })

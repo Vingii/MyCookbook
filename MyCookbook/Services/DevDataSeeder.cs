@@ -14,10 +14,9 @@ namespace MyCookbook.Services;
 /// </summary>
 public static class DevDataSeeder
 {
-    /// <summary>A second user who shares her cookbook, for trying out sharing and cloning.</summary>
+    /// <summary>A second user whose recipes you can open by their share links, for trying out sharing and cloning.</summary>
     public const string SharingUser = "dev-anna";
     public const string SharingUserDisplayName = "Anna Nováková";
-    public const string SharingUserToken = "dev-share-token";
 
     private const string SeededMarker = "DevSeeded";
 
@@ -37,8 +36,6 @@ public static class DevDataSeeder
         if (await SeedUserAsync(context, SharingUser, SharingUserRecipes))
         {
             context.UserPreferences.Add(new UserPreference { UserName = SharingUser, Key = "DisplayName", Value = SharingUserDisplayName });
-            if (!await context.UserPreferences.AnyAsync(p => p.UserName == SharingUser && p.Key == "ShareToken"))
-                context.UserPreferences.Add(new UserPreference { UserName = SharingUser, Key = "ShareToken", Value = SharingUserToken });
             await context.SaveChangesAsync();
         }
     }
